@@ -1,0 +1,41 @@
+{
+    "at": "2026-08-25T09:48:56+02:00",
+    "by": "pyo",
+    "changes": [
+        {
+            "po": "PO-sys2024511555",
+            "from": "AUTOTRAX FLEET MASTER -A\/S",
+            "to": "AUTOTRAX FLEET MASTER A\/S"
+        },
+        {
+            "po": "PO-sys2024511560",
+            "from": "AUTOTRAX FLEET MASTER, A\/S",
+            "to": "AUTOTRAX FLEET MASTER A\/S"
+        },
+        {
+            "po": "PO-sys2026624927",
+            "from": "7 DIAMONDS EDUCATIONAL & CONSUMER GOOD TRADING",
+            "to": "7  DIAMONDS  EDUCATIONAL & CONSUMER GOOD TRADING"
+        },
+        {
+            "po": "PO-sys2025316803",
+            "from": "7DIAMONDS EDUCATIONAL & CONSUMER GODS TRADING",
+            "to": "7 DIAMONDS EDUCATIONAL & CONSUMER GODS TRADING"
+        },
+        {
+            "po": "PO-sys2025517702",
+            "from": "7DIAMONDS EDUCATIONAL & CONSUMER GOODS",
+            "to": "7 DIAMONDS EDUCATIONAL & CONSUMER GOODS"
+        },
+        {
+            "po": "PO-sys2024813472",
+            "from": "D'APIARY CONSUMER,GOOD TRADING",
+            "to": "D'APIARY CONSUMER GOOD TRADING"
+        },
+        {
+            "po": "PO-sys2026826123",
+            "from": "DIAPIARY CONSUMER GOODS TRADING",
+            "to": "DI'APIARY CONSUMER GOODS TRADING"
+        }
+    ]
+}

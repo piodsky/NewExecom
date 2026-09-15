@@ -1,0 +1,178 @@
+/* ── Disbursement Voucher — the printed form ──────────────────────────────────
+ *
+ * Sibling of css/iar-print.css and of the Purchase Order / Obligation Request
+ * printouts in purchase_orders.php: same serif body, same 1.5px frame, same
+ * 3px rule under the letterhead, same blue title, same bordered grids. The
+ * three forms leave this office stapled together, so they are built from one
+ * set of tokens rather than three.
+ *
+ * Every label, tick box, rule and column here is traced object-by-object to
+ * tools/rpt_reports/dv.layout.tsv, extracted from
+ * `vb/Inspection and Acceptance/Crystal Reports/Disbursement Voucher.rpt`.
+ * What is NOT traced is the geometry: like the IAR, this is the same form laid
+ * out the modern way, not a pixel facsimile. The coordinates remain in that
+ * .tsv if the office ever wants the old look back.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.dv-sheet {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12px;
+    color: #000;
+    background: #fff;
+    width: 816px;            /* 8.5in at 96dpi — the IAR and PO sheet width */
+    max-width: 100%;
+    margin: 0 auto;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, .18);
+}
+/* Slimmer margin/padding and a min-height pegged to roughly a full sheet at
+   this width — same reasoning as .iar-frame in css/iar-print.css: less dead
+   paper on the left/right, and the form's last block (the C/D certification
+   table) pushed to the bottom via margin-top:auto below so a short voucher
+   still reads as a whole page instead of stopping halfway down one. */
+.dv-frame {
+    border: 1.5px solid #000; margin: 8px; padding: 10px 14px 10px;
+    display: flex; flex-direction: column; min-height: 1010px;
+}
+/* C/D is always the form's last element (see buildSheet() in js/dv-print.js).
+   Both certification tables share the class .dv-cert, so this targets the
+   position (last direct child), not the class. */
+.dv-frame > table:last-child { margin-top: auto; }
+
+/* ── Letterhead — identical to the IAR's, because the .rpt's is identical:
+   the same Picture5 seal and the same five address lines, object for object. */
+.dv-letterhead { width: 100%; border-collapse: collapse; margin-bottom: 2px; }
+.dv-letterhead td { vertical-align: middle; text-align: center; }
+.dv-seal { width: 90px; }
+.dv-seal img { width: 82px; height: 82px; object-fit: contain; }
+.dv-letterhead-text { font-size: 10.5px; line-height: 1.3; color: #1e3a8a; }
+.dv-letterhead-text strong { color: #000; font-size: 11.5px; }
+.dv-letterhead-text .email { color: #1d4ed8; }
+.dv-rule { border: none; border-top: 3px solid #000; margin: 4px 0 8px; }
+
+/* ── Title bar ────────────────────────────────────────────────────────────
+   The .rpt puts the title left of centre with a boxed "No." hard right
+   (Text3 at 0.333, Text19 at 6.083 over Line30). The table keeps that
+   relationship without the absolute positions. */
+.dv-titlebar { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+/* Centred in its own cell, which stops short of the "No." blank — so the title
+   sits a little left of the page centre, where Text3 (L=0.333 W=5.750) puts it
+   on the .rpt. No nudge needed; the cell does it. */
+.dv-title {
+    font-size: 22px; font-weight: 700; letter-spacing: .04em;
+    color: #3b82f6; text-align: center;
+}
+.dv-no-lbl { width: 8%; text-align: right; font-weight: 600; padding-right: 6px; white-space: nowrap; }
+.dv-no-val { width: 16%; border-bottom: 1px solid #000; }
+
+/* ── Payee / TIN / ORS block ──────────────────────────────────────────────
+   Three stacked pairs across, exactly the three columns the .rpt divides this
+   band into with Line3 (x=4.417) and Line11 (x=6.000). */
+.dv-grid { width: 100%; border-collapse: collapse; border: 1px solid #000; }
+.dv-grid td { border: 1px solid #000; padding: 4px 7px; vertical-align: middle; font-size: 12px; }
+.dv-grid .lbl { font-weight: 600; white-space: nowrap; }
+.dv-grid .val { }
+
+/* Mode of Payment sits on its own row above the payee band, tick boxes only —
+   the .rpt binds no field to any of them, so all three print empty and are
+   ticked by hand. */
+.dv-mode-cell { }
+.dv-mode-opts { display: flex; gap: 34px; align-items: center; }
+.dv-tick { display: inline-flex; align-items: center; gap: 6px; }
+.dv-box { width: 11px; height: 11px; border: 1px solid #000; display: inline-block; flex: 0 0 auto; }
+
+/* ── Explanation / Amount ─────────────────────────────────────────────────
+   The .rpt's vertical Line11 at x=6.000 puts the money column at 24% of the
+   7.417in body; the split is kept. */
+.dv-expl { width: 100%; border-collapse: collapse; border: 1px solid #000; border-top: none; }
+.dv-expl td, .dv-expl th { border: 1px solid #000; padding: 5px 8px; font-size: 12px; }
+.dv-expl th { text-align: center; font-weight: 700; font-size: 11px; letter-spacing: .03em; }
+.dv-expl-body { vertical-align: top; height: 150px; line-height: 1.55; }
+/* "To payment of <Category>" — the classification is the subject of the
+   sentence, so it carries the weight rather than sitting in its own cell. */
+.dv-expl-category { font-weight: 700; }
+.dv-expl-note { margin-top: 10px; }
+.dv-dots { letter-spacing: .18em; }
+.dv-amount-cell { text-align: right; vertical-align: top; font-weight: 700; white-space: nowrap; width: 24%; }
+
+.dv-words-label { font-weight: 600; white-space: nowrap; width: 14%; }
+.dv-words { font-style: italic; color: #c2410c; }
+.dv-total-cell { text-align: right; font-weight: 700; white-space: nowrap; }
+
+/* ── Certification blocks ─────────────────────────────────────────────────
+   A/B then C/D, two to a row, each lettered in a small box like the ORS
+   form's .orq-cert-letter. */
+.dv-cert { width: 100%; border-collapse: collapse; border: 1px solid #000; border-top: none; }
+.dv-cert > tbody > tr > td {
+    border: 1px solid #000; padding: 6px 9px 8px; vertical-align: top;
+    width: 50%; font-size: 9.5px;
+}
+.dv-letter {
+    display: inline-block; border: 1px solid #000; width: 15px; height: 15px;
+    text-align: center; line-height: 14px; font-weight: 700; margin-right: 5px;
+    font-size: 10px;
+}
+.dv-cert-head { font-weight: 700; font-size: 10.5px; }
+.dv-check-row { display: flex; align-items: flex-start; gap: 6px; margin-top: 5px; padding-left: 20px; }
+.dv-check-row .dv-box { margin-top: 2px; }
+/* Block B's condition has no tick box on the .rpt — same indent, no square. */
+.dv-plain-row { margin-top: 5px; padding-left: 20px; }
+
+/* The signature strip inside each certification cell. Label left, ruled line
+   right — the .rpt's Signature / Printed Name / Position stack. */
+.dv-sign { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.dv-sign td { padding: 3px 0; font-size: 9.5px; vertical-align: bottom; border: none; }
+.dv-sign .k { width: 34%; white-space: nowrap; font-weight: 600; }
+.dv-sign .v { border-bottom: 1px solid #000; }
+/* A name that was supplied prints on the rule; a blank rule is signed by hand. */
+.dv-sign .v strong { font-weight: 700; }
+.dv-sign .v.plain { border-bottom: none; }
+
+/* Check No. / Bank Name / Date — short ruled blanks across block D, all
+   unbound on the .rpt and filled in at the counter.
+
+   The value cells carry explicit widths because without them the browser gives
+   each blank whatever the label leaves over, and "Date" ends up with a rule a
+   few pixels wide. A rule too short to write a cheque number on is not a
+   blank, it is a hyphen. */
+.dv-inline { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.dv-inline td { padding: 2px 0; font-size: 9.5px; border: none; vertical-align: bottom; }
+.dv-inline .k { white-space: nowrap; padding-right: 5px; font-weight: 600; width: 1%; }
+.dv-inline .v { border-bottom: 1px solid #000; width: 22%; }
+
+/* ── Reference line ───────────────────────────────────────────────────────
+   Not on the Crystal form — see the note above buildSheet() in js/dv-print.js
+   for why it is here. Small and quiet: it identifies the paper, it is not part
+   of the certification. */
+.dv-subtitle {
+    text-align: center; font-size: 11px; letter-spacing: .04em;
+    margin: -2px 0 8px; color: #334155;
+}
+.dv-subtitle .sep { color: #94a3b8; margin: 0 6px; }
+
+/* ── Text size toolbar (see inspection.php's dvTextSize) ─────────────────
+   Same +1px/+2px convention as the IAR's iar-text-1/2 and the PO's own
+   pp-text-1/2 — every explicit font-size below bumped by the same step,
+   since nothing here uses a relative unit tied to .dv-sheet's own size.
+   The title (22px, decorative) and the certification-letter box (10px,
+   fixed to its own 15x15 square) are left alone: scaling either would
+   shift the title bar's centring or crack the box's own border. */
+.dv-sheet.dv-text-1 { font-size: 13px; }
+.dv-sheet.dv-text-2 { font-size: 14px; }
+.dv-sheet.dv-text-1 .dv-letterhead-text { font-size: 11.5px; }
+.dv-sheet.dv-text-2 .dv-letterhead-text { font-size: 12.5px; }
+.dv-sheet.dv-text-1 .dv-letterhead-text strong { font-size: 12.5px; }
+.dv-sheet.dv-text-2 .dv-letterhead-text strong { font-size: 13.5px; }
+.dv-sheet.dv-text-1 .dv-grid td { font-size: 13px; }
+.dv-sheet.dv-text-2 .dv-grid td { font-size: 14px; }
+.dv-sheet.dv-text-1 .dv-expl td, .dv-sheet.dv-text-1 .dv-expl th { font-size: 13px; }
+.dv-sheet.dv-text-2 .dv-expl td, .dv-sheet.dv-text-2 .dv-expl th { font-size: 14px; }
+.dv-sheet.dv-text-1 .dv-expl th { font-size: 12px; }
+.dv-sheet.dv-text-2 .dv-expl th { font-size: 13px; }
+.dv-sheet.dv-text-1 .dv-cert > tbody > tr > td { font-size: 10.5px; }
+.dv-sheet.dv-text-2 .dv-cert > tbody > tr > td { font-size: 11.5px; }
+.dv-sheet.dv-text-1 .dv-cert-head { font-size: 11.5px; }
+.dv-sheet.dv-text-2 .dv-cert-head { font-size: 12.5px; }
+.dv-sheet.dv-text-1 .dv-sign td { font-size: 10.5px; }
+.dv-sheet.dv-text-2 .dv-sign td { font-size: 11.5px; }
+.dv-sheet.dv-text-1 .dv-inline td { font-size: 10.5px; }
+.dv-sheet.dv-text-2 .dv-inline td { font-size: 11.5px; }

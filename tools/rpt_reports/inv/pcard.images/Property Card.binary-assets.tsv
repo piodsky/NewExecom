@@ -1,0 +1,7 @@
+RecordType	Offset	Type	Length	FileName	Sha256	Method
+ASSET	156117	jpg	8634	Property Card_asset_001.jpg	57179f32dc325df886e408f0227f35cbe9e4401d4b8fe30efcace3393d7d1e46	rpt binary JPEG signature
+ASSET	194095	jpg	2480	Property Card_asset_002.jpg	49ea868877baba55c1b24af6b6bbb0d0c7b5700e1ef5d767bb2895ccc70d6fa8	rpt binary JPEG signature
+ASSET	219598	jpg	10454	Property Card_asset_003.jpg	43935df18f800aaa83053b812bf257270a9c9addf858449bf7a646155c060b91	rpt binary JPEG signature
+ASSET	7168	bmp	111994	Property Card_asset_004.bmp	5d9844d8c265c563d3ce6d046750afe537cd74614bdeb59001f6371a984755a6	rpt binary BMP signature
+ASSET	121344	bmp	120486	Property Card_asset_005.bmp	d76d110cc526504ebd99d6bbe7344b4ee4f27e23dbff4cba94bc79cddb2bfb8f	rpt binary BMP signature
+ASSET	251904	bmp	1000054	Property Card_asset_006.bmp	33cdc7f1861b1aaa39df2cda7e397491a5f1b7315bc336837c4b98f9e36c9f0e	rpt binary BMP signature

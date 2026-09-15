@@ -1,0 +1,244 @@
+/* ── Inspection & Acceptance Report — the printed form ────────────────────────
+ *
+ * Styled to match the Purchase Order printout in purchase_orders.php, on
+ * purpose: the two forms come out of the same office, get filed together and
+ * are read by the same people, so they should look like siblings rather than
+ * like two different decades. Every token here — the 1.5px frame, the serif
+ * body, the 3px rule under the letterhead, the blue title, the bordered header
+ * grid, the item table — is lifted from that form's .pp-* rules.
+ *
+ * WHAT THIS IS NOT: it is no longer a pixel facsimile of
+ * `vb/Inspection and Acceptance/Crystal Reports/Inspection and Acceptance
+ * Report.rpt`. The earlier version of this file reproduced that report's exact
+ * coordinates; this one keeps every field, label, rule and tick box it has, and
+ * the same reading order, but lays them out the way the PO form does.
+ *
+ * The Crystal coordinates are not lost — they are in
+ * tools/rpt_reports/ia.layout.tsv and ia.fonts.tsv, so the facsimile can be
+ * rebuilt from them if the office ever needs the old look back.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.iar-sheet {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12px;
+    color: #000;
+    background: #fff;
+    width: 816px;            /* 8.5in at 96dpi, same as the PO sheet */
+    max-width: 100%;
+    margin: 0 auto;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, .18);
+}
+
+/* The ruled border the whole form sits inside. Slimmer margin/padding than
+   before — 2026-09-14, "don't make big margin of the left and right" — so the
+   form uses more of the paper's actual printable width.
+
+   Flex column with a min-height pegged to roughly a full sheet at this
+   width, so a short delivery (few items) still reads as a whole page rather
+   than the form's content stopping halfway down a mostly blank sheet — the
+   last element (.iar-ia) gets pushed to the bottom below, closing that gap
+   instead of leaving it dead space. Content longer than one page simply
+   overflows the min-height as normal; nothing here caps or paginates it. */
+.iar-frame {
+    border: 1.5px solid #000; margin: 8px; padding: 10px 12px 8px;
+    display: flex; flex-direction: column; min-height: 1010px;
+}
+/* The Inspection/Acceptance block is always the form's last element (see
+   buildSheet() in js/iar-print.js) — pushing IT to the bottom pushes
+   everything after it too, but there is nothing after it. */
+.iar-frame > table:last-child { margin-top: auto; }
+
+/* ── Letterhead ───────────────────────────────────────────────────────────
+   Seal left, CGSO logo right, address centred between them — the symmetric
+   three-cell row is what actually centres the text block on the page. Both
+   images are the ones embedded in the .rpt itself, extracted rather than
+   substituted with lookalikes. */
+.iar-letterhead { width: 100%; border-collapse: collapse; margin-bottom: 2px; }
+.iar-letterhead td { vertical-align: middle; text-align: center; }
+.iar-seal { width: 90px; }
+.iar-seal img { width: 82px; height: 82px; object-fit: contain; }
+.iar-letterhead-text { font-size: 10.5px; line-height: 1.3; color: #1e3a8a; }
+.iar-letterhead-text strong { color: #000; font-size: 11.5px; }
+.iar-letterhead-text .email { color: #1d4ed8; }
+
+.iar-rule { border: none; border-top: 3px solid #000; margin: 4px 0 8px; }
+
+/* Same blue as the PO's title. Deliberately not paler: this is the one line on
+   the form that has to survive a photocopy, and lighter than #3b82f6 starts
+   dropping out to grey. */
+.iar-title {
+    text-align: center; font-size: 22px; font-weight: 700; letter-spacing: .04em;
+    margin: 6px 0 8px; color: #3b82f6;
+}
+
+/* ── Identification grid ──────────────────────────────────────────────────
+   Label / value / label / value, bordered — the PO's .pp-header-grid. */
+.iar-grid { width: 100%; border-collapse: collapse; margin-bottom: 8px; border: 1px solid #000; }
+.iar-grid td { border: 1px solid #000; padding: 3px 6px; vertical-align: middle; }
+.iar-grid .lbl { font-weight: 700; width: 16%; white-space: nowrap; }
+.iar-grid .val { width: 34%; }
+/* Deliberately empty on the printout: the delivery receipt number and its date
+   are written on by hand. See the note in js/iar-print.js — the legacy report
+   binds no field to DR No. at all, and binds Date to a column that does not
+   exist on the table. */
+.iar-grid .val.blank { min-height: 1em; }
+
+/* ── Items ────────────────────────────────────────────────────────────────
+   The PO's .pp-items, rule for rule, so an item line looks identical on both
+   forms. */
+.iar-items { width: 100%; border-collapse: collapse; margin: 6px 0; }
+.iar-items th, .iar-items td { border: 1px solid #000; padding: 3px 6px; font-size: 12px; }
+/* Top, not middle: once a description runs to 40 lines, centring floats
+   No./QTY/Units/costs into the middle of the cell, far from the item they
+   belong to. */
+.iar-items td { vertical-align: top; }
+.iar-items th { text-align: center; font-weight: 700; }
+.iar-items td.num { text-align: right; }
+.iar-items td.center { text-align: center; }
+/* Descriptions are stored as multi-line blocks — a title, then an indented
+   SPECIFICATIONS list. Default HTML collapses every run of whitespace, which
+   turns that into one unreadable paragraph. */
+.iar-items td.desc { white-space: pre-wrap; }
+/* Item text size toolbar (see inspection.php's iarTextSize) — same +1px/+2px
+   steps as purchase_orders.php's own pp-text-1/pp-text-2. */
+.iar-sheet.iar-text-1 .iar-items th, .iar-sheet.iar-text-1 .iar-items td { font-size: 13px; }
+.iar-sheet.iar-text-2 .iar-items th, .iar-sheet.iar-text-2 .iar-items td { font-size: 14px; }
+
+/* Progress billing only. The subtitle sits under the title where Text36 does
+   (L=3.500 T=1.500 on the .rpt, i.e. centred under a narrowed title band), and
+   the period row sits between the last item and "nothing follows", which is
+   exactly where the Crystal form makes room for it. */
+.iar-subtitle {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: #1e3a8a;
+    margin: -4px 0 6px;
+}
+.iar-billing-period { text-align: center; font-weight: 700; letter-spacing: .02em; }
+.iar-period-date { display: inline-block; min-width: 92px; border-bottom: 1px solid #000; padding: 0 6px; }
+.iar-nothing-follows { text-align: center; font-style: italic; }
+/* The initial the receiving clerk writes beside "nothing follows" — the legacy
+   report's ?initial parameter. Upright and bold against the italic so it reads
+   as a signature rather than as part of the sentence. */
+.iar-initial { margin-left: 18px; font-style: normal; font-weight: 700; letter-spacing: .06em; white-space: nowrap; }
+
+/* ── Money summary ────────────────────────────────────────────────────────
+   Amount in words and the total in one box, purpose in a row beneath it, both
+   joined to the item table above — the PO's .pp-summary-box. */
+.iar-summary-box { border: 1px solid #000; border-top: none; margin-bottom: 8px; }
+.iar-totals { width: 100%; border-collapse: collapse; }
+.iar-totals td { padding: 4px 6px; vertical-align: middle; }
+.iar-words-label { font-weight: 700; white-space: nowrap; width: 105px; }
+.iar-total-label { text-align: right; font-weight: 700; width: 55px; white-space: nowrap; }
+.iar-total-value { text-align: right; font-weight: 700; border-left: 1px solid #000; width: 110px; }
+.iar-purpose-row { width: 100%; border-collapse: collapse; border-top: 1px solid #000; }
+.iar-purpose-row td { padding: 5px 6px; vertical-align: top; }
+.iar-purpose-label { font-weight: 700; font-style: italic; white-space: nowrap; width: 80px; }
+
+/* ── Certification ────────────────────────────────────────────────────────
+   The sentence the end users sign against. */
+.iar-certify { margin: 10px 0 6px; }
+.iar-blank { border-bottom: 1px solid #000; display: inline-block; min-width: 90px; }
+
+/* ── End-user signature blocks ────────────────────────────────────────────
+   A flex row rather than five fixed slots, because empty blocks are dropped
+   (see js/iar-print.js) and the survivors have to close ranks — a lone
+   signature stranded where the fifth used to be reads as a printing fault. */
+/* flex-end, not the row's default start: requested 2026-09-09 so a partial
+   row (most of the time — most deliveries have one end user, not five) sits
+   flush against the right edge instead of stranded at the left with empty
+   width trailing it. */
+.iar-endusers { display: flex; gap: 10px; margin-bottom: 10px; justify-content: flex-end; }
+/* A FIFTH of the row each, not an equal share of however many there are.
+   With flex:1 a lone end user stretched its ruled lines the whole width of
+   the page, which reads as one enormous signature box rather than as one of
+   five slots — and the width a name is signed on should not depend on how
+   many colleagues signed beside it. */
+.iar-eu { flex: 0 0 calc(20% - 8px); min-width: 0; }
+.iar-eu-lbl { font-size: 9px; font-weight: 700; white-space: nowrap; }
+/* Wraps to two lines rather than truncating. A fifth of the page is about
+   145px and "TEOFILO ARANAIDO PIODOS JR" does not fit on one line of it —
+   and an ellipsis through somebody's name on the line they are about to
+   sign is not an acceptable way to save a few pixels. Fixed two-line height
+   so short and long names still leave their ruled lines level across the row. */
+.iar-eu-name {
+    font-size: 9.5px; font-weight: 700; height: 24px; line-height: 12px;
+    overflow: hidden; word-break: break-word;
+}
+.iar-eu-rule { border-top: 1px solid #000; font-size: 9px; padding-top: 1px; margin-bottom: 12px; }
+.iar-eu-rule:last-child { margin-bottom: 0; }
+
+/* ── Inspection / Acceptance ──────────────────────────────────────────────
+   Two columns in one bordered block, divided by a rule — the same split the
+   original draws with its Line33, and the part of this form that is most
+   clearly two separate acts by two separate people. */
+.iar-ia { width: 100%; border-collapse: collapse; border: 1px solid #000; }
+.iar-ia > tbody > tr > td { vertical-align: top; padding: 0; width: 50%; }
+.iar-ia .ia-right { border-left: 1px solid #000; }
+.iar-ia-head {
+    text-align: center; font-weight: 700; font-style: italic; font-size: 12px;
+    padding: 3px 0; border-bottom: 1px solid #000; background: #f1f5f9;
+}
+.iar-ia-body { padding: 6px 8px 8px; }
+.iar-date-line { margin-bottom: 8px; white-space: nowrap; }
+.iar-date-line .iar-blank { min-width: 130px; text-align: center; }
+
+/* Tick boxes. Empty on the printout — the officer signing ticks them by hand,
+   which is the whole reason they are boxes and not a printed value. */
+.iar-check { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 6px; }
+.iar-cbox { flex: 0 0 auto; width: 15px; height: 13px; border: 1px solid #000; margin-top: 1px; }
+.iar-check-text { font-size: 10.5px; line-height: 1.25; }
+
+/* Two-by-two grid of inspectorate signatures: name over a rule, office under
+   it. Fixed-height rows so the two columns stay level with each other whether
+   an office is on file or not. */
+/* Row gap is generous on purpose: each cell is a name, a rule and an office
+   stacked tight, so without it the second row of signatories reads as a
+   continuation of the first rather than as two more people. */
+.iar-sign-grid { display: flex; flex-wrap: wrap; gap: 18px 10px; margin-top: 16px; }
+.iar-sign { flex: 1 1 calc(50% - 10px); min-width: 0; }
+.iar-sign-name {
+    font-size: 11px; font-weight: 700; text-align: center; height: 14px;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.iar-sign-rule { border-top: 1px solid #000; margin-top: 2px; }
+.iar-sign-dept {
+    font-size: 9.5px; text-align: center; height: 12px; overflow: hidden;
+    white-space: nowrap; text-overflow: ellipsis; margin-top: 2px;
+}
+/* The acceptance signature sits at the bottom of its column rather than
+   floating under the tick boxes, so it lines up with the inspectorate block
+   opposite. */
+.iar-accept-sign { margin-top: 34px; }
+.iar-accept-title { font-size: 10px; font-style: italic; text-align: center; margin-top: 2px; }
+
+/* ── Preview chrome (not part of the form) ────────────────────────────────
+   Rasterised off-screen for the same reason the PO print does it: html2canvas
+   can misjudge the bounding box of an element that is scrolled or transformed,
+   and a modal mid-animation is both. Height 0 with overflow hidden keeps it out
+   of the layout while leaving the sheet its own true offsetHeight to measure. */
+.iar-offscreen { position: absolute; top: 0; left: 0; height: 0; overflow: hidden; }
+
+/* ── Preview toolbar ──────────────────────────────────────────────────────
+   The PO print carries these same rules in its own page-local <style>. They
+   live here so this screen is not depending on another page's stylesheet. */
+.pp-toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .75rem;
+    background: #fff; border: 1px solid #cbd5e1; border-radius: 10px;
+    padding: .5rem .75rem; margin-bottom: .75rem;
+}
+.pp-tool { display: flex; align-items: center; gap: .4rem; }
+.pp-tool label {
+    font-size: .72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--muted); margin: 0; white-space: nowrap;
+}
+.pp-tool select { width: auto; min-width: 12rem; font-size: .82rem; }
+.pp-layout-status {
+    display: flex; align-items: center; gap: .5rem; margin-left: auto;
+    font-size: .78rem; color: var(--muted);
+}
+.pp-layout-status .pp-sheets { font-weight: 700; color: var(--navy, #1e3a8a); }
+.pp-layout-status .pp-layout-note { color: #b45309; }
+.pdf-preview-frame { width: 100%; height: 70vh; border: none; background: #fff; }

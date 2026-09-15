@@ -1,0 +1,343 @@
+/* ── Office assistant ────────────────────────────────────────────────────────
+   Panel, chat and character animation. Everything the avatar does is CSS: the
+   state machine in assistant.js only sets data-state on the root, and the
+   selectors below decide what that looks like. That split is deliberate — it
+   means the character can be restyled, retimed or replaced without touching a
+   line of behaviour.
+
+   The state lives on .pa[data-state]; the character is inside it. Values:
+       idle      breathing, blinking, glancing about
+       greeting  waving, smiling
+       thinking  head tilted, eyes up, brows raised
+       speaking  mouth moving, small gestures
+       nodding   one short nod
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.pa {
+    --pa-w: 372px;
+    --pa-glass: rgba(255, 255, 255, .72);
+    --pa-stroke: rgba(255, 255, 255, .55);
+    --pa-navy: #1e3a8a;
+    position: fixed; right: 22px; bottom: 22px; z-index: 1040;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+/* Below Bootstrap's modal (1050) on purpose: while someone is filling in a
+   purchase order the assistant must not float over the form they are typing
+   into. It is help, not an interruption. */
+
+/* ── Collapsed ─────────────────────────────────────────────────────────────── */
+.pa-launcher {
+    position: relative; width: 68px; height: 68px; border-radius: 50%;
+    border: none; padding: 0; cursor: pointer; overflow: visible;
+    background: linear-gradient(145deg, #2563eb, #1e3a8a);
+    box-shadow: 0 10px 28px rgba(30, 58, 138, .38), 0 0 0 6px rgba(37, 99, 235, .12);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.pa-launcher:hover  { transform: translateY(-3px) scale(1.04); box-shadow: 0 14px 34px rgba(30,58,138,.46), 0 0 0 9px rgba(37,99,235,.16); }
+.pa-launcher:active { transform: translateY(-1px) scale(1); }
+.pa-launcher:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.pa-launcher-avatar { display: block; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; }
+.pa-launcher-avatar .av { width: 100%; height: 100%; display: block; }
+/* The ring is the avatar's own backdrop; inside the launcher the button
+   already provides one, so it would only double up. */
+.pa-launcher-avatar .av-ring { display: none; }
+
+/* "There is something here" — a single quiet pulse, not a red unread count.
+   The assistant has nothing urgent to report; claiming otherwise is the kind
+   of small lie that teaches people to ignore badges. */
+.pa-launcher-badge {
+    position: absolute; top: 4px; right: 4px; width: 14px; height: 14px;
+    border-radius: 50%; background: #22c55e; border: 2.5px solid #fff;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, .55);
+    animation: pa-pulse 2.6s ease-out infinite;
+}
+@keyframes pa-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(34,197,94,.55); }
+    70%  { box-shadow: 0 0 0 11px rgba(34,197,94,0); }
+    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+.pa.is-open .pa-launcher-badge { display: none; }
+
+/* ── Expanded ──────────────────────────────────────────────────────────────── */
+.pa-panel {
+    position: absolute; right: 0; bottom: 0; width: var(--pa-w);
+    display: flex; flex-direction: column; overflow: hidden;
+    border-radius: 22px;
+    background: var(--pa-glass);
+    /* Glassmorphism proper: the blur is what makes it glass. Where the browser
+       will not do it (older Edge, some Linux builds) the fallback below raises
+       the fill to near-opaque, because a translucent panel over a dashboard
+       full of tables is unreadable without the blur. */
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid var(--pa-stroke);
+    box-shadow: 0 24px 60px rgba(15, 36, 96, .28), 0 2px 8px rgba(15, 36, 96, .1);
+    /* Hidden by transform rather than display:none so the avatar keeps
+       breathing while closed and is already alive the moment it opens. */
+    transform: translateY(14px) scale(.94); transform-origin: 100% 100%;
+    opacity: 0; pointer-events: none; visibility: hidden;
+    transition: opacity .24s ease, transform .28s cubic-bezier(.22,1,.36,1), visibility 0s .28s;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .pa-panel { background: rgba(255, 255, 255, .97); }
+}
+.pa.is-open .pa-panel {
+    opacity: 1; transform: translateY(0) scale(1);
+    pointer-events: auto; visibility: visible; transition-delay: 0s;
+}
+.pa.is-open .pa-launcher { opacity: 0; pointer-events: none; transform: scale(.7); }
+
+.pa-head {
+    display: flex; align-items: center; gap: .8rem; padding: .9rem 1rem .7rem;
+    background: linear-gradient(135deg, rgba(37,99,235,.16), rgba(30,58,138,.08));
+    border-bottom: 1px solid rgba(148, 163, 184, .28);
+}
+.pa-avatar { width: 62px; height: 62px; flex: 0 0 auto; }
+.pa-avatar .av { width: 100%; height: 100%; display: block; }
+.pa-who { flex: 1 1 auto; min-width: 0; }
+.pa-name { font-weight: 800; color: var(--pa-navy); font-size: .95rem; line-height: 1.2; }
+.pa-status {
+    font-size: .74rem; color: #15803d; font-weight: 600;
+    display: flex; align-items: center; gap: .3rem;
+}
+.pa-status::before {
+    content: ''; width: 7px; height: 7px; border-radius: 50%;
+    background: currentColor; flex: 0 0 auto;
+}
+.pa-min {
+    width: 32px; height: 32px; flex: 0 0 auto; border-radius: 10px;
+    border: 1px solid rgba(148,163,184,.4); background: rgba(255,255,255,.6);
+    color: #475569; cursor: pointer; transition: background .15s, color .15s;
+}
+.pa-min:hover { background: #fff; color: var(--pa-navy); }
+
+/* The current line, in a bubble with a tail pointing back at the avatar. */
+.pa-bubble {
+    position: relative; margin: .85rem 1rem .2rem;
+    background: #fff; border: 1px solid rgba(148,163,184,.3); border-radius: 14px;
+    padding: .7rem .85rem; font-size: .86rem; line-height: 1.45; color: #1e293b;
+    box-shadow: 0 2px 10px rgba(30,58,138,.07);
+    white-space: pre-line;   /* the API sends real newlines in list answers */
+}
+.pa-bubble::before {
+    content: ''; position: absolute; top: -7px; left: 22px;
+    width: 12px; height: 12px; background: #fff;
+    border-left: 1px solid rgba(148,163,184,.3); border-top: 1px solid rgba(148,163,184,.3);
+    transform: rotate(45deg); border-radius: 2px 0 0 0;
+}
+
+/* Three dots while it works something out. Shown INSTEAD of the text, so the
+   bubble never displays a stale answer next to a thinking indicator. */
+.pa-typing { display: none; gap: 4px; align-items: center; padding: 2px 0; }
+.pa[data-state="thinking"] .pa-typing { display: inline-flex; }
+.pa[data-state="thinking"] .pa-bubble-text { display: none; }
+.pa-typing i {
+    width: 7px; height: 7px; border-radius: 50%; background: #94a3b8;
+    animation: pa-dot 1.3s ease-in-out infinite;
+}
+.pa-typing i:nth-child(2) { animation-delay: .16s; }
+.pa-typing i:nth-child(3) { animation-delay: .32s; }
+@keyframes pa-dot { 0%, 100% { opacity: .3; transform: translateY(0); } 45% { opacity: 1; transform: translateY(-3px); } }
+
+/* ── Conversation ──────────────────────────────────────────────────────────── */
+.pa-log {
+    flex: 1 1 auto; min-height: 0; max-height: 232px; overflow-y: auto;
+    padding: .6rem 1rem .2rem; display: flex; flex-direction: column; gap: .45rem;
+    scrollbar-width: thin;
+}
+.pa-log:empty { display: none; }
+.pa-msg {
+    max-width: 86%; padding: .5rem .7rem; border-radius: 13px;
+    font-size: .83rem; line-height: 1.45; white-space: pre-line;
+    animation: pa-msg-in .22s ease-out both;
+}
+@keyframes pa-msg-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.pa-msg.me  { align-self: flex-end; background: var(--pa-navy); color: #fff; border-bottom-right-radius: 5px; }
+.pa-msg.bot { align-self: flex-start; background: rgba(255,255,255,.9); color: #1e293b;
+              border: 1px solid rgba(148,163,184,.3); border-bottom-left-radius: 5px; }
+
+.pa-chips { display: flex; flex-wrap: wrap; gap: .35rem; padding: .5rem 1rem .2rem; }
+.pa-chips:empty { display: none; }
+.pa-chip {
+    border: 1px solid rgba(37,99,235,.35); background: rgba(255,255,255,.75);
+    color: #1d4ed8; font-size: .76rem; font-weight: 600;
+    padding: .3rem .65rem; border-radius: 20px; cursor: pointer;
+    transition: background .15s, color .15s, transform .12s;
+}
+.pa-chip:hover  { background: #1d4ed8; color: #fff; }
+.pa-chip:active { transform: scale(.97); }
+
+.pa-input { display: flex; gap: .45rem; padding: .7rem 1rem 1rem; }
+.pa-input input {
+    flex: 1 1 auto; min-width: 0; border: 1px solid rgba(148,163,184,.45);
+    background: rgba(255,255,255,.85); border-radius: 12px;
+    padding: .55rem .75rem; font-size: .85rem; color: #1e293b;
+}
+.pa-input input:focus { outline: none; border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.14); }
+.pa-input button {
+    flex: 0 0 auto; width: 40px; border: none; border-radius: 12px; cursor: pointer;
+    background: linear-gradient(145deg, #2563eb, #1e3a8a); color: #fff;
+    transition: filter .15s, transform .12s;
+}
+.pa-input button:hover:not(:disabled)  { filter: brightness(1.1); }
+.pa-input button:active:not(:disabled) { transform: scale(.95); }
+.pa-input button:disabled { opacity: .5; cursor: default; }
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .pa { right: 12px; bottom: 12px; left: 12px; }
+    /* Fills the width, and the log gives up height first: on a phone the input
+       box has to stay above the keyboard, and the conversation is the part
+       that can scroll instead. */
+    .pa-panel { width: auto; left: 0; right: 0; border-radius: 18px; }
+    .pa-log { max-height: 34vh; }
+    .pa-launcher { width: 58px; height: 58px; margin-left: auto; }
+    .pa { display: flex; justify-content: flex-end; }
+}
+@media (min-width: 481px) and (max-width: 900px) {
+    .pa { --pa-w: 340px; }
+    .pa-log { max-height: 200px; }
+}
+/* Landscape phones have almost no vertical room; the log goes first. */
+@media (max-height: 560px) {
+    .pa-log { max-height: 120px; }
+    .pa-avatar { width: 48px; height: 48px; }
+}
+
+/* ── Print ─────────────────────────────────────────────────────────────────── */
+@media print { .pa { display: none !important; } }
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THE CHARACTER
+   Every rule below targets a class inside the avatar SVG. Replacing the
+   drawing means keeping those class names; nothing here knows anything else
+   about it. See the note at the top of assistant.php.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.av { display: block; overflow: visible; }
+
+/* ── Idle: alive, not busy ─────────────────────────────────────────────────── */
+@keyframes av-breathe { from { transform: translateY(0) scaleX(1); } to { transform: translateY(-1.4px) scaleX(1.008); } }
+/* A blink is fast and almost all of the cycle is the eye OPEN — the closed
+   part is two frames out of a hundred. Spreading it evenly reads as a slow,
+   sleepy droop, which is the usual mistake. */
+@keyframes av-blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95%, 97%      { transform: scaleY(.08); }
+}
+/* Glancing about. Long holds with short movements between them: eyes that
+   drift continuously look unwell, eyes that flick and settle look like
+   someone thinking about something else for a second. */
+@keyframes av-glance {
+    0%, 26%   { transform: translate(0, 0); }
+    30%, 40%  { transform: translate(1.5px, .4px); }
+    44%, 66%  { transform: translate(0, 0); }
+    70%, 78%  { transform: translate(-1.6px, -.5px); }
+    82%, 100% { transform: translate(0, 0); }
+}
+@keyframes av-headsway {
+    0%, 100% { transform: rotate(0deg); }
+    30%      { transform: rotate(1.4deg); }
+    70%      { transform: rotate(-1.6deg); }
+}
+
+.av-body  { animation: av-breathe 3.4s ease-in-out infinite alternate; }
+.av-head  { animation: av-headsway 11s ease-in-out infinite; }
+.av-eye   { animation: av-blink 5.2s ease-in-out infinite; }
+/* The two eyes blink together but glance on slightly different clocks would
+   look broken, so both share one timing; only the blink is offset per avatar
+   instance so two on screen are not in lockstep. */
+.av-pupil { animation: av-glance 13s ease-in-out infinite; }
+.av-mouth { opacity: 0; }          /* the smile is the resting mouth */
+.av-arm   { transform: rotate(0deg); transform-box: view-box; }
+
+/* The arm rests down and out of frame; only greeting brings it up. */
+.av-arm { transform: translateY(30px) rotate(6deg); opacity: 0; }
+
+/* ── Greeting: wave and smile ──────────────────────────────────────────────── */
+@keyframes av-wave-in {
+    from { transform: translateY(30px) rotate(6deg); opacity: 0; }
+    to   { transform: translateY(0) rotate(-8deg); opacity: 1; }
+}
+@keyframes av-wave {
+    0%, 100% { transform: rotate(-8deg); }
+    25%      { transform: rotate(12deg); }
+    50%      { transform: rotate(-10deg); }
+    75%      { transform: rotate(11deg); }
+}
+@keyframes av-wave-out {
+    from { transform: translateY(0) rotate(-8deg); opacity: 1; }
+    to   { transform: translateY(30px) rotate(6deg); opacity: 0; }
+}
+.pa[data-state="greeting"] .av-arm {
+    animation: av-wave-in .3s ease-out both, av-wave .62s ease-in-out .3s 3 both, av-wave-out .32s ease-in 2.2s both;
+}
+/* Eyes widen a touch and the cheeks lift — a smile is not just the mouth. */
+.pa[data-state="greeting"] .av-eye  { animation-duration: 4s; }
+.pa[data-state="greeting"] .av-head { animation: av-greet-tilt 2.6s ease-in-out; }
+@keyframes av-greet-tilt {
+    0%, 100% { transform: rotate(0deg); }
+    20%, 70% { transform: rotate(-3deg); }
+}
+
+/* ── Thinking: look up and away, brows raised ──────────────────────────────── */
+@keyframes av-think-tilt {
+    0%, 100% { transform: rotate(0deg); }
+    30%, 80% { transform: rotate(5deg); }
+}
+@keyframes av-think-eyes {
+    0%, 100% { transform: translate(0, 0); }
+    25%, 85% { transform: translate(2px, -2.2px); }
+}
+.pa[data-state="thinking"] .av-head  { animation: av-think-tilt 1.6s ease-in-out infinite; }
+.pa[data-state="thinking"] .av-pupil { animation: av-think-eyes 1.6s ease-in-out infinite; }
+.pa[data-state="thinking"] .av-brow  { transform: translateY(-1.6px); }
+.av-brow { transition: transform .25s ease; }
+
+/* ── Speaking: the mouth actually moves ────────────────────────────────────── */
+/* The smile fades out and the open mouth fades in — two paths cross-fading,
+   because CSS cannot interpolate between two path shapes with different node
+   counts, and a smile and an open mouth do not have the same ones. */
+@keyframes av-talk {
+    0%, 100% { transform: scaleY(.35) scaleX(1);   }
+    20%      { transform: scaleY(1) scaleX(.92);   }
+    40%      { transform: scaleY(.45) scaleX(1.04);}
+    60%      { transform: scaleY(.9) scaleX(.95);  }
+    80%      { transform: scaleY(.4) scaleX(1.02); }
+}
+@keyframes av-gesture {
+    0%, 100% { transform: rotate(0deg); }
+    35%      { transform: rotate(-1.8deg); }
+    72%      { transform: rotate(1.5deg); }
+}
+.pa[data-state="speaking"] .av-mouth { opacity: 1; animation: av-talk .42s ease-in-out infinite; }
+.pa[data-state="speaking"] .av-smile { opacity: 0; }
+.pa[data-state="speaking"] .av-head  { animation: av-gesture 2.1s ease-in-out infinite; }
+.av-smile, .av-mouth { transition: opacity .18s ease; }
+
+/* ── Nodding: one short "got it" ───────────────────────────────────────────── */
+@keyframes av-nod {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    30%      { transform: translateY(2.2px) rotate(3deg); }
+    60%      { transform: translateY(0) rotate(-1deg); }
+}
+.pa[data-state="nodding"] .av-head { animation: av-nod .55s ease-in-out; }
+
+/* ── Reduced motion ────────────────────────────────────────────────────────── */
+/* Everything decorative stops. The panel still opens, the chat still works,
+   and the character is still there and still smiling — the assistant does not
+   become unavailable because someone finds movement uncomfortable. */
+@media (prefers-reduced-motion: reduce) {
+    .av-body, .av-head, .av-eye, .av-pupil, .av-arm, .av-mouth,
+    .pa[data-state] .av-body, .pa[data-state] .av-head, .pa[data-state] .av-eye,
+    .pa[data-state] .av-pupil, .pa[data-state] .av-arm, .pa[data-state] .av-mouth {
+        animation: none !important;
+    }
+    .pa-launcher-badge { animation: none; }
+    .pa-panel { transition: opacity .01s; }
+    .pa-msg   { animation: none; }
+    /* The dots stay — they are the only signal that anything is happening at
+       all while the answer is being fetched. */
+    .pa-typing i { animation-duration: 2.4s; }
+}

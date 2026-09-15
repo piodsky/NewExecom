@@ -1,0 +1,56 @@
+{
+    "at": "2026-08-24T06:47:01+02:00",
+    "by": "pyo",
+    "changes": [
+        {
+            "po": "PO-sys2023109050",
+            "from": "A&L PHARMA",
+            "to": "A & L PHARMA"
+        },
+        {
+            "po": "PO-sys2025317041",
+            "from": "A&L PHARMA",
+            "to": "A & L PHARMA"
+        },
+        {
+            "po": "PO-sys2025718527",
+            "from": "A&L PHARMA",
+            "to": "A & L PHARMA"
+        },
+        {
+            "po": "PO-sys2026222470",
+            "from": "A&L PHARMA",
+            "to": "A & L PHARMA"
+        },
+        {
+            "po": "PO-sys2026222683",
+            "from": "A&L PHARMA",
+            "to": "A & L PHARMA"
+        },
+        {
+            "po": "PO-sys2026624729",
+            "from": "A&L PHARMA",
+            "to": "A & L PHARMA"
+        },
+        {
+            "po": "PO-sys2026625313",
+            "from": "A&L PHARMA",
+            "to": "A & L PHARMA"
+        },
+        {
+            "po": "PO-sys2025618060",
+            "from": "A  & L PHARMA",
+            "to": "A & L PHARMA"
+        },
+        {
+            "po": "PO-sys2026423602",
+            "from": "A  & L PHARMA",
+            "to": "A & L PHARMA"
+        },
+        {
+            "po": "PO-sys20251020806",
+            "from": "A & L  PHARMA",
+            "to": "A & L PHARMA"
+        }
+    ]
+}

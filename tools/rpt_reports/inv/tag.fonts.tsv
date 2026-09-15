@@ -1,0 +1,45 @@
+﻿Section	Object	Kind	Font	Size	Bold	Italic	Underline	HAlign	Color	BorderTop	BorderBottom	BorderLeft	BorderRight
+Section2	Picture5	PictureObject								NoLine	NoLine	NoLine	NoLine
+Section2	PropertyNumber1	FieldObject	Microsoft Sans Serif	9	True	False	False		Color [Black]	SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Text1	TextObject	Arial	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text2	TextObject	Arial	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text3	TextObject	Arial	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text5	TextObject	Times New Roman	6	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text4	TextObject	Times New Roman	6	False	False	False		Color [Black]	SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Text6	TextObject	Microsoft Sans Serif	6	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text7	TextObject	Microsoft Sans Serif	6	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text8	TextObject	Microsoft Sans Serif	6	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text9	TextObject	Microsoft Sans Serif	6	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text10	TextObject	Microsoft Sans Serif	7	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text11	TextObject	Microsoft Sans Serif	6	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text12	TextObject	Microsoft Sans Serif	6	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text13	TextObject	Microsoft Sans Serif	5.5	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text14	TextObject	Microsoft Sans Serif	6	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	ItemsDescription1	FieldObject	Candara	6	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	DateAcquired1	FieldObject	Candara	6	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Quantity1	FieldObject	Candara	6	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	SerialNumber1	FieldObject	Candara	6	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Unit1	FieldObject	Candara	6	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	PONumber1	FieldObject	Candara	6	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Condition1	FieldObject	Candara	6	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	AccountableOfficer1	FieldObject	Candara	6	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	AcquisitionCost1	FieldObject	Candara	6	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	CGSOOFFICER1	FieldObject	Microsoft Sans Serif	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Box2	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	BARCODE1	FieldObject	IDAutomationSC128S DEMO	14	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Position1	FieldObject	Arial	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Box4	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Box5	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Box6	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Box7	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Box10	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Box11	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Picture2	PictureObject								NoLine	NoLine	NoLine	NoLine
+Section2	Text15	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text16	TextObject	Microsoft Sans Serif	8	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	PrintDate1	FieldObject	Arial	5	True	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	PrintTime1	FieldObject	Arial	5	True	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text17	TextObject	Arial	5	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Picture1	PictureObject								NoLine	NoLine	NoLine	NoLine
+Section2	Picture3	PictureObject								NoLine	NoLine	NoLine	NoLine
+Section5	Box1	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine

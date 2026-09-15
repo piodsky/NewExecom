@@ -1,0 +1,749 @@
+/* ============================================================
+   Pyo Base System — Shared Stylesheet
+   Rename the CSS variables below to re-theme any project built
+   from this base — everything else reads from them.
+   ============================================================ */
+
+:root {
+    --sidebar-w: 270px;
+    --navy: #1e3a8a;
+    --navy-hover: rgba(255,255,255,.12);
+    --body-bg: #f1f5f9;
+    --card-shadow: 0 2px 12px rgba(0,0,0,.07);
+    --primary: #2563eb;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --info: #0891b2;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+}
+
+/* ── Layout ── */
+body {
+    background: var(--body-bg);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--text);
+    font-size: .9rem;
+    overflow-x: hidden;
+}
+
+.wrapper { display: flex; min-height: 100vh; }
+
+/* ── Sidebar ── */
+.sidebar {
+    width: var(--sidebar-w);
+    /* Same dusk navy-to-amber palette as the dashboard's Quote of the Day
+       card, run top-to-bottom instead of left-to-right to fit a tall, narrow
+       panel — the amber settles at the foot rather than the far edge. */
+    background: linear-gradient(165deg, #0b1a33 0%, #13294f 35%, #24406b 60%, #5b4632 88%, #7a5528 100%);
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    transition: transform .3s ease;
+    /* The sidebar no longer scrolls as one piece — .sidebar-nav does, below.
+       Scrolling the whole column pushed the brand, the user card and the
+       footer artwork off-screen the moment the module list grew past the
+       viewport, so the illustration was only ever visible at scroll top. */
+    overflow: hidden;
+}
+/* Same faint glow as the quote card, anchored low rather than to one side —
+   atmosphere, not a shape, so it never competes with the nav text over it. */
+.sidebar::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse 90% 45% at 50% 100%, rgba(251,191,120,.16), transparent 70%);
+}
+.sidebar > * { position: relative; z-index: 1; }
+
+.sidebar-brand {
+    flex: 0 0 auto;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    color: #fff;
+    text-decoration: none;
+}
+/* White plate behind the logo: the mark is black + red on a transparent
+   background, so its dark half would disappear straight into the navy
+   sidebar without something light behind it. */
+.sidebar-brand .brand-icon {
+    width: 42px; height: 42px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; color: #fff; flex-shrink: 0;
+    overflow: hidden;
+}
+.sidebar-brand .brand-icon img { width: 100%; height: 100%; object-fit: contain; }
+.sidebar-brand .brand-name { font-weight: 700; font-size: 1rem; line-height: 1.2; }
+.sidebar-brand .brand-sub  { font-size: .65rem; opacity: .7; line-height: 1.2; }
+
+.sidebar-user {
+    flex: 0 0 auto;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    color: rgba(255,255,255,.9);
+}
+.sidebar-user .su-row { display: flex; align-items: center; gap: .65rem; }
+.sidebar-user .avatar {
+    position: relative;
+    width: 42px; height: 42px;
+    background: rgba(255,255,255,.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .95rem; color: #fff; flex-shrink: 0;
+    overflow: hidden;
+}
+/* Discord-style online badge — border matches the sidebar's own gradient at
+   this point so the dot reads as cut out of the avatar, not pasted on. */
+.sidebar-user .su-dot {
+    position: absolute; right: -1px; bottom: -1px;
+    width: 11px; height: 11px;
+    background: #22c55e;
+    border: 2px solid #16307a;
+    border-radius: 50%;
+}
+.sidebar-user .su-info { min-width: 0; flex: 1 1 auto; }
+.sidebar-user .u-name  {
+    font-weight: 700; font-size: .84rem; line-height: 1.25;
+    overflow-wrap: break-word;
+}
+.sidebar-user .su-meta {
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: .4rem; margin-top: .25rem; font-size: .66rem;
+}
+.sidebar-user .su-role {
+    display: inline-flex; align-items: center; gap: .3rem;
+    color: #7dd3fc; font-weight: 600;
+}
+.sidebar-user .su-role i { font-size: .62rem; }
+.sidebar-user .su-sep { opacity: .3; }
+.sidebar-user .su-online {
+    display: inline-flex; align-items: center; gap: .3rem;
+    color: rgba(255,255,255,.7);
+}
+.sidebar-user .su-online-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34,197,94,.25);
+}
+
+.sidebar-nav {
+    padding: .75rem 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+}
+/* A thin scrollbar in the sidebar's own palette. Left visible rather than
+   revealed on hover: on a long module list it is the only cue that there is
+   more below the fold. */
+.sidebar-nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.28) transparent; }
+.sidebar-nav::-webkit-scrollbar { width: 6px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.25);
+    border-radius: 3px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.45); }
+
+/* Decorative illustration at the foot of the sidebar (drawn in sidebar.php).
+   flex: 0 0 auto so a long nav scrolls inside itself rather than squashing the
+   artwork — the default flex-shrink:1 would flatten it into a smear first.
+   Being outside the scrolling .sidebar-nav is what keeps it on screen however
+   many modules the account can see and however far the nav is scrolled. */
+.sidebar-art {
+    flex: 0 0 auto;
+    padding: .5rem .75rem 1rem;
+    pointer-events: none;
+    user-select: none;
+    border-top: 1px solid rgba(255,255,255,.08);
+}
+/* max-height is the ceiling on how much of a short window the decoration may
+   take before the nav starts losing rows. The SVG's default preserveAspectRatio
+   keeps it centred and undistorted when the cap bites. */
+.sidebar-art svg { display: block; width: 100%; height: auto; max-height: 27vh; }
+/* Decoration is still the first thing to go when there is genuinely no room,
+   but the bar for that is much lower now than the 760px it used to be: the
+   artwork no longer pushes nav rows below the fold, because the nav scrolls
+   inside itself. This only fires on a window short enough that the remaining
+   nav strip would show barely two links at a time. */
+@media (max-height: 620px) { .sidebar-art { display: none; } }
+/* Print: the sidebar is hidden anyway on most screens, but this makes sure a
+   stray print never spends ink on it. */
+@media print { .sidebar-art { display: none; } }
+
+/* ── The greeting and the handover, in the sidebar ──────────────────────────
+   All of it is CSS on the inline SVG in sidebar.php — no JS, no sprite sheet,
+   nothing to load. (The one line of JS in that file only keeps the greeting's
+   WORDS current; it has nothing to do with the motion.)
+
+   One 24s master clock, and everything that has to agree with it — the step in
+   and out, both arms, the parcel, all three bubbles — is written against that
+   same 24s so the percentages line up by construction:
+
+       0-6%    apart, greeting appears
+       6-14%   they step toward each other
+       14-30%  handshake, three pumps
+       30-40%  release, step back out
+       40-50%  the courier says their piece
+       50-58%  the parcel crosses over
+       58-74%  the inspector checks it
+       74-82%  the parcel goes back
+       82-100% rest
+
+   Idle motion — breathing, the clipboard swaying at a side, the dots filling —
+   runs on its own short clocks, because none of it is keeping time with
+   anything.
+
+   Deliberately unhurried. This sits in peripheral vision all day beside the
+   screen someone is actually working in, and anything brisk enough to catch
+   the eye twice is something they will end up resenting. */
+
+/* Stepping in to shake, and back out to trade. Without this the handshake
+   cannot happen: an arm is 18 units long and they stand 82 apart. */
+@keyframes sb-step-a {
+    0%,   6% { transform: translateX(0); }
+    14%, 32% { transform: translateX(15px); }
+    40%,100% { transform: translateX(0); }
+}
+@keyframes sb-step-b {
+    0%,   6% { transform: translateX(0); }
+    14%, 32% { transform: translateX(-15px); }
+    40%,100% { transform: translateX(0); }
+}
+
+/* Both inner arms. The two figures are mirror images, so identical angles put
+   their hands in the same place — which is what keeps them clasped through the
+   pumps rather than sawing past each other. The pump is deliberately shallow:
+   a handshake is a small movement, and a big one reads as an argument.
+   Each arm then reaches again at 54% and 78% to meet the parcel, so the box is
+   never floating between two hands that are somewhere else. */
+@keyframes sb-shake-a {
+    0%,   8% { transform: rotate(-36deg); }
+    14%      { transform: rotate(-78deg); }
+    18%      { transform: rotate(-70deg); }
+    22%      { transform: rotate(-79deg); }
+    26%      { transform: rotate(-70deg); }
+    30%      { transform: rotate(-78deg); }
+    38%, 48% { transform: rotate(-36deg); }
+    54%      { transform: rotate(-56deg); }
+    58%, 72% { transform: rotate(-38deg); }
+    78%      { transform: rotate(-56deg); }
+    84%,100% { transform: rotate(-36deg); }
+}
+@keyframes sb-shake-b {
+    0%,   8% { transform: rotate(-38deg); }
+    14%      { transform: rotate(-78deg); }
+    18%      { transform: rotate(-70deg); }
+    22%      { transform: rotate(-79deg); }
+    26%      { transform: rotate(-70deg); }
+    30%      { transform: rotate(-78deg); }
+    38%, 48% { transform: rotate(-38deg); }
+    54%      { transform: rotate(-56deg); }
+    58%, 72% { transform: rotate(-34deg); }
+    78%      { transform: rotate(-56deg); }
+    84%,100% { transform: rotate(-38deg); }
+}
+
+/* The parcel: courier's hand, across to the inspector, a pause while it is
+   checked, then back. Handing it over and never returning it would need the
+   box to teleport home at the end of every loop. The dip mid-crossing is the
+   arc of a real pass; without it the box slides along an invisible rail. */
+@keyframes sb-pass {
+    0%,   6% { transform: translate(0, 0); }
+    /* Steps in and back out with the courier, who is carrying it. Left at its
+       resting spot it would hang in mid-air beside them for the whole
+       handshake, which is the sort of thing nobody can name but everybody
+       notices. */
+    14%, 32% { transform: translate(-15px, 0); }
+    40%, 50% { transform: translate(0, 0); }
+    54%      { transform: translate(-22px, -8px); }
+    58%, 74% { transform: translate(-44px, 0); }
+    78%      { transform: translate(-22px, -8px); }
+    82%,100% { transform: translate(0, 0); }
+}
+
+/* Five lines of dialogue, each keyed to the moment it belongs to. They pop up
+   and settle rather than simply appearing, which is what makes a bubble read
+   as somebody starting to speak. Every one of them holds long enough to be
+   READ — roughly two and a half seconds for two short lines, which is slower
+   than it feels like it needs to be and is still the right amount. */
+@keyframes sb-say-1 {   /* "Hi Pyo, / Good <time of day>!"  — the courier */
+    0%,   1% { opacity: 0; transform: translateY(5px) scale(.9); }
+    4%,  11% { opacity: 1; transform: translateY(0) scale(1); }
+    14%,100% { opacity: 0; transform: translateY(-3px) scale(.95); }
+}
+@keyframes sb-say-2 {   /* "Hello! / For inspection?"  — mid-handshake */
+    0%,  16% { opacity: 0; transform: translateY(5px) scale(.9); }
+    19%, 29% { opacity: 1; transform: translateY(0) scale(1); }
+    32%,100% { opacity: 0; transform: translateY(-3px) scale(.95); }
+}
+@keyframes sb-say-3 {   /* "Yes po — / one parcel."  — before the pass */
+    0%,  37% { opacity: 0; transform: translateY(5px) scale(.9); }
+    40%, 48% { opacity: 1; transform: translateY(0) scale(1); }
+    51%,100% { opacity: 0; transform: translateY(-3px) scale(.95); }
+}
+@keyframes sb-say-4 {   /* "Let me / check it…"  — while holding it */
+    0%,  57% { opacity: 0; transform: translateY(5px) scale(.9); }
+    60%, 70% { opacity: 1; transform: translateY(0) scale(1); }
+    73%,100% { opacity: 0; transform: translateY(-3px) scale(.95); }
+}
+@keyframes sb-say-5 {   /* "Thank you po!"  — as it goes back */
+    0%,  77% { opacity: 0; transform: translateY(5px) scale(.9); }
+    80%, 90% { opacity: 1; transform: translateY(0) scale(1); }
+    93%,100% { opacity: 0; transform: translateY(-3px) scale(.95); }
+}
+
+/* Idle motion, on its own clocks. */
+@keyframes sb-breathe { from { transform: translateY(0); } to { transform: translateY(-1.1px); } }
+@keyframes sb-sway    { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+
+.sidebar-art .fig-a        { animation: sb-step-a 24s ease-in-out infinite; }
+.sidebar-art .fig-b        { animation: sb-step-b 24s ease-in-out infinite; }
+.sidebar-art .arm-a-in     { animation: sb-shake-a 24s ease-in-out infinite; }
+.sidebar-art .arm-b-in     { animation: sb-shake-b 24s ease-in-out infinite; }
+.sidebar-art .parcel       { animation: sb-pass 24s ease-in-out infinite; }
+.sidebar-art .say-1        { animation: sb-say-1 24s ease-in-out infinite; opacity: 0; }
+.sidebar-art .say-2        { animation: sb-say-2 24s ease-in-out infinite; opacity: 0; }
+.sidebar-art .say-3        { animation: sb-say-3 24s ease-in-out infinite; opacity: 0; }
+.sidebar-art .say-4        { animation: sb-say-4 24s ease-in-out infinite; opacity: 0; }
+.sidebar-art .say-5        { animation: sb-say-5 24s ease-in-out infinite; opacity: 0; }
+.sidebar-art .body-a       { animation: sb-breathe 2.6s ease-in-out infinite alternate; }
+.sidebar-art .body-b       { animation: sb-breathe 3.1s ease-in-out infinite alternate; }
+.sidebar-art .arm-hold     { animation: sb-sway 3.4s ease-in-out infinite alternate; }
+.sidebar-art .arm-hold-b   { animation: sb-sway 2.9s ease-in-out infinite alternate; }
+
+/* Motion is a preference the operating system already collects, and movement in
+   the corner of the eye is exactly what someone who sets it is asking not to
+   have. The scene stays, posed at the handshake with the greeting up — the
+   friendliest moment in the loop, and the one that still says what the picture
+   is about. The transforms below are what hold that pose: with the animations
+   simply switched off, every element snaps back to its untransformed position,
+   which is two people standing apart with their arms hanging down. */
+@media (prefers-reduced-motion: reduce) {
+    .sidebar-art .fig-a, .sidebar-art .fig-b,
+    .sidebar-art .arm-a-in, .sidebar-art .arm-b-in,
+    .sidebar-art .parcel,
+    .sidebar-art .say-1, .sidebar-art .say-2, .sidebar-art .say-3,
+    .sidebar-art .say-4, .sidebar-art .say-5,
+    .sidebar-art .body-a, .sidebar-art .body-b,
+    .sidebar-art .arm-hold, .sidebar-art .arm-hold-b { animation: none; }
+    .sidebar-art .fig-a        { transform: translateX(15px); }
+    .sidebar-art .fig-b        { transform: translateX(-15px); }
+    .sidebar-art .arm-a-in     { transform: rotate(-78deg); }
+    .sidebar-art .arm-b-in     { transform: rotate(-78deg); }
+    .sidebar-art .arm-hold     { transform: rotate(2deg); }
+    /* The greeting is the line to hold: it is the friendliest moment in the
+       loop and the only one that still says what the picture is about. */
+    .sidebar-art .say-1        { opacity: 1; }
+}
+
+
+.sidebar-section-title {
+    padding: .6rem 1.5rem .3rem;
+    font-size: .65rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.4);
+}
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .6rem 1.5rem;
+    color: rgba(255,255,255,.8);
+    text-decoration: none;
+    font-size: .85rem;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+    transition: all .2s;
+}
+.sidebar-link:hover {
+    background: var(--navy-hover);
+    color: #fff;
+    border-left-color: rgba(255,255,255,.4);
+}
+.sidebar-link.active {
+    background: rgba(255,255,255,.15);
+    color: #fff;
+    border-left-color: #60a5fa;
+}
+.sidebar-link .nav-icon {
+    width: 20px; text-align: center;
+    font-size: .9rem; flex-shrink: 0;
+}
+.sidebar-link .badge-count {
+    margin-left: auto;
+    background: #ef4444;
+    color: #fff;
+    font-size: .65rem;
+    padding: .15rem .45rem;
+    border-radius: 10px;
+}
+/* A module group that exists as a heading before it exists as a page —
+   Warehouse Management today. Same row shape as a real .sidebar-link so the
+   group reads as one list, but inert: no hover highlight, no active state,
+   cursor says so too. The "Soon" pill is what tells it apart from a link
+   that is merely disabled by permissions. */
+.sidebar-link.disabled {
+    color: rgba(255,255,255,.38);
+    cursor: default;
+}
+.sidebar-link.disabled:hover { background: transparent; border-left-color: transparent; }
+.sidebar-link .soon-badge {
+    margin-left: auto;
+    background: rgba(255,255,255,.12);
+    color: rgba(255,255,255,.65);
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: .15rem .45rem;
+    border-radius: 10px;
+}
+
+/* ── Main Content ── */
+.main-content {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    /* A flex item defaults to min-width:auto, i.e. it refuses to shrink below
+       its content's intrinsic width. A wide table (the 40-column Reports
+       tables, say) therefore stretched this whole column past the viewport:
+       the page grew its own horizontal scrollbar, content was clipped off the
+       left edge, and toolbar buttons were pushed off the right. min-width:0
+       lets the column stay viewport-width so inner containers do the
+       scrolling instead. Same trap as min-height:0 on flex columns. */
+    min-width: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Top Navbar ── */
+.top-navbar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: .75rem 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.page-title { font-size: 1.15rem; font-weight: 700; color: var(--text); margin: 0; }
+.page-subtitle { font-size: .78rem; color: var(--muted); margin: 0; }
+
+/* ── Content Area ── */
+.content-area { padding: 1.5rem 1.75rem; flex: 1; }
+
+/* ── Summary Cards ── */
+.stat-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid var(--border);
+    transition: transform .2s, box-shadow .2s;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+.stat-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; color: #fff; flex-shrink: 0;
+}
+.stat-icon.blue   { background: linear-gradient(135deg,#2563eb,#3b82f6); }
+.stat-icon.green  { background: linear-gradient(135deg,#16a34a,#22c55e); }
+.stat-icon.amber  { background: linear-gradient(135deg,#d97706,#f59e0b); }
+.stat-icon.red    { background: linear-gradient(135deg,#dc2626,#ef4444); }
+.stat-icon.purple { background: linear-gradient(135deg,#7c3aed,#8b5cf6); }
+.stat-icon.teal   { background: linear-gradient(135deg,#0891b2,#06b6d4); }
+.stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
+.stat-label { font-size: .78rem; color: var(--muted); margin-top: .2rem; }
+
+/* ── Panel Cards ── */
+.panel {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+}
+.panel-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+}
+.panel-title {
+    font-size: .9rem; font-weight: 700; color: var(--text); margin: 0;
+}
+.panel-body { padding: 1.25rem; }
+
+/* ── Chart containers ──
+   Canvas is a replaced element with an intrinsic size; inside a Bootstrap
+   flex column its default min-width:auto can force the column (and the
+   whole row) wider than the viewport before Chart.js's responsive resize
+   kicks in. Constrain via a sized, positioned wrapper instead. */
+.content-area .row > [class*="col-"] { min-width: 0; }
+.chart-box { position: relative; width: 100%; height: 220px; }
+.chart-box canvas { width: 100% !important; height: 100% !important; }
+
+/* ── Tables ── */
+.app-table { width: 100%; margin: 0; border-collapse: collapse; font-size: .845rem; }
+.app-table thead th {
+    background: #f8fafc;
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: .7rem 1rem;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+}
+.app-table tbody tr { border-bottom: 1px solid #f1f5f9; transition: background .15s; }
+.app-table tbody tr:hover { background: #f8fafc; }
+.app-table tbody td { padding: .65rem 1rem; vertical-align: middle; }
+.app-table tbody tr:last-child { border-bottom: none; }
+
+/* ── Status Badges ── */
+.badge-status {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .25rem .65rem; border-radius: 20px;
+    font-size: .72rem; font-weight: 600; white-space: nowrap;
+}
+.badge-status::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+/* ── Quick Action Buttons ── */
+.quick-action {
+    display: flex; align-items: center; gap: .85rem;
+    padding: .85rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #f8fafc;
+    text-decoration: none;
+    color: var(--text);
+    font-size: .85rem;
+    font-weight: 500;
+    transition: all .2s;
+    margin-bottom: .6rem;
+}
+.quick-action:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.quick-action .qa-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; flex-shrink: 0;
+}
+.quick-action:hover .qa-icon { background: rgba(255,255,255,.2) !important; }
+
+.modal-header-app .btn-close { filter: invert(1); }
+.modal-content { border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+
+/* ── Form Controls ── */
+.form-label { font-size: .82rem; font-weight: 600; color: #374151; margin-bottom: .3rem; }
+.form-control, .form-select {
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: .875rem;
+    padding: .5rem .85rem;
+    transition: border-color .2s, box-shadow .2s;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+.input-group-text { border: 1.5px solid #d1d5db; background: #f8fafc; font-size: .85rem; }
+
+/* ── Buttons ── */
+.btn-primary-app {
+    background: linear-gradient(135deg, var(--navy), #1e40af);
+    color: #fff; border: none; border-radius: 8px;
+    padding: .5rem 1.1rem; font-weight: 600; font-size: .85rem;
+    transition: all .2s; cursor: pointer;
+}
+.btn-primary-app:hover { opacity: .9; transform: translateY(-1px); color: #fff; }
+.btn-sm-action {
+    padding: .3rem .6rem;
+    font-size: .78rem;
+    border-radius: 6px;
+}
+
+/* ── DataTable override ── */
+
+/* A list wider than its panel scrolls sideways INSIDE the panel.
+ *
+ * Without this it is silently clipped instead. .wrapper and body both set
+ * overflow-x: hidden (above) to stop the whole page scrolling sideways, and
+ * the side effect is that a table wider than its column simply has the excess
+ * cut off — with no scrollbar anywhere to say anything is missing. On
+ * Competitive Bidding, which carries the most columns, that ate the Delete
+ * button off the end of every row.
+ *
+ * Scoped to .dt-row — the row DataTables' bootstrap5 integration puts the
+ * table in — so the length menu, the search box, the info line and the
+ * pagination all stay exactly where they are. Inert until something actually
+ * overflows, which is why it belongs here rather than on one page.
+ */
+.dataTables_wrapper .dt-row > div { overflow-x: auto; }
+
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select {
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    padding: .35rem .7rem;
+    font-size: .82rem;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: var(--primary) !important;
+    color: #fff !important;
+    border-radius: 6px;
+    border: none !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #e5e7eb !important;
+    border-radius: 6px;
+    border: none !important;
+    color: var(--text) !important;
+}
+
+/* ── Recent activity list ── */
+.txn-item {
+    display: flex; align-items: flex-start; gap: .75rem;
+    padding: .65rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.txn-item:last-child { border-bottom: none; }
+.txn-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; flex-shrink: 0;
+}
+.txn-meta { font-size: .78rem; color: var(--muted); }
+.txn-title { font-size: .85rem; font-weight: 600; margin: 0; }
+
+/* ── Toast ── */
+#toastContainer { z-index: 9999; }
+.toast { border-radius: 10px; font-size: .85rem; }
+
+/* ── Responsive ── */
+@media (max-width: 992px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0; }
+    .sidebar-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,.5); z-index: 1040;
+    }
+    .sidebar-overlay.show { display: block; }
+}
+
+/* ── Top Navbar — notifications + account ── */
+.topbar-actions { display: flex; align-items: center; gap: .6rem; }
+
+.topbar-icon-btn {
+    position: relative;
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--muted);
+    font-size: .95rem;
+    transition: background .15s, color .15s;
+}
+.topbar-icon-btn:hover { background: var(--body-bg); color: var(--text); }
+.topbar-icon-btn .badge-dot {
+    position: absolute; top: -4px; right: -4px;
+    min-width: 18px; height: 18px; padding: 0 4px;
+    background: var(--danger); color: #fff;
+    border-radius: 10px;
+    font-size: .62rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+}
+
+.notif-dropdown { width: 340px; padding: 0; border: 1px solid var(--border); box-shadow: 0 12px 32px rgba(0,0,0,.12); }
+.notif-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .75rem 1rem; border-bottom: 1px solid var(--border);
+    font-size: .85rem; font-weight: 700; color: var(--text);
+}
+.notif-header button { font-size: .72rem; color: var(--primary); background: none; border: none; cursor: pointer; }
+.notif-header button:hover { text-decoration: underline; }
+.notif-list { max-height: 360px; overflow-y: auto; }
+.notif-item {
+    display: block; padding: .7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none; color: inherit;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: var(--body-bg); }
+.notif-item.unread { background: #eff6ff; }
+.notif-item .ni-title { font-size: .82rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: .4rem; }
+.notif-item.unread .ni-title::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+.notif-item .ni-message { font-size: .76rem; color: var(--muted); margin-top: .15rem; }
+.notif-item .ni-time { font-size: .68rem; color: var(--muted); margin-top: .3rem; }
+.notif-empty { padding: 2.5rem 1rem; text-align: center; color: var(--muted); font-size: .82rem; }
+.notif-empty i { font-size: 1.8rem; display: block; margin-bottom: .5rem; opacity: .5; }
+
+.user-pill {
+    display: flex; align-items: center; gap: .55rem;
+    padding: .35rem .75rem .35rem .4rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: #fff;
+    cursor: pointer;
+}
+.user-pill:hover { background: var(--body-bg); }
+.user-pill .up-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--navy);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: .8rem;
+    flex-shrink: 0; overflow: hidden;
+}
+.user-pill .up-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.user-pill .up-name { font-size: .85rem; font-weight: 600; color: var(--text); }
+.user-pill .up-caret { font-size: .7rem; color: var(--muted); }
+
+.user-dropdown { width: 220px; padding: .4rem; border: 1px solid var(--border); box-shadow: 0 12px 32px rgba(0,0,0,.12); }
+.user-dropdown .ud-role { padding: .3rem .75rem .5rem; font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
+.user-dropdown .dropdown-item { border-radius: 8px; font-size: .85rem; padding: .5rem .75rem; display: flex; align-items: center; gap: .55rem; }
+.user-dropdown .dropdown-item i { width: 16px; text-align: center; color: var(--muted); }
+.user-dropdown .dropdown-item.text-danger i { color: var(--danger); }
+
+/* ── My Profile modal ── */
+.profile-avatar-wrap { position: relative; width: 128px; height: 128px; margin: 0 auto; }
+.profile-avatar {
+    width: 128px; height: 128px; border-radius: 50%; overflow: hidden;
+    background: var(--navy); display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 2.4rem; font-weight: 700; border: 3px solid var(--border);
+}
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-avatar-edit {
+    position: absolute; bottom: 2px; right: 2px;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff; cursor: pointer; font-size: .8rem;
+}
+.profile-section-title { display: flex; align-items: center; gap: .5rem; font-weight: 700; color: var(--text); margin-bottom: .1rem; }
+.profile-section-title i { color: var(--text); }
+.profile-security-row { display: flex; justify-content: space-between; padding: .5rem 0; font-size: .85rem; }
+.profile-security-row .psr-label { font-weight: 600; color: var(--text); }

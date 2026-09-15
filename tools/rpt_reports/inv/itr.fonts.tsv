@@ -1,0 +1,109 @@
+﻿Section	Object	Kind	Font	Size	Bold	Italic	Underline	HAlign	Color	BorderTop	BorderBottom	BorderLeft	BorderRight
+Section2	Box1	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Line29	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line28	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line26	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line25	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Picture5	PictureObject								NoLine	NoLine	NoLine	NoLine
+Section2	Text1	TextObject	Arial	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text5	TextObject	Arial	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text2	TextObject	Arial	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text7	TextObject	Arial	10	False	False	False		Color [Black]	SingleLine	SingleLine	SingleLine	SingleLine
+Section2	PageNumber1	FieldObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text31	TextObject	Calisto MT	16	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Picture1	PictureObject								NoLine	NoLine	NoLine	NoLine
+Section2	Text3	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Line2	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line1	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Text4	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text25	TextObject	Calibri	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text23	TextObject	Calibri	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text33	TextObject	Calibri	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text6	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Box2	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Text32	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Box4	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Text35	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Box5	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Text36	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text37	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Box6	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Line7	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line8	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line14	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Text38	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text39	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Line15	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line23	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line32	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Text40	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text10	FieldHeadingObject	Calibri	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text11	FieldHeadingObject	Calibri	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Line3	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	PONumber1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	PTRNUMBER1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	PrintDate2	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	accountablefrom1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	accountableto1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text12	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Line5	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line6	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Text13	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	FundCluster1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Department1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Line18	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line19	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Text8	TextObject	Calibri	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text9	TextObject	Calibri	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Picture2	PictureObject								NoLine	NoLine	NoLine	NoLine
+GroupHeaderSection1	RecordNumber1	FieldObject	Calibri	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+GroupHeaderSection1	Quantity1	FieldObject	Calibri	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+GroupHeaderSection1	GroupNameInvID1	FieldObject	Arial	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+GroupHeaderSection1	UnitCost1	FieldObject	Calibri	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+GroupHeaderSection1	Condition1	FieldObject	Calibri	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+GroupHeaderSection1	ItemsDescription1	FieldObject	Calibri	9	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+GroupHeaderSection1	SuppressDateEntry1	FieldObject	Calibri	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+GroupHeaderSection1	Unit1	FieldObject	Calibri	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section3	ItemsDescription2	FieldObject	Calibri	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text47	TextObject	Arial	10	False	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line12	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Text15	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text46	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line49	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line50	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line51	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Text45	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line46	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line47	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line48	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	CGSOPosition1	FieldObject	Arial	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	AccountablePosition1	FieldObject	Arial	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	WarehousePosition1	FieldObject	Arial	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text44	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line43	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line44	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line45	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	CGSOOfficer1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	AccountableOfficer1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	WarehouseOfficer1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text43	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text42	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text48	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text49	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line39	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Purpose1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text41	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line13	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line16	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line17	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	SupplierName1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line9	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Text16	TextObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line11	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	TotalCost1	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	ReasonforTransfer1	FieldObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section5	PageNofM1	FieldObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section5	Text30	TextObject	Arial	11	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section5	PrintDate1	FieldObject	Arial	11	False	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section5	PrintTime1	FieldObject	Arial	11	False	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section5	initial1	FieldObject	Calibri	10	True	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine

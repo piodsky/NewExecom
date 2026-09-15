@@ -1,0 +1,61 @@
+-- Fix for "special characters" failing on Purchase Order save while Import
+-- accepts them fine. NOT executed automatically — this file is a deliverable
+-- to review and run yourself (or ask Claude to run it), since it changes the
+-- live server's schema. Reviewed and confirmed live on 2026-09-09 by
+-- reproducing the exact failure in a rolled-back transaction (nothing was
+-- written) before writing this file.
+--
+-- ROOT CAUSE — it is not the data type. TEXT already holds far more than any
+-- item description needs; the type was never the limit. The column's
+-- CHARACTER SET is: `tbl_purchase_order_items_details.Items_Description` is
+-- defined as `latin1` (collation latin1_swedish_ci) on this HRMIS database,
+-- a leftover from whenever this table was first created — 348 columns across
+-- this schema are still latin1, this is one of them, not a one-off mistake.
+--
+-- This app's own DB connection talks utf8mb4 (config.php, PO_DB_CHARSET),
+-- and this server runs MySQL 8.4 in STRICT_TRANS_TABLES mode. Import
+-- (api/purchase_order_item_parse.php) only reads the uploaded file and hands
+-- rows back to the browser — it never touches the database, so it can't hit
+-- this at all, which is exactly why it looks like "import allows it." Save
+-- is the first point anything actually gets INSERTed, and that INSERT is
+-- where MySQL has to convert the text from the connection's utf8mb4 down to
+-- the column's latin1 — and refuses, hard, for any character latin1 cannot
+-- represent, instead of silently mangling it.
+--
+-- Reproduced directly against the live table (in a transaction, rolled back,
+-- nothing kept) to see exactly where the line falls:
+--   OK    - em-dash, curly quotes, café/résumé  (MySQL's "latin1" is really
+--           cp1252, a superset of true Latin-1 that happens to include these)
+--   ERROR - the peso sign (₱), emoji, •, →, and CJK text (打印纸) — all with
+--           SQLSTATE HY000 3988: "Conversion from collation utf8mb4_general_ci
+--           into latin1_swedish_ci impossible for parameter"
+-- ₱ is the one most likely to actually come up on a Philippine procurement
+-- form, and it is squarely in the failing set.
+--
+-- THE FIX: widen the column to utf8mb4, matching what the connection already
+-- sends. Items_Description shipped first, same day, on its own — that was the
+-- field named in the report. Unit and End_User are its two siblings on the
+-- SAME table, still latin1, same failure mode (a peso sign or similar in
+-- either would error the same way); widened here too on explicit confirmation
+-- rather than assumed the first time.
+--
+-- Safe to run on populated data: MODIFY ... CHARACTER SET performs a real
+-- conversion of the existing bytes (every row currently in these columns is
+-- guaranteed to already be valid latin1 — nothing else could have been saved
+-- here up to now), not a reinterpretation, so every existing value is
+-- preserved exactly as it prints today. utf8mb4_general_ci is used (not
+-- utf8mb4_unicode_ci) to match the collation the connection error above shows
+-- the app is already sending, so nothing about how comparisons/sorting behave
+-- changes from what the app already assumes.
+--
+-- One honest tradeoff, not a blocker: TEXT's 65,535-byte cap is per BYTE, not
+-- per character. At latin1 (1 byte/char) that is ~65,000 characters; at
+-- utf8mb4 (up to 4 bytes/char) the worst case is ~16,000. No item description
+-- on this system is remotely close to either number, and Unit/End_User are
+-- both short VARCHARs, nowhere near any cap either way.
+-- Unit and End_User are both VARCHAR(255) today (confirmed via
+-- information_schema before writing this) — kept at 255 here, not resized.
+ALTER TABLE tbl_purchase_order_items_details
+    MODIFY Items_Description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+    MODIFY Unit VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+    MODIFY End_User VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;

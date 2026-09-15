@@ -1,0 +1,18 @@
+# Web-facing hardening for the Purchase Order app.
+#
+# Everything the browser legitimately needs is a .php page, a css/js/font/image
+# asset under system/, or an uploaded avatar. Nothing else in this tree should
+# ever be retrievable over HTTP — most importantly system/.env, which holds the
+# live HRMIS database password and the QR signing key in plaintext.
+
+# No directory listings anywhere. Without this, /vb/, /tools/, /system/uploads/
+# and /system/database/ all enumerate their contents to anonymous visitors.
+Options -Indexes
+
+# Dotfiles (.env, .git*, .htpasswd …) and developer material: schema dumps,
+# docs, legacy sources, editor leftovers. Denied by name so a new file of a
+# known-sensitive type is covered the moment it lands, not when someone
+# remembers to add a rule.
+<FilesMatch "^\.|\.(env|sql|md|bak|orig|save|swp|log|rpt|vb|vbproj|sln|resx|config)$">
+    Require all denied
+</FilesMatch>

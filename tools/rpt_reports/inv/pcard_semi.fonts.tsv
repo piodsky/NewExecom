@@ -1,0 +1,48 @@
+﻿Section	Object	Kind	Font	Size	Bold	Italic	Underline	HAlign	Color	BorderTop	BorderBottom	BorderLeft	BorderRight
+Section2	Picture5	PictureObject								NoLine	NoLine	NoLine	NoLine
+Section2	Picture1	PictureObject								NoLine	NoLine	NoLine	NoLine
+Section2	Text1	TextObject	Arial	9	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text2	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text3	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text4	TextObject	Calibri	14	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text5	TextObject	Calibri	10	True	False	True		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text6	TextObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text7	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text8	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text9	TextObject	Arial	9	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text15	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text16	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text17	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text18	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text19	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text20	TextObject	Arial	9	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text21	TextObject	Arial	9	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Box1	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Text22	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text23	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text24	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text25	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text26	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text27	TextObject	Arial	9	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Line19	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line20	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line21	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line22	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line25	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line28	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line29	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line30	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line31	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line32	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line33	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line36	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line37	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line38	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line39	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line45	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Picture2	PictureObject								NoLine	NoLine	NoLine	NoLine
+Section5	PageNofM1	FieldObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section5	initial1	FieldObject	Calibri	10	True	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section5	PrintTime1	FieldObject	Arial	11	False	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section5	PrintDate1	FieldObject	Arial	11	False	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section5	Text30	TextObject	Arial	11	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine

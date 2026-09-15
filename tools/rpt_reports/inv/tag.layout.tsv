@@ -1,0 +1,69 @@
+﻿RecordType	Report	Section	ObjectName	Kind	LeftTwips	TopTwips	WidthTwips	HeightTwips	LeftIn	TopIn	WidthIn	HeightIn	TextOrField	FormulaOrValue
+SECTION	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section1			0	0	0	10	0.000	0.000	0.000	0.007		
+SECTION	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2			0	0	0	4147	0.000	0.000	0.000	2.880		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Picture5	PictureObject	480	240	600	600	0.333	0.167	0.417	0.417		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	PropertyNumber1	FieldObject	840	960	4200	228	0.583	0.667	2.917	0.158	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?Property_Number}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text1	TextObject	2040	480	2448	228	1.417	0.333	1.700	0.158	Republic of the Philippines	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text2	TextObject	2160	360	2040	228	1.500	0.250	1.417	0.158	Province of Bukidnon	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text3	TextObject	2280	240	1800	360	1.583	0.167	1.250	0.250	City of Malaybalay	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text5	TextObject	5280	240	120	3360	3.667	0.167	0.083	2.333	TAMPERING OF THIS STICKER IS PUNISHABLE BY LAW	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text4	TextObject	1920	720	2160	120	1.333	0.500	1.500	0.083	CITY GENERAL SERVICES OFFICE	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text6	TextObject	840	1560	960	228	0.583	1.083	0.667	0.158	DESCRIPTION:	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text7	TextObject	840	1440	1080	228	0.583	1.000	0.750	0.158	DATE ACQUIRED:	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text8	TextObject	840	1920	1080	228	0.583	1.333	0.750	0.158	QUANTITY:	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text9	TextObject	840	1800	1080	228	0.583	1.250	0.750	0.158	SERIAL NUMBER:	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text10	TextObject	840	2040	480	228	0.583	1.417	0.333	0.158	UNIT:	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text11	TextObject	840	1320	1080	228	0.583	0.917	0.750	0.158	P.O NUMBER:	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text12	TextObject	840	2160	1080	228	0.583	1.500	0.750	0.158	CONDITION:	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text13	TextObject	840	2280	1320	228	0.583	1.583	0.917	0.158	ACCOUNTABLE OFFICER:	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text14	TextObject	840	2520	1440	228	0.583	1.750	1.000	0.158	ACQUISITION COST:	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	ItemsDescription1	FieldObject	1920	1560	2880	240	1.333	1.083	2.000	0.167	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?Items_Description}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	DateAcquired1	FieldObject	1920	1440	2880	120	1.333	1.000	2.000	0.083	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?Date_Acquired}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Quantity1	FieldObject	1920	1920	2880	228	1.333	1.333	2.000	0.158	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?Quantity}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	SerialNumber1	FieldObject	1920	1800	2880	228	1.333	1.250	2.000	0.158	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?Serial_Number}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Unit1	FieldObject	1920	2040	2880	228	1.333	1.417	2.000	0.158	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?Unit}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	PONumber1	FieldObject	1920	1320	2880	240	1.333	0.917	2.000	0.167	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?PO_Number}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Condition1	FieldObject	1920	2160	2880	228	1.333	1.500	2.000	0.158	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?Condition}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	AccountableOfficer1	FieldObject	1920	2280	2880	240	1.333	1.583	2.000	0.167	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?Accountable_Officer}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	AcquisitionCost1	FieldObject	2160	2520	2640	120	1.500	1.750	1.833	0.083	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?Acquisition_Cost}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	CGSOOFFICER1	FieldObject	1080	3120	3480	228	0.750	2.167	2.417	0.158	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?CGSO_OFFICER}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Box2	BoxObject	360	120	5160	3990	0.250	0.083	3.583	2.771		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	BARCODE1	FieldObject	4920	1200	360	2400	3.417	0.833	0.250	1.667	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?BARCODE}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Position1	FieldObject	1080	3360	3480	228	0.750	2.333	2.417	0.158	CrystalDecisions.CrystalReports.Engine.ParameterFieldDefinition	{?Position}
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Box4	BoxObject	480	3600	720	329	0.333	2.500	0.500	0.228		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Box5	BoxObject	1320	3600	720	329	0.917	2.500	0.500	0.228		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Box6	BoxObject	2160	3600	720	329	1.500	2.500	0.500	0.228		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Box7	BoxObject	3000	3600	720	329	2.083	2.500	0.500	0.228		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Box10	BoxObject	3840	3600	720	329	2.667	2.500	0.500	0.228		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Box11	BoxObject	4680	3600	720	329	3.250	2.500	0.500	0.228		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Picture2	PictureObject	1080	2640	3480	480	0.750	1.833	2.417	0.333		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text15	TextObject	2040	2520	1869	221	1.417	1.750	1.298	0.153		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text16	TextObject	2040	2520	120	120	1.417	1.750	0.083	0.083	₱	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	PrintDate1	FieldObject	480	1680	240	600	0.333	1.167	0.167	0.417	CrystalDecisions.CrystalReports.Engine.SpecialVarFieldDefinition	PrintDate
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	PrintTime1	FieldObject	480	1080	240	600	0.333	0.750	0.167	0.417	CrystalDecisions.CrystalReports.Engine.SpecialVarFieldDefinition	PrintTime
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Text17	TextObject	480	2280	240	720	0.333	1.583	0.167	0.500	Date Printed:	
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Picture1	PictureObject	1080	240	600	600	0.750	0.167	0.417	0.417		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section2	Picture3	PictureObject	4440	240	720	600	3.083	0.167	0.500	0.417		
+SECTION	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section3			0	0	0	20	0.000	0.000	0.000	0.014		
+SECTION	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section4			0	0	0	0	0.000	0.000	0.000			
+SECTION	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section5			0	0	0	3225	0.000	0.000	0.000	2.240		
+OBJECT	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt	Section5	Box1	BoxObject	12660	599	203340	0	8.792	0.416	141.208			
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Office	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Items_Description	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Date_Acquired	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Quantity	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Serial_Number	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Unit	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		PO_Number	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Condition	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Accountable_Officer	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Acquisition_Cost	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Property_Number	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		CGSO_OFFICER	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		BARCODE	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		I	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Position	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Purok	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Zone	StringField										
+PARAMETER	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		Sector	StringField										
+TABLE	C:\xampp\htdocs\SystemsMISPYO\PurchaseOrder\vb\Inventory\Crystal Reports\Inventory Label Report.rpt		DataTable1	DatabaseTable									DataTable1	

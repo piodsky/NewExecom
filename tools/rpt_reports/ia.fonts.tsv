@@ -1,0 +1,103 @@
+Section	Object	Kind	Font	Size	Bold	Italic	Underline	HAlign	Color	BorderTop	BorderBottom	BorderLeft	BorderRight
+Section2	Text1	TextObject	Calibri	14	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text5	TextObject	Centaur	16	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Box1	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section2	Text2	TextObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text3	TextObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text4	TextObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text6	TextObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text7	TextObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Line2	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line4	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line5	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line6	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line7	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Text8	TextObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Line9	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Text26	FieldHeadingObject	Arial	12	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Picture5	PictureObject								NoLine	NoLine	NoLine	NoLine
+Section2	Line20	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line21	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Text30	TextObject	Calibri	14	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text31	TextObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text32	TextObject	Calibri	11	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text33	TextObject	Calibri	11	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Picture3	PictureObject								NoLine	NoLine	NoLine	NoLine
+Section2	PONumber1	FieldObject	Calibri	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	DeliveryDate1	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Department1	FieldObject	Calibri	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	SupplierName1	FieldObject	Calibri	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text15	FieldHeadingObject	Calibri	12	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text22	FieldHeadingObject	Calibri	12	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text24	FieldHeadingObject	Calibri	12	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text29	FieldHeadingObject	Calibri	12	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Text34	FieldHeadingObject	Calibri	12	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section2	Line10	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line12	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line23	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section2	Line24	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line32	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	Line39	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section2	InvoiceNumber1	FieldObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section3	RecordNumber1	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section3	Quantity1	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section3	Unit1	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section3	ItemsDescription1	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section3	UnitCost1	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section3	TotalCost1	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text28	TextObject	Microsoft Sans Serif	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text23	TextObject	Calibri	14	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line15	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Text10	TextObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line22	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Text11	TextObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text12	TextObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Box2	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section4	Text16	TextObject	Calibri	11	True	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text17	TextObject	Calibri	11	True	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text18	TextObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text19	TextObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text20	TextObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text21	TextObject	Calibri	10	False	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Box3	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section4	Box5	BoxObject								SingleLine	SingleLine	SingleLine	SingleLine
+Section4	Text9	TextObject	Calibri	8	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Text27	TextObject	Calibri	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line11	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line14	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line17	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line3	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Acceptedby1	FieldObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	sumtotalcost1	FieldObject	Arial	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Inspectorate11	FieldObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Inspectorate21	FieldObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Inspectorate31	FieldObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line30	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Text13	TextObject	Calibri	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line31	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Text14	TextObject	Calibri	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line33	LineObject								NoLine	NoLine	SingleLine	NoLine
+Section4	Text25	TextObject	Calibri	10	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line36	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	wordssumtotalcost1	FieldObject	Calibri	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	EndUser11	FieldObject	Calibri	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Subreport1	SubreportObject								NoLine	NoLine	NoLine	NoLine
+Section4	Subreport2	SubreportObject								NoLine	NoLine	NoLine	NoLine
+Section4	Subreport3	SubreportObject								NoLine	NoLine	NoLine	NoLine
+Section4	Subreport4	SubreportObject								NoLine	NoLine	NoLine	NoLine
+Section4	Text47	TextObject	Arial	10	False	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	initial1	FieldObject	Arial	10	True	True	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Department31	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Department11	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Department21	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Line38	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line8	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line13	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line16	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line18	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Line1	LineObject								SingleLine	NoLine	NoLine	NoLine
+Section4	Inspectorate41	FieldObject	Calibri	11	True	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	Department41	FieldObject	Calibri	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section4	PurposeOffice1	FieldObject	Calibri	8	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section5	PageNofM1	FieldObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine
+Section5	TotalPageCount1	FieldObject	Arial	10	False	False	False		Color [Black]	NoLine	NoLine	NoLine	NoLine

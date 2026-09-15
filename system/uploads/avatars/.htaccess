@@ -1,0 +1,6 @@
+# Uploaded avatar images only — never execute anything from this folder as code.
+<FilesMatch "\.(php|php[3-8]?|phtml|pl|py|jsp|asp|sh|cgi)$">
+    Require all denied
+</FilesMatch>
+Options -ExecCGI -Indexes
+php_flag engine off

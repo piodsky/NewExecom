@@ -1,0 +1,24 @@
+-- Same latin1-vs-utf8mb4 fix as database/items_description_charset.sql and
+-- database/inspection_inventory_charset.sql, for a table those two missed:
+-- tbl_ppmp_bac_items, the item CATALOG (56,130 rows) that ensureCatalogItem()
+-- in api/purchase_orders.php writes to on EVERY new purchase order item —
+-- manual entry AND import both go through it, not just import. Found
+-- 2026-09-09 reproducing "Unable to create purchase order" against
+-- database/TRIAL.xlsx (in a rolled-back transaction, nothing was written):
+-- the real SQLSTATE HY000 3988 conversion error, same as before, just on a
+-- table the earlier two fixes didn't touch. The file's own descriptions carry
+-- ≥ (U+2265, "≥6V" on the solar panel spec) — outside even cp1252's range,
+-- unlike ± and Ø a few lines away in the same file which are both in Latin-1
+-- and saved fine, which is exactly why this looked like an import-only
+-- problem: most special characters happened to be the kind that survive
+-- latin1, until one row had the kind that doesn't.
+--
+-- Every text/varchar column on the table, matching the earlier whole-table
+-- CONVERT approach: Items_Description, Unit, Category, Department.
+-- Same safety case as both earlier fixes: every value already in these
+-- columns is guaranteed valid latin1 (nothing else could have been saved past
+-- this server's STRICT_TRANS_TABLES check up to now), so CONVERT TO CHARACTER
+-- SET reproduces each one exactly in utf8mb4 rather than reinterpreting
+-- bytes. utf8mb4_general_ci again, matching this app's own connection
+-- charset (config.php's PO_DB_CHARSET).
+ALTER TABLE tbl_ppmp_bac_items CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
