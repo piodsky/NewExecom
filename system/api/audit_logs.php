@@ -1,17 +1,11 @@
 <?php
 // System-wide activity log: who changed what, across every module that calls
-// logAudit() — purchase orders, master data, inspections, access levels,
-// reports, user accounts and sign-ins.
-//
-// settings.php has its own Audit Log tab that shows the last 200 rows with no
-// filters. This is the same table (tbl_po_audit_logs on the HRMIS server) with
-// the filters that make it usable once there are more than a screenful, and it
-// is open to admins rather than super_admin only.
+// logAudit() — user accounts, sign-ins, and every operational module as it
+// ships. Open to branch_admin and super_admin.
 require_once '../config.php';
-requireAuth();
-requireSystemToolsAdmin();
+requireRole(['super_admin', 'branch_admin']);
 header('Content-Type: application/json');
-$db = getPoDB();
+$db = getDB();
 
 // Hard ceiling on any single response. The table grows without bound and
 // nobody reads ten thousand rows in a browser; the filters are how you narrow
@@ -23,52 +17,50 @@ $params = [];
 
 $from = trim($_GET['from'] ?? '');
 $to   = trim($_GET['to'] ?? '');
-if ($from !== '') { $where[] = 'Date_Created >= ?'; $params[] = $from . ' 00:00:00'; }
-if ($to   !== '') { $where[] = 'Date_Created <= ?'; $params[] = $to   . ' 23:59:59'; }
+if ($from !== '') { $where[] = 'created_at >= ?'; $params[] = $from . ' 00:00:00'; }
+if ($to   !== '') { $where[] = 'created_at <= ?'; $params[] = $to   . ' 23:59:59'; }
 
-foreach (['user' => 'Username', 'module' => 'Module', 'action' => 'Action'] as $key => $col) {
+foreach (['user' => 'username', 'module' => 'module', 'action' => 'action'] as $key => $col) {
     $val = trim($_GET[$key] ?? '');
     if ($val !== '') { $where[] = "{$col} = ?"; $params[] = $val; }
 }
 
-// Sign-ins are two thirds of this table (123 of the first 190 rows) and they
-// bury the thing the page is for — who changed what. Hidden unless asked for,
-// or unless 'auth' was picked in the module filter, which is an explicit
-// request to see exactly those.
+// Sign-ins tend to bury the thing the page is for — who changed what. Hidden
+// unless asked for, or unless 'auth' was picked in the module filter.
 $includeAuth = ($_GET['include_auth'] ?? '') === '1';
 if (!$includeAuth && trim($_GET['module'] ?? '') === '') {
-    $where[] = "Module <> 'auth'";
+    $where[] = "module <> 'auth'";
 }
 
-// Free-text across the columns someone would actually search: the detail line
-// (which carries the PO number), the username, and the action.
 $q = trim($_GET['q'] ?? '');
 if ($q !== '') {
-    $where[] = '(Details LIKE ? OR Username LIKE ? OR Action LIKE ?)';
+    $where[] = '(details LIKE ? OR username LIKE ? OR action LIKE ?)';
     $like = '%' . $q . '%';
     array_push($params, $like, $like, $like);
 }
 
 $sqlWhere = implode(' AND ', $where);
 
-$count = $db->prepare("SELECT COUNT(*) FROM tbl_po_audit_logs WHERE {$sqlWhere}");
+$count = $db->prepare("SELECT COUNT(*) FROM audit_logs WHERE {$sqlWhere}");
 $count->execute($params);
 $total = (int)$count->fetchColumn();
 
+// Aliased back to the capitalized column names the page's JS already reads.
 $stmt = $db->prepare(
-    "SELECT ID, Username, Action, Module, Details, IP_Address, Date_Created
-       FROM tbl_po_audit_logs
+    "SELECT id AS ID, username AS Username, action AS Action, module AS Module,
+            details AS Details, ip_address AS IP_Address, created_at AS Date_Created
+       FROM audit_logs
       WHERE {$sqlWhere}
-      ORDER BY Date_Created DESC, ID DESC
+      ORDER BY created_at DESC, id DESC
       LIMIT " . MAX_ROWS
 );
 $stmt->execute($params);
-$rows = fixLegacyEncodingDeep($stmt->fetchAll(PDO::FETCH_ASSOC));
+$rows = $stmt->fetchAll();
 
 // Filter choices come from the whole table, not the filtered set, so picking
 // one value never empties the other dropdowns.
 $distinct = function (string $col) use ($db): array {
-    return $db->query("SELECT DISTINCT {$col} AS v FROM tbl_po_audit_logs
+    return $db->query("SELECT DISTINCT {$col} AS v FROM audit_logs
                         WHERE {$col} IS NOT NULL AND {$col} <> '' ORDER BY {$col}")
               ->fetchAll(PDO::FETCH_COLUMN);
 };
@@ -79,8 +71,8 @@ jsonResponse(true, '', [
     'capped'  => $total > MAX_ROWS,
     'max'     => MAX_ROWS,
     'filters' => [
-        'users'   => fixLegacyEncodingDeep($distinct('Username')),
-        'modules' => $distinct('Module'),
-        'actions' => $distinct('Action'),
+        'users'   => $distinct('username'),
+        'modules' => $distinct('module'),
+        'actions' => $distinct('action'),
     ],
 ]);

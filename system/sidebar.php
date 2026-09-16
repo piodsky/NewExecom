@@ -1,27 +1,18 @@
 <?php
 // sidebar.php — included by every protected page
 // Requires: $currentUser, $activePage
-$navUser   = $currentUser ?? ['full_name' => 'User', 'role' => 'user', 'username' => ''];
+$navUser   = $currentUser ?? ['full_name' => 'User', 'role' => 'branch_user', 'username' => '', 'branch_name' => null];
 $initials  = strtoupper(substr($navUser['full_name'], 0, 1));
 $navAvatar = avatarUrl($navUser);
 
-$moduleAccess      = getEffectiveModuleAccess($navUser['id'] ?? null, $navUser['role']);
-$canPurchaseOrders = $moduleAccess['purchase_orders'] ?? true;
-$canBidding        = $moduleAccess['competitive_bidding'] ?? true;
-$canInspection     = $moduleAccess['inspection'] ?? true;
-$canDocTracking    = $moduleAccess['document_tracking'] ?? true;
-$canInventory      = $moduleAccess['inventory'] ?? true;
-// Real HRMIS flag as of 2026-09-09 (system_access_level.reports), same
-// super_admin-always/admin-needs-the-flag/user-never shape as the System
-// section below. Kept in step with requireReportsAdmin() at the top of
-// reports.php/po_insights.php/competitive_insights.php.
-$canReports        = canAccessReports($navUser);
-// The System section: one HRMIS access flag per screen, so unticking a box on
-// the Access Levels matrix actually hides the link. Kept in step with the
-// require*() call at the top of each of these pages.
-$canSystemUsers    = canManageSystemUsers($navUser);
-$canAccessLevels   = canManageAccessLevels($navUser);
-$canSystemTools    = canManageSystemTools($navUser);
+$moduleAccess    = getEffectiveModuleAccess($navUser['id'] ?? null, $navUser['role']);
+$canReports      = $moduleAccess['reports'] ?? true;
+// System section: settings (user management) is gated by ACCESS_MODULES;
+// Access Levels and Audit Log are admin-tier only, same rank rule everywhere
+// else in this app uses.
+$canSettings     = $moduleAccess['settings'] ?? true;
+$isAdminTier     = in_array($navUser['role'], ['super_admin', 'branch_admin'], true);
+$canAccessLevels = $navUser['role'] === 'super_admin';
 
 // Greeting for the sidebar illustration. Server time here so the page arrives
 // with the right words already in it and nothing flickers; the small script at
@@ -52,10 +43,10 @@ $sbHail = ($sbFirst !== '' && mb_strlen($sbFirst) <= 10) ? 'Hi ' . $sbFirst . ',
 <nav class="sidebar" id="sidebar">
     <!-- Brand -->
     <a href="dashboard.php" class="sidebar-brand text-decoration-none">
-        <div class="brand-icon"><img src="image/po-128.png" alt="<?= e(APP_NAME) ?> logo"></div>
+        <div class="brand-icon" style="display:flex;align-items:center;justify-content:center;font-weight:800;">E</div>
         <div>
             <div class="brand-name"><?= e(APP_NAME) ?></div>
-            <div class="brand-sub">Base System</div>
+            <div class="brand-sub">Logistics System</div>
         </div>
     </a>
 
@@ -74,7 +65,7 @@ $sbHail = ($sbFirst !== '' && mb_strlen($sbFirst) <= 10) ? 'Hi ' . $sbFirst . ',
             <div class="su-info">
                 <div class="u-name"><?= e($navUser['full_name']) ?></div>
                 <div class="su-meta">
-                    <span class="su-role"><i class="fas fa-user-shield"></i><?= e(hrmisRoleName($navUser['role_id'] ?? null) ?? roleLabel($navUser['role'])) ?></span>
+                    <span class="su-role"><i class="fas fa-user-shield"></i><?= e(roleLabel($navUser['role'])) ?><?= $navUser['branch_name'] ?? null ? ' · ' . e($navUser['branch_name']) : '' ?></span>
                     <span class="su-sep">|</span>
                     <span class="su-online"><span class="su-online-dot"></span>Online</span>
                 </div>
@@ -90,78 +81,31 @@ $sbHail = ($sbFirst !== '' && mb_strlen($sbFirst) <= 10) ? 'Hi ' . $sbFirst . ',
             <span class="nav-icon"><i class="fas fa-th-large"></i></span> Dashboard
         </a>
 
-        <?php // Everything that starts with a Purchase Order — the PO itself,
-              // how it was awarded, where the paperwork is, and the analytics
-              // built on top of all three. Reports/PO Insights/Competitive
-              // Insights keep the same $canReports (and, for the last one,
-              // $canBidding) gating they always had; only the grouping changed. ?>
-        <?php if ($canPurchaseOrders || $canBidding || $canDocTracking || $canReports): ?>
-        <div class="sidebar-section-title mt-2">Procurement</div>
-
-        <?php if ($canPurchaseOrders): ?>
-        <a href="purchase_orders.php" class="sidebar-link <?= ($activePage === 'purchase_orders') ? 'active' : '' ?>">
-            <span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Purchase Orders
-        </a>
-        <?php endif; ?>
-
-        <?php if ($canBidding): ?>
-        <a href="competitive_bidding.php" class="sidebar-link <?= ($activePage === 'competitive_bidding') ? 'active' : '' ?>">
-            <span class="nav-icon"><i class="fas fa-gavel"></i></span> Competitive Bidding
-        </a>
-        <?php endif; ?>
-
-        <?php if ($canDocTracking): ?>
-        <a href="document_tracking.php" class="sidebar-link <?= ($activePage === 'document_tracking') ? 'active' : '' ?>">
-            <span class="nav-icon"><i class="fas fa-route"></i></span> Document Tracking
-        </a>
-        <?php endif; ?>
-
-        <?php if ($canReports): ?>
-        <a href="reports.php" class="sidebar-link <?= ($activePage === 'reports') ? 'active' : '' ?>">
-            <span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Procurement Reports
-        </a>
-        <a href="po_insights.php" class="sidebar-link <?= ($activePage === 'po_insights') ? 'active' : '' ?>">
-            <span class="nav-icon"><i class="fas fa-lightbulb"></i></span> PO Insights
-        </a>
-        <?php if ($canBidding): ?>
-        <a href="competitive_insights.php" class="sidebar-link <?= ($activePage === 'competitive_insights') ? 'active' : '' ?>">
-            <span class="nav-icon"><i class="fas fa-piggy-bank"></i></span> Competitive Insights
-        </a>
-        <?php endif; ?>
-        <?php endif; ?>
-        <?php endif; ?>
-
-        <?php if ($canInspection || $canInventory): ?>
-        <div class="sidebar-section-title mt-2">Inventory Management</div>
-
-        <?php if ($canInspection): ?>
-        <a href="inspection.php" class="sidebar-link <?= ($activePage === 'inspection') ? 'active' : '' ?>">
-            <span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Inspection &amp; Acceptance
-        </a>
-        <?php endif; ?>
-
-        <?php if ($canInventory): ?>
-        <a href="inventory.php" class="sidebar-link <?= ($activePage === 'inventory') ? 'active' : '' ?>">
-            <span class="nav-icon"><i class="fas fa-warehouse"></i></span> Inventory &amp; Property
-        </a>
-        <?php endif; ?>
-        <?php endif; ?>
-
-        <?php // No page and no permission flag behind this one yet — it is a
-              // heading for what is coming, not a module anyone can open.
-              // Give it a real $can* gate here the day Warehousing ships. ?>
-        <div class="sidebar-section-title mt-2">Warehouse Management</div>
+        <?php // The 10 operational modules (Purchase Requisition, RFQ, PO,
+              // Receiving/Delivery Reports, Warehouse, Inventory, Stock
+              // Transfer, Issuance, Suppliers, Clients) land here one at a
+              // time as each phase of the structure plan ships — see
+              // CLAUDE.md's "Adding a new page" checklist. Placeholder while
+              // Phase 0 (this bootstrap) is the only thing built. ?>
+        <div class="sidebar-section-title mt-2">Operations</div>
         <div class="sidebar-link disabled">
-            <span class="nav-icon"><i class="fas fa-dolly"></i></span> Warehousing
-            <span class="soon-badge">Soon</span>
+            <span class="nav-icon"><i class="fas fa-dolly"></i></span> Modules
+            <span class="soon-badge">Coming soon</span>
         </div>
 
-        <?php if ($canSystemUsers || $canAccessLevels || $canSystemTools): ?>
+        <?php if ($canReports): ?>
+        <div class="sidebar-section-title mt-2">Reports</div>
+        <a href="reports.php" class="sidebar-link <?= ($activePage === 'reports') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Reports
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canSettings || $canAccessLevels || $isAdminTier): ?>
         <div class="sidebar-section-title mt-2">System</div>
 
-        <?php if ($canSystemUsers): ?>
+        <?php if ($canSettings): ?>
         <a href="settings.php" class="sidebar-link <?= ($activePage === 'settings') ? 'active' : '' ?>">
-            <span class="nav-icon"><i class="fas fa-users-gear"></i></span> System Users
+            <span class="nav-icon"><i class="fas fa-users-gear"></i></span> Users
         </a>
         <?php endif; ?>
 
@@ -170,13 +114,8 @@ $sbHail = ($sbFirst !== '' && mb_strlen($sbFirst) <= 10) ? 'Hi ' . $sbFirst . ',
             <span class="nav-icon"><i class="fas fa-user-shield"></i></span> Access Levels
         </a>
         <?php endif; ?>
-        <?php /* Access Levels removed: module access is now HRMIS's own
-                 system_access_level.purchase_order flag, managed in HRMIS
-                 rather than in a local table this app owned. */ ?>
-        <?php if ($canSystemTools): ?>
-        <a href="master_data.php" class="sidebar-link <?= ($activePage === 'master_data') ? 'active' : '' ?>">
-            <span class="nav-icon"><i class="fas fa-database"></i></span> Master Data
-        </a>
+
+        <?php if ($isAdminTier): ?>
         <a href="audit_logs.php" class="sidebar-link <?= ($activePage === 'audit_logs') ? 'active' : '' ?>">
             <span class="nav-icon"><i class="fas fa-clock-rotate-left"></i></span> Activity Log
         </a>

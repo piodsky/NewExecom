@@ -1,67 +1,108 @@
 <?php
-// My Profile — read-only.
-//
-// This used to read and write the local pyobasesystem_db `users` table. That
-// stopped making sense once login moved to HRMIS: a session carries an HRMIS
-// users.user_id, while the local table was keyed by its own ids, so the lookup
-// only ever matched by coincidence (for the one account whose ids happened to
-// collide). With the local database retired there is nothing to write to at
-// all, so the endpoint now reports what HRMIS knows and edits nothing.
-//
-// Account details — name, role, password — are maintained in HRMIS itself, via
-// Settings > User Management (api/hrmis_users.php), which is the directory
-// every other HRMIS module shares.
+// My Profile — self-service name/department/password/avatar for the
+// logged-in user's own local `users` row.
 require_once '../config.php';
 requireAuth();
 header('Content-Type: application/json');
 
 $user   = getCurrentUser();
+$db     = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
-    $poDb = getPoDB();
-
-    // Split the display name back into parts for the modal's name fields.
-    // HRMIS keeps the authoritative breakdown in tblpersonalinformation.
-    $first = $middle = $last = $suffix = '';
-    $department = '';
-    try {
-        $stmt = $poDb->prepare(
-            "SELECT u.Department, p.FirstName, p.MiddleName, p.SurName, p.NameExt
-             FROM users u
-             LEFT JOIN tblpersonalinformation p ON p.PIID = u.piid
-             WHERE u.user_id = ? LIMIT 1"
-        );
-        $stmt->execute([$user['id']]);
-        if ($row = $stmt->fetch()) {
-            $row        = fixLegacyEncodingDeep($row);
-            $first      = $row['FirstName']  ?? '';
-            $middle     = $row['MiddleName'] ?? '';
-            $last       = $row['SurName']    ?? '';
-            $suffix     = $row['NameExt']    ?? '';
-            $department = $row['Department'] ?? '';
-        }
-    } catch (Throwable $e) {
-        // Fall back to the session's display name — the modal still renders.
-        error_log('Profile lookup failed (non-fatal): ' . $e->getMessage());
-    }
-
-    jsonResponse(true, '', ['user' => [
-        'username'    => $user['username'],
-        'full_name'   => $user['full_name'],
-        'first_name'  => $first,
-        'middle_name' => $middle,
-        'last_name'   => $last,
-        'suffix'      => $suffix,
-        'department'  => $department,
-        'role'        => $user['role'],
-        'avatar_path' => null,   // avatars needed the retired local table
-        'is_active'   => 1,      // HRMIS has no inactive flag; a row can log in
-        'created_at'  => null,   // not tracked in HRMIS
-        'last_login'  => $user['last_login'] ?? null,
-        'read_only'   => true,
-    ]]);
+    $stmt = $db->prepare(
+        'SELECT username, full_name, first_name, middle_name, last_name, suffix,
+                department, role, avatar_path, is_active, created_at, last_login
+         FROM users WHERE id = ? LIMIT 1'
+    );
+    $stmt->execute([$user['id']]);
+    $row = $stmt->fetch();
+    if (!$row) jsonResponse(false, 'Account not found.');
+    jsonResponse(true, '', ['user' => $row]);
 }
 
-// Editing is intentionally unavailable — see the header comment.
-jsonResponse(false, 'Profile details are managed in HRMIS. Ask an administrator to update them via Settings > User Management.');
+if ($method === 'POST') {
+    $data = $_POST;
+    $firstName  = trim($data['first_name']  ?? '');
+    $middleName = trim($data['middle_name'] ?? '');
+    $lastName   = trim($data['last_name']   ?? '');
+    $suffix     = trim($data['suffix']      ?? '');
+    $department = trim($data['department']  ?? '');
+    $currentPw  = (string)($data['current_password'] ?? '');
+    $newPw      = (string)($data['new_password']      ?? '');
+    $confirmPw  = (string)($data['confirm_password']  ?? '');
+
+    if ($firstName === '' || $lastName === '') {
+        jsonResponse(false, 'First and last name are required.');
+    }
+
+    $stmt = $db->prepare('SELECT password, avatar_path FROM users WHERE id = ? LIMIT 1');
+    $stmt->execute([$user['id']]);
+    $row = $stmt->fetch();
+    if (!$row) jsonResponse(false, 'Account not found.');
+
+    // full_name is a derived, denormalized column — always recomputed here,
+    // never written directly. Sidebar/topbar/session/audit log all read it.
+    $fullName = trim(implode(' ', array_filter([$firstName, $middleName, $lastName, $suffix])));
+
+    $newPasswordHash = null;
+    if ($currentPw !== '' || $newPw !== '' || $confirmPw !== '') {
+        if (!password_verify($currentPw, $row['password'])) {
+            jsonResponse(false, 'Current password is incorrect.');
+        }
+        if ($newPw === '' || strlen($newPw) < 8) {
+            jsonResponse(false, 'New password must be at least 8 characters.');
+        }
+        if ($newPw !== $confirmPw) {
+            jsonResponse(false, 'New password and confirmation do not match.');
+        }
+        $newPasswordHash = password_hash($newPw, PASSWORD_DEFAULT);
+    }
+
+    $avatarPath = $row['avatar_path'];
+    if (!empty($_FILES['avatar']['tmp_name']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+        $tmp  = $_FILES['avatar']['tmp_name'];
+        $size = (int)$_FILES['avatar']['size'];
+        if ($size > 2 * 1024 * 1024) {
+            jsonResponse(false, 'Avatar image must be 2MB or smaller.');
+        }
+        // Validated by real image content, not just the file extension —
+        // never trust the client-supplied name or MIME header.
+        $info = @getimagesize($tmp);
+        $allowedMime = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        if ($info === false || !isset($allowedMime[$info['mime']])) {
+            jsonResponse(false, 'Avatar must be a valid JPG, PNG, or WEBP image.');
+        }
+        $ext      = $allowedMime[$info['mime']];
+        $filename = 'user_' . $user['id'] . '_' . time() . '.' . $ext;
+        $destDir  = __DIR__ . '/../uploads/avatars/';
+        if (!move_uploaded_file($tmp, $destDir . $filename)) {
+            jsonResponse(false, 'Failed to save the uploaded avatar.');
+        }
+        // Remove the previous avatar file, if any.
+        if ($avatarPath && strncmp($avatarPath, 'uploads/avatars/', 16) === 0) {
+            @unlink(__DIR__ . '/../' . $avatarPath);
+        }
+        $avatarPath = 'uploads/avatars/' . $filename;
+    }
+
+    $sql = 'UPDATE users SET first_name = ?, middle_name = ?, last_name = ?, suffix = ?,
+            full_name = ?, department = ?, avatar_path = ?';
+    $params = [$firstName, $middleName ?: null, $lastName, $suffix ?: null, $fullName, $department ?: null, $avatarPath];
+    if ($newPasswordHash !== null) {
+        $sql .= ', password = ?';
+        $params[] = $newPasswordHash;
+    }
+    $sql .= ' WHERE id = ?';
+    $params[] = $user['id'];
+    $db->prepare($sql)->execute($params);
+
+    $_SESSION['pbs_full_name']   = $fullName;
+    $_SESSION['pbs_avatar_path'] = $avatarPath;
+
+    logAudit('UPDATE_PROFILE', 'profile', 'Updated own profile' . ($newPasswordHash !== null ? ' (password changed)' : ''));
+
+    jsonResponse(true, 'Profile updated.', ['full_name' => $fullName, 'avatar_path' => $avatarPath]);
+}
+
+jsonResponse(false, 'Method not allowed.');

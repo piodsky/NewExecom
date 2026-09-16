@@ -1,6 +1,6 @@
 <?php
 require_once 'config.php';
-requireSystemToolsAdmin();
+requireRole(['super_admin', 'branch_admin']);
 $currentUser = getCurrentUser();
 $activePage  = 'audit_logs';
 ?>
@@ -10,7 +10,7 @@ $activePage  = 'audit_logs';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Activity Log | <?= e(APP_NAME) ?></title>
-<link rel="icon" type="image/png" href="image/po-32.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3EE%3C/text%3E%3C/svg%3E">
 <link href="vendor/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="vendor/css/dataTables.bootstrap5.min.css">
@@ -253,7 +253,5 @@ document.getElementById('alQuery').addEventListener('keydown', e => {
 
 loadLogs();
 </script>
-<?php include 'profile_modal.php'; ?>
-<?php include 'assistant.php'; ?>
-</body>
+<?php include 'profile_modal.php'; ?></body>
 </html>

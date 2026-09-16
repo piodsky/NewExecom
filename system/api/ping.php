@@ -24,12 +24,12 @@ header('Content-Type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 
-// getPoDB() handles a failure to CONNECT on its own — dbConnectionFailure()
+// getDB() handles a failure to CONNECT on its own — dbConnectionFailure()
 // exits with a 500 for an /api/ route. This catches the other case: a
 // connection that was established earlier in the process and has since died,
 // where the failure only surfaces on use.
 try {
-    getPoDB()->query('SELECT 1');
+    getDB()->query('SELECT 1');
 } catch (Throwable $e) {
     error_log('ping: database unreachable: ' . $e->getMessage());
     http_response_code(503);

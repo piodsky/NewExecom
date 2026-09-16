@@ -42,7 +42,7 @@ $tbAvatar  = avatarUrl($tbUser);
             <i class="fas fa-chevron-down up-caret"></i>
         </button>
         <div class="dropdown-menu dropdown-menu-end user-dropdown" aria-labelledby="topbarUserMenu">
-            <div class="ud-role"><?= e(hrmisRoleName($tbUser['role_id'] ?? null) ?? roleLabel($tbUser['role'])) ?></div>
+            <div class="ud-role"><?= e(roleLabel($tbUser['role'])) ?></div>
             <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="fas fa-user"></i> My Profile</a>
             <div class="dropdown-divider"></div>
             <a class="dropdown-item text-danger" href="#" onclick="confirmLogout();return false;"><i class="fas fa-sign-out-alt"></i> Logout</a>
