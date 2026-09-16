@@ -59,7 +59,7 @@ $sbHail = ($sbFirst !== '' && mb_strlen($sbFirst) <= 10) ? 'Hi ' . $sbFirst . ',
 <nav class="sidebar" id="sidebar">
     <!-- Brand -->
     <a href="dashboard.php" class="sidebar-brand text-decoration-none">
-        <div class="brand-icon" style="display:flex;align-items:center;justify-content:center;font-weight:800;">E</div>
+        <div class="brand-icon"><img src="image/execom_icon.png" alt="EXECOM"></div>
         <div>
             <div class="brand-name"><?= e(APP_NAME) ?></div>
             <div class="brand-sub">Logistics System</div>

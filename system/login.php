@@ -14,7 +14,7 @@ $expired = isset($_GET['expired']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login | <?= e(APP_NAME) ?></title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3EE%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="image/execom_icon.png">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 
 <style>
@@ -407,7 +407,7 @@ $expired = isset($_GET['expired']);
       <div class="ls-ring ls-ring-mid"></div>
       <div class="ls-ring ls-ring-inner"></div>
       <div class="ls-logo-circle">
-        <span style="font-size:2.5rem;font-weight:800;color:#1d4ed8;">E</span>
+        <img src="image/execom_icon.png" alt="EXECOM" style="width:70%;height:70%;object-fit:contain;">
       </div>
     </div>
     <div class="ls-city">EXECOM Computer Sales &amp; Services</div>
@@ -446,7 +446,7 @@ $expired = isset($_GET['expired']);
 <div class="brand-panel">
   <div class="brand-text">
     <div class="brand-head">
-      <div class="brand-name"><?= e(APP_NAME) ?></div>
+      <img src="image/execom_logo.png" alt="EXECOM Computer Sales & Services" style="width:100%;max-width:340px;height:auto;">
     </div>
     <div class="brand-title">Private Company Logistics System</div>
     <div class="brand-rule"></div>
@@ -538,7 +538,7 @@ $expired = isset($_GET['expired']);
     </div>
 
     <div class="footer-note">
-      &copy; <?= date('Y') ?> City Government of Malaybalay<br>
+      &copy; <?= date('Y') ?> EXECOM Computer Sales &amp; Services<br>
       All rights reserved.
     </div>
 
@@ -549,7 +549,7 @@ $expired = isset($_GET['expired']);
 
 <!-- ═══════════════ PAGE FOOTER ═══════════════ -->
 <div class="page-footer">
-  <div><span class="pf-brand"><?= e(APP_NAME) ?></span> &mdash; Purchase Order Management System of the City Government of Malaybalay</div>
+  <div><span class="pf-brand"><?= e(APP_NAME) ?></span> &mdash; Private Company Logistics System of EXECOM Computer Sales &amp; Services</div>
   <div class="pf-links">
     <span>Purchase Orders</span>
     <span>Suppliers &amp; Master Data</span>
