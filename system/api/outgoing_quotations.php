@@ -201,6 +201,7 @@ if ($method === 'POST') {
         }
 
         logAudit('CONVERT_QUOTATION_TO_PO', 'outgoing_quotations', "{$quotationNumber} -> {$poNumber}");
+        notifyRoles(['branch_admin', 'super_admin'], 'Client order awarded', "{$quotationNumber} converted to {$poNumber} for {$q['client_name']}", 'po_outgoing.php');
         jsonResponse(true, "Converted to Outgoing PO: {$poNumber}", ['po_number' => $poNumber]);
     }
 

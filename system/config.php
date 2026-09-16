@@ -313,6 +313,35 @@ function mintDocNumber(PDO $db, int $branchId, string $docType): string {
     return sprintf('%s-%s-%d-%04d', $code, $docType, $year, $seq);
 }
 
+// Fires a low-stock notification when a bulk item's quantity_on_hand at a
+// branch has just dropped to or below its reorder_level. Called after
+// anything that decrements inventory_stock (Issuance, Stock Transfer ship).
+// No "already notified" flag — a repeat sale while still below the
+// threshold fires again, which is fine: each recipient's own read state
+// (notification_reads) is what actually controls whether it nags them.
+function checkLowStock(PDO $db, int $itemId, int $branchId): void {
+    try {
+        $stmt = $db->prepare(
+            'SELECT s.quantity_on_hand, s.reorder_level, i.name AS item_name, b.name AS branch_name
+             FROM inventory_stock s JOIN items i ON i.id = s.item_id JOIN branches b ON b.id = s.branch_id
+             WHERE s.item_id = ? AND s.branch_id = ?'
+        );
+        $stmt->execute([$itemId, $branchId]);
+        $row = $stmt->fetch();
+        if (!$row || (float)$row['reorder_level'] <= 0) return;
+        if ((float)$row['quantity_on_hand'] > (float)$row['reorder_level']) return;
+
+        notifyRoles(
+            ['branch_admin', 'super_admin'],
+            'Low stock alert',
+            "{$row['item_name']} at {$row['branch_name']} is down to {$row['quantity_on_hand']} (reorder level {$row['reorder_level']}).",
+            'inventory.php'
+        );
+    } catch (Throwable $e) {
+        error_log('checkLowStock failed: ' . $e->getMessage());
+    }
+}
+
 // ── Notifications ──
 // Broadcast per-role (notifyRoles(['branch_admin'], ...)); per-user read
 // state tracked in notification_reads so each recipient dismisses

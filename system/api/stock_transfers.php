@@ -210,6 +210,10 @@ if ($method === 'POST') {
             $db->prepare("UPDATE stock_transfers SET status = 'in_transit', approved_by = ? WHERE transfer_number = ?")
                ->execute([$user['id'], $transferNumber]);
             $db->commit();
+
+            foreach (array_unique(array_column(array_filter($t['items'], fn($l) => $l['item_id']), 'item_id')) as $touchedItemId) {
+                checkLowStock($db, (int)$touchedItemId, (int)$t['from_branch_id']);
+            }
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
             error_log('Stock transfer ship failed: ' . $e->getMessage());
@@ -249,6 +253,7 @@ if ($method === 'POST') {
         }
 
         logAudit('RECEIVE_STOCK_TRANSFER', 'stock_transfer', "Received {$transferNumber}");
+        notifyRoles(['branch_admin', 'super_admin'], 'Stock transfer received', "{$transferNumber} has arrived at {$t['to_branch_name']}", 'stock_transfers.php');
         jsonResponse(true, 'Transfer received into branch inventory.');
     }
 

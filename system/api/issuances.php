@@ -219,6 +219,10 @@ if ($method === 'POST') {
             }
             if ($poNumber) recomputePoOutgoingStatus($db, $poNumber);
             $db->commit();
+
+            foreach (array_unique(array_column(array_filter($prepared, fn($p) => $p['item_id']), 'item_id')) as $touchedItemId) {
+                checkLowStock($db, (int)$touchedItemId, $branchId);
+            }
         } catch (Throwable $e) {
             $db->rollBack();
             error_log('Issuance create failed: ' . $e->getMessage());

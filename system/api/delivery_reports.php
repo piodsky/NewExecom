@@ -135,8 +135,10 @@ if ($method === 'POST') {
             if (($totals[$itemId] ?? 0) + 0.0001 < $orderedQty) { $fullyCovered = false; break; }
         }
 
+        $justCompleted = false;
         if ($fullyCovered && $receivedBy !== '' && $dateAccepted && in_array($po['status'], ['delivered', 'partially_delivered', 'open'], true)) {
             $db->prepare("UPDATE po_outgoing SET status = 'completed' WHERE po_number = ?")->execute([$poNumber]);
+            $justCompleted = true;
         }
 
         $db->commit();
@@ -147,6 +149,9 @@ if ($method === 'POST') {
     }
 
     logAudit('CREATE_DR', 'delivery_reports', "Posted {$drNumber} against {$poNumber}");
+    if ($justCompleted) {
+        notifyRoles(['branch_admin', 'super_admin'], 'Order completed', "{$poNumber} signed for by {$receivedBy} and closed", 'po_outgoing.php');
+    }
     jsonResponse(true, 'Delivery report posted.', ['dr_number' => $drNumber]);
 }
 

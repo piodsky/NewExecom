@@ -171,6 +171,7 @@ if ($method === 'POST') {
         if ($po['status'] !== 'delivered') jsonResponse(false, 'Only a fully delivered PO can be marked completed.');
         $db->prepare("UPDATE po_outgoing SET status = 'completed' WHERE po_number = ?")->execute([$poNumber]);
         logAudit('COMPLETE_PO_OUTGOING', 'po_outgoing', "Completed {$poNumber}");
+        notifyRoles(['branch_admin', 'super_admin'], 'Order completed', "{$poNumber} for {$po['client_name']} is fully delivered and closed", 'po_outgoing.php');
         jsonResponse(true, 'Purchase Order marked completed.');
     }
 

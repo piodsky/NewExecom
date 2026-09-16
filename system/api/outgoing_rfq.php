@@ -114,6 +114,7 @@ if ($method === 'POST') {
         }
 
         logAudit('CREATE_OUTGOING_RFQ', 'outgoing_rfq', "Logged {$rfqNumber} from {$client['name']}");
+        notifyRoles(['branch_admin', 'super_admin'], 'Canvass received', "{$rfqNumber} from {$client['name']} needs a quotation", 'outgoing_rfq.php');
         jsonResponse(true, 'RFQ logged.', ['rfq_number' => $rfqNumber]);
     }
 

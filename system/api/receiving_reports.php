@@ -166,6 +166,9 @@ if ($method === 'POST') {
     }
 
     logAudit('CREATE_RR', 'receiving_reports', "Posted {$rrNumber} against {$poNumber}");
+    if ($fullyReceived) {
+        notifyRoles(['branch_admin', 'super_admin'], 'Purchase Order fully received', "{$poNumber} from {$po['supplier_name']} is complete", 'po_internal.php');
+    }
     jsonResponse(true, 'Receiving report posted.', ['rr_number' => $rrNumber]);
 }
 

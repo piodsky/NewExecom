@@ -224,6 +224,7 @@ async function viewPo(poNumber) {
     } else if (isAdminTier && po.status === 'sent') {
         footer += `<button class="btn btn-danger btn-sm" onclick="poAction('${po.po_number}','cancel')">Cancel</button>`;
     }
+    footer += `<a href="print_po_internal.php?po_number=${encodeURIComponent(po.po_number)}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fas fa-print me-1"></i>Print</a>`;
     document.getElementById('poViewFooter').innerHTML = footer || '<span class="text-muted small">No actions available.</span>';
     new bootstrap.Modal(document.getElementById('poViewModal')).show();
 }

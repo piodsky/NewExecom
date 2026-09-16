@@ -259,6 +259,7 @@ async function viewOq(quotationNumber) {
         footer = `<button class="btn btn-danger btn-sm me-auto" onclick="oqAction('${q.quotation_number}','cancel')">Cancel</button>
                    <button class="btn btn-primary-app btn-sm" onclick="openConvertModal('${q.quotation_number}')">Convert to PO</button>`;
     }
+    footer += `<a href="print_quotation.php?quotation_number=${encodeURIComponent(q.quotation_number)}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fas fa-print me-1"></i>Print</a>`;
     document.getElementById('oqViewFooter').innerHTML = footer || '<span class="text-muted small">No actions available.</span>';
     new bootstrap.Modal(document.getElementById('oqViewModal')).show();
 }

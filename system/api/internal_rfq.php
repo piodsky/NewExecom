@@ -257,6 +257,7 @@ if ($method === 'POST') {
         }
 
         logAudit('CONVERT_RFQ_TO_PO', 'internal_rfq', "{$rfqNumber} -> " . implode(', ', $poNumbers));
+        notifyRoles(['branch_admin', 'super_admin'], 'Internal PO created', "{$rfqNumber} converted to " . implode(', ', $poNumbers), 'po_internal.php');
         jsonResponse(true, 'Converted to Internal PO' . (count($poNumbers) > 1 ? 's' : '') . ': ' . implode(', ', $poNumbers), ['po_numbers' => $poNumbers]);
     }
 
