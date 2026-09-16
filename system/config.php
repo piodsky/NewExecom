@@ -218,8 +218,11 @@ function requireBranchAccess(?int $branchId): void {
 // Reports, Inventory, Stock Transfer, Issuance, Suppliers, Clients, Cost/
 // Profit Reports) gets its own key added here as that page is built.
 const ACCESS_MODULES = [
-    'reports'  => 'Reports',
-    'settings' => 'User Management',
+    'suppliers' => 'Supplier Management',
+    'clients'   => 'Client Management',
+    'items'     => 'Item Catalog',
+    'reports'   => 'Reports',
+    'settings'  => 'User Management',
 ];
 
 // Resolution order: per-account override (user_module_access) > per-role

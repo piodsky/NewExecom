@@ -6,6 +6,10 @@ $initials  = strtoupper(substr($navUser['full_name'], 0, 1));
 $navAvatar = avatarUrl($navUser);
 
 $moduleAccess    = getEffectiveModuleAccess($navUser['id'] ?? null, $navUser['role']);
+$canSuppliers    = $moduleAccess['suppliers'] ?? true;
+$canClients      = $moduleAccess['clients'] ?? true;
+$canItems        = $moduleAccess['items'] ?? true;
+$canBranches     = $navUser['role'] === 'super_admin';
 $canReports      = $moduleAccess['reports'] ?? true;
 // System section: settings (user management) is gated by ACCESS_MODULES;
 // Access Levels and Audit Log are admin-tier only, same rank rule everywhere
@@ -81,12 +85,39 @@ $sbHail = ($sbFirst !== '' && mb_strlen($sbFirst) <= 10) ? 'Hi ' . $sbFirst . ',
             <span class="nav-icon"><i class="fas fa-th-large"></i></span> Dashboard
         </a>
 
-        <?php // The 10 operational modules (Purchase Requisition, RFQ, PO,
-              // Receiving/Delivery Reports, Warehouse, Inventory, Stock
-              // Transfer, Issuance, Suppliers, Clients) land here one at a
-              // time as each phase of the structure plan ships — see
-              // CLAUDE.md's "Adding a new page" checklist. Placeholder while
-              // Phase 0 (this bootstrap) is the only thing built. ?>
+        <?php if ($canBranches || $canSuppliers || $canClients || $canItems): ?>
+        <div class="sidebar-section-title mt-2">Master Data</div>
+
+        <?php if ($canBranches): ?>
+        <a href="branches.php" class="sidebar-link <?= ($activePage === 'branches') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-store"></i></span> Branches
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canSuppliers): ?>
+        <a href="suppliers.php" class="sidebar-link <?= ($activePage === 'suppliers') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-truck-field"></i></span> Suppliers
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canClients): ?>
+        <a href="clients.php" class="sidebar-link <?= ($activePage === 'clients') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-building-user"></i></span> Clients
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canItems): ?>
+        <a href="items.php" class="sidebar-link <?= ($activePage === 'items') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-boxes-stacked"></i></span> Item Catalog
+        </a>
+        <?php endif; ?>
+        <?php endif; ?>
+
+        <?php // The remaining transactional modules (Purchase Requisition,
+              // RFQ, PO, Receiving/Delivery Reports, Warehouse, Inventory,
+              // Stock Transfer, Issuance) land here one at a time as each
+              // phase of the structure plan ships — see CLAUDE.md's "Adding
+              // a new page" checklist. ?>
         <div class="sidebar-section-title mt-2">Operations</div>
         <div class="sidebar-link disabled">
             <span class="nav-icon"><i class="fas fa-dolly"></i></span> Modules
