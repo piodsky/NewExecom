@@ -11,6 +11,8 @@ $canInternalRfq  = $moduleAccess['internal_rfq'] ?? true;
 $canPoInternal   = $moduleAccess['po_internal'] ?? true;
 $canReceiving    = $moduleAccess['receiving_reports'] ?? true;
 $canInventory    = $moduleAccess['inventory'] ?? true;
+$canStockTransfer = $moduleAccess['stock_transfer'] ?? true;
+$canIssuance      = $moduleAccess['issuance'] ?? true;
 $canSuppliers    = $moduleAccess['suppliers'] ?? true;
 $canClients      = $moduleAccess['clients'] ?? true;
 $canItems        = $moduleAccess['items'] ?? true;
@@ -152,13 +154,21 @@ $sbHail = ($sbFirst !== '' && mb_strlen($sbFirst) <= 10) ? 'Hi ' . $sbFirst . ',
         <?php endif; ?>
         <?php endif; ?>
 
-        <?php // Stock Transfer + Issuance land here in Phase 3, following
-              // CLAUDE.md's "Adding a new page" checklist. ?>
+        <?php if ($canStockTransfer || $canIssuance): ?>
         <div class="sidebar-section-title mt-2">Branch Operations</div>
-        <div class="sidebar-link disabled">
-            <span class="nav-icon"><i class="fas fa-dolly"></i></span> Stock Transfer &amp; Issuance
-            <span class="soon-badge">Coming soon</span>
-        </div>
+
+        <?php if ($canStockTransfer): ?>
+        <a href="stock_transfers.php" class="sidebar-link <?= ($activePage === 'stock_transfers') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-dolly"></i></span> Stock Transfer
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canIssuance): ?>
+        <a href="issuances.php" class="sidebar-link <?= ($activePage === 'issuances') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-cash-register"></i></span> Issuance (POS)
+        </a>
+        <?php endif; ?>
+        <?php endif; ?>
 
         <?php if ($canReports): ?>
         <div class="sidebar-section-title mt-2">Reports</div>
