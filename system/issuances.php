@@ -73,6 +73,8 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
             <div class="col-6"><label class="form-label">Branch</label><input type="text" class="form-control" value="<?= e($currentUser['branch_name'] ?? '') ?>" disabled></div>
             <?php endif; ?>
             <div class="col-6"><label class="form-label">Client</label><select class="form-select" id="issClient"><option value="">Walk-in / Retail</option></select></div>
+            <div class="col-12"><label class="form-label">Fulfilling Outgoing PO (optional)</label>
+                <select class="form-select" id="issPo" onchange="onIssPoPicked()"><option value="">None — walk-in / retail sale</option></select></div>
           </div>
 
           <div id="issItemsWrap" style="display:<?= $isSuperAdmin ? 'none' : '' ?>">
@@ -111,7 +113,7 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
 const isAdminTier  = <?= $isAdminTier ? 'true' : 'false' ?>;
 const isSuperAdmin = <?= $isSuperAdmin ? 'true' : 'false' ?>;
 const myBranchId   = <?= $currentUser['branch_id'] !== null ? (int)$currentUser['branch_id'] : 'null' ?>;
-let issCache = [], currentAvail = { units: [], stock: [] };
+let issCache = [], currentAvail = { units: [], stock: [] }, poItemFilter = null;
 
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const peso = n => '₱' + Number(n || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
@@ -154,8 +156,11 @@ async function openIssModal() {
     document.getElementById('issLineRows').innerHTML = '';
     document.getElementById('issAvailList').innerHTML = '';
     document.getElementById('issTotal').textContent = peso(0);
+    document.getElementById('issClient').disabled = false;
     currentAvail = { units: [], stock: [] };
+    poItemFilter = null;
     await loadClientOptions();
+    await loadPoOptions();
 
     if (isSuperAdmin) {
         document.getElementById('issItemsWrap').style.display = 'none';
@@ -164,6 +169,37 @@ async function openIssModal() {
         await fetchAvailable(myBranchId);
     }
     new bootstrap.Modal(document.getElementById('issModal')).show();
+}
+
+async function loadPoOptions() {
+    const res  = await fetch('api/po_outgoing.php?open_for_issuance=1');
+    const data = await res.json();
+    const pos = data.success ? data.pos : [];
+    document.getElementById('issPo').innerHTML = '<option value="">None — walk-in / retail sale</option>' +
+        pos.map(p => `<option value="${p.po_number}">${escapeHtml(p.po_number)} — ${escapeHtml(p.client_name)}</option>`).join('');
+}
+
+async function onIssPoPicked() {
+    const poNumber = document.getElementById('issPo').value;
+    document.getElementById('issLineRows').innerHTML = '';
+    if (!poNumber) {
+        poItemFilter = null;
+        document.getElementById('issClient').disabled = false;
+        return renderAvailable();
+    }
+    const res  = await fetch('api/po_outgoing.php?id=' + encodeURIComponent(poNumber));
+    const data = await res.json();
+    if (!data.success) return alert(data.message);
+    poItemFilter = data.po.items.filter(i => i.item_id).map(i => i.item_id);
+
+    // Fulfilling a specific client order — that client is fixed, not a choice.
+    await loadClientOptions();
+    const clientSelect = document.getElementById('issClient');
+    for (const opt of clientSelect.options) {
+        if (opt.textContent === data.po.client_name) { clientSelect.value = opt.value; break; }
+    }
+    clientSelect.disabled = true;
+    renderAvailable();
 }
 
 async function onBranchPicked() {
@@ -178,18 +214,24 @@ async function fetchAvailable(branchId) {
     const data = await res.json();
     if (!data.success) return alert(data.message);
     currentAvail = data;
+    renderAvailable();
+}
+
+function renderAvailable() {
     document.getElementById('issLineRows').innerHTML = '';
-    const unitRows = currentAvail.units.map(u => `
+    const inFilter = itemId => poItemFilter === null || poItemFilter.includes(itemId);
+    const unitRows = currentAvail.units.filter(u => inFilter(u.item_id)).map(u => `
         <div class="iss-avail-row">
             <span>${escapeHtml(u.item_name)} <span class="text-muted">(SN: ${escapeHtml(u.serial_number)})</span></span>
             <button type="button" class="btn btn-sm btn-light" onclick='addIssLine("unit", ${JSON.stringify(u).replace(/'/g,"&#39;")})'><i class="fas fa-plus"></i> Add</button>
         </div>`).join('');
-    const stockRows = currentAvail.stock.map(s => `
+    const stockRows = currentAvail.stock.filter(s => inFilter(s.item_id)).map(s => `
         <div class="iss-avail-row">
             <span>${escapeHtml(s.item_name)} <span class="text-muted">(${s.quantity_on_hand} ${escapeHtml(s.unit)} on hand)</span></span>
             <button type="button" class="btn btn-sm btn-light" onclick='addIssLine("stock", ${JSON.stringify(s).replace(/'/g,"&#39;")})'><i class="fas fa-plus"></i> Add</button>
         </div>`).join('');
-    document.getElementById('issAvailList').innerHTML = (unitRows + stockRows) || '<div class="text-muted small">No sellable stock at this branch.</div>';
+    document.getElementById('issAvailList').innerHTML = (unitRows + stockRows) ||
+        `<div class="text-muted small">${poItemFilter ? 'None of this PO\'s items are currently in stock at this branch.' : 'No sellable stock at this branch.'}</div>`;
 }
 
 function addIssLine(kind, item) {
@@ -234,6 +276,7 @@ document.getElementById('issForm').addEventListener('submit', async (e) => {
 
     const payload = {
         client_id: document.getElementById('issClient').value || null,
+        po_number: document.getElementById('issPo').value || null,
         items,
     };
     if (isSuperAdmin) payload.branch_id = document.getElementById('issBranch').value;
@@ -257,6 +300,7 @@ async function viewIssuance(issuanceNumber) {
             <div class="col-6"><strong>Client:</strong> ${escapeHtml(iss.client_name || 'Walk-in')}</div>
             <div class="col-6"><strong>Issued By:</strong> ${escapeHtml(iss.issued_by_name)}</div>
             <div class="col-6"><strong>Date:</strong> ${iss.date_created ? iss.date_created.slice(0,10) : '—'}</div>
+            ${iss.po_number ? `<div class="col-12"><strong>Fulfilling PO:</strong> ${escapeHtml(iss.po_number)}</div>` : ''}
         </div>
         <table class="app-table table">
             <thead><tr><th>Item</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>

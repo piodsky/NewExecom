@@ -306,6 +306,7 @@ CREATE TABLE outgoing_rfq (
     client_address VARCHAR(255) NULL,
     received_date  DATE         NULL,
     due_date       DATE         NULL,
+    status         ENUM('open','quoted','converted','cancelled') NOT NULL DEFAULT 'open',
     created_by     INT          NOT NULL,
     is_deleted     TINYINT(1)   NOT NULL DEFAULT 0,
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -333,13 +334,19 @@ CREATE TABLE outgoing_quotations (
     quotation_number     VARCHAR(30) NOT NULL UNIQUE,
     rfq_number           VARCHAR(30) NULL,
     branch_id            INT         NOT NULL,
+    client_id            INT         NULL,
+    client_name          VARCHAR(255) NULL,   -- snapshot, same pattern as every other outgoing document
+    client_address       VARCHAR(255) NULL,
     price_validity_days  INT         NULL,
     lead_time            VARCHAR(100) NULL,
+    total_amount         DECIMAL(15,2) NOT NULL DEFAULT 0,
+    status               ENUM('active','converted','cancelled') NOT NULL DEFAULT 'active',
     prepared_by          INT         NULL,
     is_deleted           TINYINT(1)  NOT NULL DEFAULT 0,
     created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (rfq_number) REFERENCES outgoing_rfq(rfq_number),
     FOREIGN KEY (branch_id) REFERENCES branches(id),
+    FOREIGN KEY (client_id) REFERENCES clients(id),
     FOREIGN KEY (prepared_by) REFERENCES users(id),
     INDEX idx_oq_branch (branch_id)
 );

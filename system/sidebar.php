@@ -13,6 +13,10 @@ $canReceiving    = $moduleAccess['receiving_reports'] ?? true;
 $canInventory    = $moduleAccess['inventory'] ?? true;
 $canStockTransfer = $moduleAccess['stock_transfer'] ?? true;
 $canIssuance      = $moduleAccess['issuance'] ?? true;
+$canOutgoingRfq   = $moduleAccess['outgoing_rfq'] ?? true;
+$canOutgoingQuotations = $moduleAccess['outgoing_quotations'] ?? true;
+$canPoOutgoing    = $moduleAccess['po_outgoing'] ?? true;
+$canDeliveryReports = $moduleAccess['delivery_reports'] ?? true;
 $canSuppliers    = $moduleAccess['suppliers'] ?? true;
 $canClients      = $moduleAccess['clients'] ?? true;
 $canItems        = $moduleAccess['items'] ?? true;
@@ -166,6 +170,34 @@ $sbHail = ($sbFirst !== '' && mb_strlen($sbFirst) <= 10) ? 'Hi ' . $sbFirst . ',
         <?php if ($canIssuance): ?>
         <a href="issuances.php" class="sidebar-link <?= ($activePage === 'issuances') ? 'active' : '' ?>">
             <span class="nav-icon"><i class="fas fa-cash-register"></i></span> Issuance (POS)
+        </a>
+        <?php endif; ?>
+        <?php endif; ?>
+
+        <?php if ($canOutgoingRfq || $canOutgoingQuotations || $canPoOutgoing || $canDeliveryReports): ?>
+        <div class="sidebar-section-title mt-2">Outgoing Sales</div>
+
+        <?php if ($canOutgoingRfq): ?>
+        <a href="outgoing_rfq.php" class="sidebar-link <?= ($activePage === 'outgoing_rfq') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-inbox"></i></span> RFQ (Outgoing)
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canOutgoingQuotations): ?>
+        <a href="outgoing_quotations.php" class="sidebar-link <?= ($activePage === 'outgoing_quotations') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Quotations (Outgoing)
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canPoOutgoing): ?>
+        <a href="po_outgoing.php" class="sidebar-link <?= ($activePage === 'po_outgoing') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-file-contract"></i></span> Purchase Order (Outgoing)
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canDeliveryReports): ?>
+        <a href="delivery_reports.php" class="sidebar-link <?= ($activePage === 'delivery_reports') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-truck"></i></span> Delivery Reports
         </a>
         <?php endif; ?>
         <?php endif; ?>

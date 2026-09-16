@@ -42,6 +42,45 @@ function loadIssuance(PDO $db, string $issuanceNumber): ?array {
     return $iss;
 }
 
+// Rolls a linked Outgoing PO's status forward or back based on how much of
+// it has actually left the branch so far. Never touches a PO that's already
+// completed or cancelled — completed is Delivery Report's call to make, and
+// a cancelled PO shouldn't come back to life just because a void ran.
+function recomputePoOutgoingStatus(PDO $db, string $poNumber): void {
+    $poStmt = $db->prepare('SELECT status FROM po_outgoing WHERE po_number = ? AND is_deleted = 0');
+    $poStmt->execute([$poNumber]);
+    $status = $poStmt->fetchColumn();
+    if ($status === false || in_array($status, ['completed', 'cancelled'], true)) return;
+
+    $orderedStmt = $db->prepare('SELECT item_id, SUM(quantity) AS qty FROM po_outgoing_items WHERE po_number = ? AND is_deleted = 0 AND item_id IS NOT NULL GROUP BY item_id');
+    $orderedStmt->execute([$poNumber]);
+    $ordered = [];
+    foreach ($orderedStmt->fetchAll() as $row) { $ordered[$row['item_id']] = (float)$row['qty']; }
+    if (!$ordered) return;
+
+    $issuedStmt = $db->prepare(
+        "SELECT COALESCE(ii.item_id, u.item_id) AS item_id, SUM(ii.quantity) AS qty
+         FROM issuance_items ii
+         JOIN issuances iss ON iss.issuance_number = ii.issuance_number
+         LEFT JOIN inventory_units u ON u.id = ii.inventory_unit_id
+         WHERE iss.po_number = ? AND ii.is_deleted = 0 AND iss.is_deleted = 0
+         GROUP BY COALESCE(ii.item_id, u.item_id)"
+    );
+    $issuedStmt->execute([$poNumber]);
+    $issued = [];
+    foreach ($issuedStmt->fetchAll() as $row) { $issued[$row['item_id']] = (float)$row['qty']; }
+
+    $anyIssued = false; $fullyIssued = true;
+    foreach ($ordered as $itemId => $qty) {
+        $got = $issued[$itemId] ?? 0;
+        if ($got > 0) $anyIssued = true;
+        if ($got + 0.0001 < $qty) $fullyIssued = false;
+    }
+
+    $newStatus = $fullyIssued ? 'delivered' : ($anyIssued ? 'partially_delivered' : 'open');
+    $db->prepare('UPDATE po_outgoing SET status = ? WHERE po_number = ?')->execute([$newStatus, $poNumber]);
+}
+
 if ($method === 'GET') {
     $id = trim($_GET['id'] ?? '');
     if ($id !== '') {
@@ -99,7 +138,26 @@ if ($method === 'POST') {
         if (!$branchId) jsonResponse(false, 'Branch is required.');
         if ($scope !== null && $branchId !== $scope) jsonResponse(false, 'Access denied for that branch.');
 
-        $clientId = !empty($data['client_id']) ? (int)$data['client_id'] : null;
+        // Fulfilling a specific Outgoing PO (a government/client order) rather
+        // than a walk-in sale — restricts lines to that PO's own catalog
+        // items and, once posted, rolls the PO's status forward.
+        $poNumber = trim($data['po_number'] ?? '') ?: null;
+        $poItemIds = null;
+        if ($poNumber) {
+            $poStmt = $db->prepare('SELECT * FROM po_outgoing WHERE po_number = ? AND is_deleted = 0');
+            $poStmt->execute([$poNumber]);
+            $poRow = $poStmt->fetch();
+            if (!$poRow) jsonResponse(false, 'Purchase Order not found.');
+            if ($scope !== null && (int)$poRow['branch_id'] !== $scope) jsonResponse(false, 'Access denied for that branch.');
+            if ((int)$poRow['branch_id'] !== $branchId) jsonResponse(false, 'That PO belongs to a different branch.');
+            if (!in_array($poRow['status'], ['open', 'partially_delivered'], true)) jsonResponse(false, 'This Purchase Order is not open for issuance.');
+
+            $poItemStmt = $db->prepare('SELECT DISTINCT item_id FROM po_outgoing_items WHERE po_number = ? AND is_deleted = 0 AND item_id IS NOT NULL');
+            $poItemStmt->execute([$poNumber]);
+            $poItemIds = array_map('intval', $poItemStmt->fetchAll(PDO::FETCH_COLUMN));
+        }
+
+        $clientId = !empty($data['client_id']) ? (int)$data['client_id'] : ($poNumber ? $poRow['client_id'] : null);
         if ($clientId) {
             $clientCheck = $db->prepare('SELECT COUNT(*) FROM clients WHERE id = ? AND is_active = 1');
             $clientCheck->execute([$clientId]);
@@ -109,7 +167,7 @@ if ($method === 'POST') {
         $lines = is_array($data['items'] ?? null) ? $data['items'] : [];
         if (!$lines) jsonResponse(false, 'At least one item is required.');
 
-        $unitCheck  = $db->prepare("SELECT u.id, i.name, u.unit_cost FROM inventory_units u JOIN items i ON i.id = u.item_id WHERE u.id = ? AND u.branch_id = ? AND u.status = 'in_stock' AND u.is_deleted = 0");
+        $unitCheck  = $db->prepare("SELECT u.id, u.item_id, i.name, u.unit_cost FROM inventory_units u JOIN items i ON i.id = u.item_id WHERE u.id = ? AND u.branch_id = ? AND u.status = 'in_stock' AND u.is_deleted = 0");
         $stockCheck = $db->prepare('SELECT s.quantity_on_hand, i.name FROM inventory_stock s JOIN items i ON i.id = s.item_id WHERE s.item_id = ? AND s.branch_id = ?');
 
         $prepared = [];
@@ -122,10 +180,12 @@ if ($method === 'POST') {
                 $unitCheck->execute([$unitId, $branchId]);
                 $unit = $unitCheck->fetch();
                 if (!$unit) jsonResponse(false, 'One of the selected units is no longer available at this branch.');
+                if ($poItemIds !== null && !in_array((int)$unit['item_id'], $poItemIds, true)) jsonResponse(false, 'That unit is not one of the items ordered on this PO.');
                 $prepared[] = ['inventory_unit_id' => $unitId, 'item_id' => null, 'quantity' => 1, 'unit_price' => $unitPrice, 'total' => $unitPrice, 'label' => $unit['name']];
             } elseif (!empty($l['item_id']) && (float)($l['quantity'] ?? 0) > 0) {
                 $itemId = (int)$l['item_id'];
                 $qty    = (float)$l['quantity'];
+                if ($poItemIds !== null && !in_array($itemId, $poItemIds, true)) jsonResponse(false, 'That item is not one of the items ordered on this PO.');
                 $stockCheck->execute([$itemId, $branchId]);
                 $stock = $stockCheck->fetch();
                 if (!$stock || (float)$stock['quantity_on_hand'] < $qty) jsonResponse(false, 'Not enough stock on hand for one of the selected items.');
@@ -140,9 +200,9 @@ if ($method === 'POST') {
             $total = array_sum(array_column($prepared, 'total'));
 
             $db->prepare(
-                'INSERT INTO issuances (issuance_number, branch_id, client_id, issued_by, date_created, total_amount)
-                 VALUES (?,?,?,?,NOW(),?)'
-            )->execute([$issuanceNumber, $branchId, $clientId, $user['id'], $total]);
+                'INSERT INTO issuances (issuance_number, branch_id, client_id, po_number, issued_by, date_created, total_amount)
+                 VALUES (?,?,?,?,?,NOW(),?)'
+            )->execute([$issuanceNumber, $branchId, $clientId, $poNumber, $user['id'], $total]);
 
             $itemStmt = $db->prepare(
                 'INSERT INTO issuance_items (issuance_number, inventory_unit_id, item_id, quantity, unit_price, total_price)
@@ -157,6 +217,7 @@ if ($method === 'POST') {
                        ->execute([$p['quantity'], $p['item_id'], $branchId]);
                 }
             }
+            if ($poNumber) recomputePoOutgoingStatus($db, $poNumber);
             $db->commit();
         } catch (Throwable $e) {
             $db->rollBack();
@@ -189,6 +250,7 @@ if ($method === 'POST') {
                 }
             }
             $db->prepare('UPDATE issuances SET is_deleted = 1 WHERE issuance_number = ?')->execute([$issuanceNumber]);
+            if ($iss['po_number']) recomputePoOutgoingStatus($db, $iss['po_number']);
             $db->commit();
         } catch (Throwable $e) {
             if ($db->inTransaction()) $db->rollBack();
