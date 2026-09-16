@@ -22,6 +22,7 @@ $canClients      = $moduleAccess['clients'] ?? true;
 $canItems        = $moduleAccess['items'] ?? true;
 $canBranches     = $navUser['role'] === 'super_admin';
 $canReports      = $moduleAccess['reports'] ?? true;
+$canCostProfitReports = $moduleAccess['cost_profit_reports'] ?? true;
 // System section: settings (user management) is gated by ACCESS_MODULES;
 // Access Levels and Audit Log are admin-tier only, same rank rule everywhere
 // else in this app uses.
@@ -202,11 +203,20 @@ $sbHail = ($sbFirst !== '' && mb_strlen($sbFirst) <= 10) ? 'Hi ' . $sbFirst . ',
         <?php endif; ?>
         <?php endif; ?>
 
-        <?php if ($canReports): ?>
+        <?php if ($canReports || $canCostProfitReports): ?>
         <div class="sidebar-section-title mt-2">Reports</div>
+
+        <?php if ($canCostProfitReports): ?>
+        <a href="cost_profit_reports.php" class="sidebar-link <?= ($activePage === 'cost_profit_reports') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-money-bill-trend-up"></i></span> Cost/Profit Reports
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canReports): ?>
         <a href="reports.php" class="sidebar-link <?= ($activePage === 'reports') ? 'active' : '' ?>">
             <span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Reports
         </a>
+        <?php endif; ?>
         <?php endif; ?>
 
         <?php if ($canSettings || $canAccessLevels || $isAdminTier): ?>
