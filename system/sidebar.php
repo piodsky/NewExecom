@@ -6,6 +6,11 @@ $initials  = strtoupper(substr($navUser['full_name'], 0, 1));
 $navAvatar = avatarUrl($navUser);
 
 $moduleAccess    = getEffectiveModuleAccess($navUser['id'] ?? null, $navUser['role']);
+$canPr           = $moduleAccess['purchase_requisition'] ?? true;
+$canInternalRfq  = $moduleAccess['internal_rfq'] ?? true;
+$canPoInternal   = $moduleAccess['po_internal'] ?? true;
+$canReceiving    = $moduleAccess['receiving_reports'] ?? true;
+$canInventory    = $moduleAccess['inventory'] ?? true;
 $canSuppliers    = $moduleAccess['suppliers'] ?? true;
 $canClients      = $moduleAccess['clients'] ?? true;
 $canItems        = $moduleAccess['items'] ?? true;
@@ -113,14 +118,45 @@ $sbHail = ($sbFirst !== '' && mb_strlen($sbFirst) <= 10) ? 'Hi ' . $sbFirst . ',
         <?php endif; ?>
         <?php endif; ?>
 
-        <?php // The remaining transactional modules (Purchase Requisition,
-              // RFQ, PO, Receiving/Delivery Reports, Warehouse, Inventory,
-              // Stock Transfer, Issuance) land here one at a time as each
-              // phase of the structure plan ships — see CLAUDE.md's "Adding
-              // a new page" checklist. ?>
-        <div class="sidebar-section-title mt-2">Operations</div>
+        <?php if ($canPr || $canInternalRfq || $canPoInternal || $canReceiving || $canInventory): ?>
+        <div class="sidebar-section-title mt-2">Internal Procurement</div>
+
+        <?php if ($canPr): ?>
+        <a href="purchase_requisitions.php" class="sidebar-link <?= ($activePage === 'purchase_requisitions') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-file-signature"></i></span> Purchase Requisition
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canInternalRfq): ?>
+        <a href="internal_rfq.php" class="sidebar-link <?= ($activePage === 'internal_rfq') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-file-invoice"></i></span> RFQ (Internal)
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canPoInternal): ?>
+        <a href="po_internal.php" class="sidebar-link <?= ($activePage === 'po_internal') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Purchase Order (Internal)
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canReceiving): ?>
+        <a href="receiving_reports.php" class="sidebar-link <?= ($activePage === 'receiving_reports') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-truck-ramp-box"></i></span> Receiving Reports
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canInventory): ?>
+        <a href="inventory.php" class="sidebar-link <?= ($activePage === 'inventory') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-warehouse"></i></span> Inventory
+        </a>
+        <?php endif; ?>
+        <?php endif; ?>
+
+        <?php // Stock Transfer + Issuance land here in Phase 3, following
+              // CLAUDE.md's "Adding a new page" checklist. ?>
+        <div class="sidebar-section-title mt-2">Branch Operations</div>
         <div class="sidebar-link disabled">
-            <span class="nav-icon"><i class="fas fa-dolly"></i></span> Modules
+            <span class="nav-icon"><i class="fas fa-dolly"></i></span> Stock Transfer &amp; Issuance
             <span class="soon-badge">Coming soon</span>
         </div>
 

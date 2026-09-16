@@ -224,6 +224,7 @@ CREATE TABLE pr_requests (
     status        ENUM('draft','pending','approved','rejected','converted') NOT NULL DEFAULT 'draft',
     approved_by   INT          NULL,
     approved_at   DATETIME     NULL,
+    remarks       VARCHAR(255) NULL,   -- approval note or rejection reason
     is_deleted    TINYINT(1)   NOT NULL DEFAULT 0,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (branch_id) REFERENCES branches(id),
@@ -255,6 +256,7 @@ CREATE TABLE internal_rfq (
     branch_id   INT         NOT NULL,
     pr_number   VARCHAR(30) NULL,
     sent_date   DATE        NULL,
+    status      ENUM('open','converted','cancelled') NOT NULL DEFAULT 'open',
     created_by  INT         NOT NULL,
     is_deleted  TINYINT(1)  NOT NULL DEFAULT 0,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
