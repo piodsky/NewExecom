@@ -45,6 +45,12 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
     </div>
 
     <div class="content-area">
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item"><button class="nav-link active" id="tabPrBtn" onclick="showTab('pr')">Requisitions</button></li>
+            <li class="nav-item"><button class="nav-link" id="tabDeptBtn" onclick="showTab('dept')">Departments</button></li>
+        </ul>
+
+        <div id="tabPr">
         <div class="panel">
             <div class="panel-header d-flex justify-content-between align-items-center">
                 <div class="panel-title">Requisitions<?= $currentUser['branch_name'] ? ' — ' . e($currentUser['branch_name']) : '' ?></div>
@@ -58,6 +64,26 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
                 </table>
                 </div>
             </div>
+        </div>
+        </div>
+
+        <div id="tabDept" style="display:none">
+        <div class="panel">
+            <div class="panel-header d-flex justify-content-between align-items-center">
+                <div class="panel-title">Departments</div>
+                <?php if ($isAdminTier): ?>
+                <button class="btn btn-primary-app btn-sm" onclick="openDeptModal()"><i class="fas fa-plus me-1"></i>New Department</button>
+                <?php endif; ?>
+            </div>
+            <div class="panel-body">
+                <div class="table-responsive">
+                <table class="app-table table">
+                    <thead><tr><th>Name</th><th>Status</th><th></th></tr></thead>
+                    <tbody id="deptBody"><tr><td colspan="3" class="text-muted small">Loading…</td></tr></tbody>
+                </table>
+                </div>
+            </div>
+        </div>
         </div>
     </div>
 </div>
@@ -75,7 +101,7 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
 	            <?php if ($isSuperAdmin): ?>
 	            <div class="col-12"><label class="form-label">Branch</label><select class="form-select" id="prBranch" required></select></div>
 	            <?php endif; ?>
-	            <div class="col-6"><label class="form-label">Department</label><input type="text" class="form-control" id="prDepartment"></div>
+	            <div class="col-6"><label class="form-label">Department</label><select class="form-select" id="prDepartment"><option value="">—</option></select></div>
             <div class="col-6"><label class="form-label">Date &amp; Time Needed</label><input type="datetime-local" step="1" class="form-control" id="prNeededDate"></div>
             <div class="col-12"><label class="form-label">Purpose</label><input type="text" class="form-control" id="prPurpose"></div>
           </div>
@@ -105,15 +131,91 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
   </div>
 </div>
 
+<!-- Department modal -->
+<div class="modal fade" id="deptModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="deptModalTitle">New Department</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form id="deptForm">
+        <div class="modal-body">
+          <input type="hidden" id="dpId">
+          <div class="mb-2"><label class="form-label">Name</label><input type="text" class="form-control" id="dpName" required></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary-app">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script src="vendor/js/jquery.min.js"></script>
 <script src="vendor/js/bootstrap.bundle.min.js"></script>
 <script>
 const isAdminTier = <?= $isAdminTier ? 'true' : 'false' ?>;
 const isSuperAdmin = <?= $isSuperAdmin ? 'true' : 'false' ?>;
 const currentUserId = <?= (int)$currentUser['id'] ?>;
-let prCache = [], branchOptions = null;
+let prCache = [], branchOptions = null, deptCache = [];
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const statusLabel = { draft: 'Draft', pending: 'Pending Approval', approved: 'Approved', rejected: 'Rejected', converted: 'Converted' };
+
+function showTab(tab) {
+    document.getElementById('tabPr').style.display   = tab === 'pr'   ? '' : 'none';
+    document.getElementById('tabDept').style.display = tab === 'dept' ? '' : 'none';
+    document.getElementById('tabPrBtn').classList.toggle('active', tab === 'pr');
+    document.getElementById('tabDeptBtn').classList.toggle('active', tab === 'dept');
+}
+
+function renderDepartments() {
+    document.getElementById('deptBody').innerHTML = deptCache.length ? deptCache.map(d => `
+        <tr>
+            <td>${escapeHtml(d.name)}</td>
+            <td><span class="badge-status ${d.is_active ? 'active' : 'inactive'}">${d.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td class="text-end">${isAdminTier ? `
+                <button class="btn-sm-action" onclick="editDept(${d.id})" title="Edit"><i class="fas fa-pen"></i></button>
+                <button class="btn-sm-action" onclick="toggleDept(${d.id})" title="Toggle"><i class="fas fa-power-off"></i></button>` : ''}</td>
+        </tr>`).join('') : '<tr><td colspan="3" class="text-muted small">No departments found.</td></tr>';
+
+    document.getElementById('prDepartment').innerHTML = '<option value="">—</option>' +
+        deptCache.filter(d => d.is_active).map(d => `<option value="${escapeHtml(d.name)}">${escapeHtml(d.name)}</option>`).join('');
+}
+
+function openDeptModal() {
+    document.getElementById('deptForm').reset();
+    document.getElementById('dpId').value = '';
+    document.getElementById('deptModalTitle').textContent = 'New Department';
+    new bootstrap.Modal(document.getElementById('deptModal')).show();
+}
+function editDept(id) {
+    const d = deptCache.find(x => x.id === id);
+    if (!d) return;
+    document.getElementById('dpId').value = d.id;
+    document.getElementById('dpName').value = d.name;
+    document.getElementById('deptModalTitle').textContent = 'Edit Department';
+    new bootstrap.Modal(document.getElementById('deptModal')).show();
+}
+document.getElementById('deptForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('dpId').value;
+    const payload = {
+        action: id ? 'update_department' : 'create_department', id: id || undefined,
+        name: document.getElementById('dpName').value.trim(),
+    };
+    const res  = await fetch('api/purchase_requisitions.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (!data.success) return alert(data.message);
+    bootstrap.Modal.getInstance(document.getElementById('deptModal')).hide();
+    loadPrs();
+});
+async function toggleDept(id) {
+    if (!confirm('Change this department\'s active status?')) return;
+    const res  = await fetch('api/purchase_requisitions.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ action: 'toggle_department_active', id }) });
+    const data = await res.json();
+    if (!data.success) return alert(data.message);
+    loadPrs();
+}
 
 async function loadBranchOptions(selectId) {
     if (!isSuperAdmin) return;
@@ -131,6 +233,8 @@ async function loadPrs() {
     const data = await res.json();
     if (!data.success) return alert(data.message);
     prCache = data.requisitions;
+    deptCache = data.departments;
+    renderDepartments();
     document.getElementById('prBody').innerHTML = prCache.length ? prCache.map(p => `
         <tr style="cursor:pointer" onclick="viewPr('${p.pr_number}')">
             <td><span class="doc-number doc-pr">${escapeHtml(p.pr_number)}</span></td>
@@ -243,6 +347,10 @@ function promptReject(prNumber) {
 }
 
 loadPrs();
+
+// Deep link from Order Tracking (order_tracking.php?view=... lands here as ?view=...).
+const _viewPr = new URLSearchParams(location.search).get('view');
+if (_viewPr) viewPr(_viewPr);
 </script>
 <?php include 'profile_modal.php'; ?>
 </body>

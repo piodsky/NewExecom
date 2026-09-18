@@ -325,6 +325,10 @@ document.getElementById('oqConvertForm').addEventListener('submit', async (e) =>
 });
 
 loadOqs();
+
+// Deep link from Order Tracking (order_tracking.php?view=... lands here as ?view=...).
+const _viewOq = new URLSearchParams(location.search).get('view');
+if (_viewOq) viewOq(_viewOq);
 if (initialFromRfq) openQModal(initialFromRfq);
 </script>
 <?php include 'profile_modal.php'; ?>

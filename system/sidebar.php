@@ -22,6 +22,7 @@ $canBranches     = $navUser['role'] === 'super_admin';
 $isSuperAdmin    = $navUser['role'] === 'super_admin';
 $canReports      = $moduleAccess['reports'] ?? true;
 $canCostProfitReports = $moduleAccess['cost_profit_reports'] ?? true;
+$canOrderTracking = $moduleAccess['order_tracking'] ?? true;
 $canSystemGuide  = $moduleAccess['system_guide'] ?? true;
 // System section: settings (user management) is gated by ACCESS_MODULES;
 // Access Levels and Audit Log are admin-tier only, same rank rule everywhere
@@ -162,8 +163,14 @@ $canAccessLevels = $navUser['role'] === 'super_admin';
         <?php endif; ?>
         <?php endif; ?>
 
-        <?php if ($canReports || $canCostProfitReports): ?>
+        <?php if ($canReports || $canCostProfitReports || $canOrderTracking): ?>
         <div class="sidebar-section-title mt-2">Reports</div>
+
+        <?php if ($canOrderTracking): ?>
+        <a href="order_tracking.php" class="sidebar-link <?= ($activePage === 'order_tracking') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-route"></i></span> Order Tracking
+        </a>
+        <?php endif; ?>
 
         <?php if ($canCostProfitReports): ?>
         <a href="cost_profit_reports.php" class="sidebar-link <?= ($activePage === 'cost_profit_reports') ? 'active' : '' ?>">

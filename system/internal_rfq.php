@@ -272,6 +272,10 @@ async function rfqAction(rfqNumber, action) {
 }
 
 loadRfqs();
+
+// Deep link from Order Tracking (order_tracking.php?view=... lands here as ?view=...).
+const _viewRfq = new URLSearchParams(location.search).get('view');
+if (_viewRfq) viewRfq(_viewRfq);
 </script>
 <?php include 'profile_modal.php'; ?>
 </body>

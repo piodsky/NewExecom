@@ -236,6 +236,10 @@ async function orfqAction(rfqNumber, action) {
 }
 
 loadOrfqs();
+
+// Deep link from Order Tracking (order_tracking.php?view=... lands here as ?view=...).
+const _viewOrfq = new URLSearchParams(location.search).get('view');
+if (_viewOrfq) viewOrfq(_viewOrfq);
 </script>
 <?php include 'profile_modal.php'; ?>
 </body>

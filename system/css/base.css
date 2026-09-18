@@ -533,7 +533,9 @@ body {
     border-radius: 6px;
     font-size: .85rem;
     white-space: nowrap;
+    text-decoration: none;
 }
+a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 .doc-number.doc-pr   { color: #2563eb; background: rgba(37,99,235,.1); }   /* Purchase Requisition */
 .doc-number.doc-irfq { color: #0891b2; background: rgba(8,145,178,.1); }  /* RFQ (Internal) */
 .doc-number.doc-poi  { color: #7c3aed; background: rgba(124,58,237,.1); } /* PO (Internal) */
@@ -620,6 +622,46 @@ body {
     text-transform: uppercase; letter-spacing: .06em;
     margin: .25rem 0 .6rem;
 }
+
+/* ── Order Tracking chain (order_tracking.php) ──
+   One vertical line down the left, a round marker per stage, and a card per
+   document found at that stage. Marker colors reuse the same doc-* palette
+   as .doc-number, so a stage's marker matches the badges inside it. */
+.track-line { position: relative; padding-left: 3rem; }
+.track-stage { position: relative; padding-bottom: 2rem; }
+.track-stage:last-child { padding-bottom: 0; }
+.track-stage::before {
+    content: ''; position: absolute; left: -2.35rem; top: 2.1rem; bottom: -2rem;
+    width: 2px; background: var(--border);
+}
+.track-stage:last-child::before { display: none; }
+.track-stage-marker {
+    position: absolute; left: -3rem; top: 0;
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; color: #fff;
+}
+.track-stage-marker.empty { background: #e2e8f0; color: #94a3b8; }
+.track-stage-marker.doc-pr   { background: #2563eb; }
+.track-stage-marker.doc-irfq { background: #0891b2; }
+.track-stage-marker.doc-poi  { background: #7c3aed; }
+.track-stage-marker.doc-rr   { background: #16a34a; }
+.track-stage-marker.doc-orfq { background: #db2777; }
+.track-stage-marker.doc-oq   { background: #4338ca; }
+.track-stage-marker.doc-poo  { background: #d97706; }
+.track-stage-marker.doc-dr   { background: #0ea5e9; }
+.track-stage-marker.doc-st   { background: #65a30d; }
+.track-stage-marker.doc-iss  { background: #e11d48; }
+.track-stage-title { font-size: .85rem; font-weight: 700; color: var(--text); margin-bottom: .6rem; }
+.track-doc-card {
+    background: #f8fafc; border: 1px solid var(--border); border-radius: 10px;
+    padding: .65rem .9rem; margin-bottom: .5rem;
+    display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+}
+.track-doc-card:last-child { margin-bottom: 0; }
+.track-empty { font-size: .8rem; color: var(--muted); font-style: italic; padding: .35rem 0; }
+.track-progress-track { height: 6px; border-radius: 4px; background: #e2e8f0; margin-top: .35rem; width: 160px; overflow: hidden; }
+.track-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#16a34a,#22c55e); }
 
 .modal-header-app .btn-close { filter: invert(1); }
 .modal-content { border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,.2); }

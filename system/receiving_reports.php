@@ -283,6 +283,10 @@ async function viewRr(rrNumber) {
 }
 
 loadRrs();
+
+// Deep link from Order Tracking (order_tracking.php?view=... lands here as ?view=...).
+const _viewRr = new URLSearchParams(location.search).get('view');
+if (_viewRr) viewRr(_viewRr);
 </script>
 <?php include 'profile_modal.php'; ?>
 </body>

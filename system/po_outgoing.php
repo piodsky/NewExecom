@@ -305,6 +305,10 @@ async function poAction(poNumber, action) {
 }
 
 loadPos();
+
+// Deep link from Order Tracking (order_tracking.php?view=... lands here as ?view=...).
+const _viewPo = new URLSearchParams(location.search).get('view');
+if (_viewPo) viewPo(_viewPo);
 </script>
 <?php include 'profile_modal.php'; ?>
 </body>

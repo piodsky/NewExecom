@@ -46,6 +46,8 @@ if ($method === 'GET') {
         jsonResponse(true, '', ['pr' => $pr]);
     }
 
+    $departments = $db->query('SELECT id, name, is_active FROM departments ORDER BY name')->fetchAll();
+
     $sql = 'SELECT p.pr_number, p.branch_id, b.name AS branch_name, p.department, p.purpose,
                    p.needed_date, p.status, p.remarks, u.full_name AS requested_by_name, p.created_at
             FROM pr_requests p JOIN branches b ON b.id = p.branch_id JOIN users u ON u.id = p.requested_by
@@ -55,7 +57,7 @@ if ($method === 'GET') {
     $sql .= ' ORDER BY p.created_at DESC';
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
-    jsonResponse(true, '', ['requisitions' => $stmt->fetchAll()]);
+    jsonResponse(true, '', ['requisitions' => $stmt->fetchAll(), 'departments' => $departments]);
 }
 
 if ($method === 'POST') {
@@ -105,6 +107,41 @@ if ($method === 'POST') {
 
         logAudit('CREATE_PR', 'purchase_requisition', "Created {$prNumber}" . ($submit ? ' and submitted' : ' (draft)'));
         jsonResponse(true, 'Requisition created.', ['pr_number' => $prNumber]);
+    }
+
+    if ($action === 'create_department' || $action === 'update_department') {
+        if (!$isAdminTier) jsonResponse(false, 'Only administrators can manage departments.');
+        $name = trim($data['name'] ?? '');
+        if ($name === '') jsonResponse(false, 'Department name is required.');
+
+        if ($action === 'create_department') {
+            $exists = $db->prepare('SELECT COUNT(*) FROM departments WHERE name = ?');
+            $exists->execute([$name]);
+            if ($exists->fetchColumn() > 0) jsonResponse(false, 'That department already exists.');
+            $db->prepare('INSERT INTO departments (name) VALUES (?)')->execute([$name]);
+            logAudit('CREATE_DEPARTMENT', 'purchase_requisition', "Created department \"{$name}\"");
+            jsonResponse(true, 'Department added.');
+        }
+
+        $deptId = (int)($data['id'] ?? 0);
+        if (!$deptId) jsonResponse(false, 'Invalid department.');
+        $db->prepare('UPDATE departments SET name = ? WHERE id = ?')->execute([$name, $deptId]);
+        logAudit('UPDATE_DEPARTMENT', 'purchase_requisition', "Updated department \"{$name}\"");
+        jsonResponse(true, 'Department updated.');
+    }
+
+    if ($action === 'toggle_department_active') {
+        if (!$isAdminTier) jsonResponse(false, 'Only administrators can manage departments.');
+        $deptId = (int)($data['id'] ?? 0);
+        if (!$deptId) jsonResponse(false, 'Invalid department.');
+        $stmt = $db->prepare('SELECT name, is_active FROM departments WHERE id = ?');
+        $stmt->execute([$deptId]);
+        $row = $stmt->fetch();
+        if (!$row) jsonResponse(false, 'Department not found.');
+        $newState = (int)$row['is_active'] ? 0 : 1;
+        $db->prepare('UPDATE departments SET is_active = ? WHERE id = ?')->execute([$newState, $deptId]);
+        logAudit($newState ? 'ACTIVATE_DEPARTMENT' : 'DEACTIVATE_DEPARTMENT', 'purchase_requisition', $row['name']);
+        jsonResponse(true, $newState ? 'Department activated.' : 'Department deactivated.');
     }
 
     // Every action below targets an existing PR.

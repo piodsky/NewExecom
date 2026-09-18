@@ -281,6 +281,10 @@ async function viewDr(drNumber) {
 }
 
 loadDrs();
+
+// Deep link from Order Tracking (order_tracking.php?view=... lands here as ?view=...).
+const _viewDr = new URLSearchParams(location.search).get('view');
+if (_viewDr) viewDr(_viewDr);
 </script>
 <?php include 'profile_modal.php'; ?>
 </body>

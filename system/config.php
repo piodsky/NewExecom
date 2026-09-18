@@ -235,6 +235,7 @@ const ACCESS_MODULES = [
     'outgoing_quotations'  => 'Quotations (Outgoing)',
     'po_outgoing'          => 'Purchase Order (Outgoing)',
     'delivery_reports'     => 'Delivery Reports',
+    'order_tracking'       => 'Order Tracking',
     'cost_profit_reports'  => 'Cost/Profit Reports',
     'suppliers'            => 'Supplier Management',
     'clients'              => 'Client Management',

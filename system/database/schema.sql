@@ -161,6 +161,17 @@ CREATE TABLE doc_sequences (
 
 -- ── Master data ───────────────────────────────────────────────────────
 
+-- Which section of a branch is requesting on a Purchase Requisition (Sales,
+-- Warehouse, Technical/Service, Admin, ...) — free text on pr_requests.department
+-- itself, this table just gives the New Requisition form a maintained
+-- dropdown instead of everyone typing their own spelling of the same thing.
+CREATE TABLE departments (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(100) NOT NULL UNIQUE,
+    is_active   TINYINT(1)   NOT NULL DEFAULT 1,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE item_categories (
     id            INT AUTO_INCREMENT PRIMARY KEY,
     name          VARCHAR(100) NOT NULL UNIQUE,
@@ -676,6 +687,12 @@ INSERT INTO role_module_access (role, module_key, can_access) VALUES
 -- CHANGE THIS PASSWORD immediately after first login (via My Profile).
 INSERT INTO users (username, password, full_name, first_name, last_name, role, branch_id) VALUES
 ('admin', '$2y$10$0w832hH3EFlb4KMRhAW6zOnCB9MVpvgCg8nP54Wkc/.mVdev4LG/u', 'System Administrator', 'System', 'Administrator', 'super_admin', NULL);
+
+INSERT INTO departments (name) VALUES
+    ('Sales'),
+    ('Warehouse'),
+    ('Technical/Service'),
+    ('Admin');
 
 INSERT INTO item_categories (name, is_serialized) VALUES
     ('Monitor', 1),
