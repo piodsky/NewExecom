@@ -4,6 +4,7 @@ requireModule('po_outgoing');
 $currentUser = getCurrentUser();
 $activePage  = 'po_outgoing';
 $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], true);
+$isSuperAdmin = $currentUser['role'] === 'super_admin';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,6 +23,11 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 .badge-status.completed            { background: #dcfce7; color: #166534; }
 .badge-status.cancelled            { background: #fee2e2; color: #991b1b; }
 .poo-item-row { display: grid; grid-template-columns: 1.6fr 1.6fr .8fr .8fr .9fr auto; gap: .5rem; margin-bottom: .5rem; align-items: center; }
+.poo-progress-text { min-width: 6.5rem; font-size: .82rem; color: #475569; white-space: nowrap; }
+.poo-progress .progress { height: .45rem; background: #e2e8f0; }
+.poo-progress .progress-bar { background: #2563eb; }
+.poo-progress.complete .progress-bar { background: #16a34a; }
+.poo-progress.over .progress-bar { background: #dc2626; }
 </style>
 </head>
 <body>
@@ -34,6 +40,7 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Purchase Orders (Outgoing)</div>
+                <div class="small text-muted">Record client purchase orders awarded from quotations or direct sales.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> PO (Outgoing)</div>
             </div>
         </div>
@@ -53,8 +60,8 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
             <div class="panel-body">
                 <div class="table-responsive">
                 <table class="app-table table">
-                    <thead><tr><th>PO Number</th><th>Branch</th><th>Client</th><th>From Quotation</th><th>Total</th><th>Status</th><th></th></tr></thead>
-                    <tbody id="pooBody"><tr><td colspan="7" class="text-muted small">Loading…</td></tr></tbody>
+                    <thead><tr><th>PO Number</th><th>Branch</th><th>Client</th><th>From Quotation</th><th>Total</th><th>Delivered to Client</th><th>Status</th><th></th></tr></thead>
+                    <tbody id="pooBody"><tr><td colspan="8" class="text-muted small">Loading…</td></tr></tbody>
                 </table>
                 </div>
             </div>
@@ -70,9 +77,12 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
       <div class="modal-header"><h5 class="modal-title">New Outgoing Purchase Order</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <form id="pooForm">
-        <div class="modal-body">
-          <div class="row g-2 mb-2">
-            <div class="col-6"><label class="form-label">Client</label><select class="form-select" id="pooClient" required></select></div>
+	        <div class="modal-body">
+	          <div class="row g-2 mb-2">
+	            <?php if ($isSuperAdmin): ?>
+	            <div class="col-12"><label class="form-label">Branch</label><select class="form-select" id="pooBranch" required></select></div>
+	            <?php endif; ?>
+	            <div class="col-6"><label class="form-label">Client</label><select class="form-select" id="pooClient" required></select></div>
             <div class="col-6"><label class="form-label">End User</label><input type="text" class="form-control" id="pooEndUser"></div>
             <div class="col-6"><label class="form-label">Place of Delivery</label><input type="text" class="form-control" id="pooPlace"></div>
             <div class="col-3"><label class="form-label">Delivery Term</label><input type="text" class="form-control" id="pooDeliveryTerm"></div>
@@ -107,10 +117,52 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 <script src="vendor/js/bootstrap.bundle.min.js"></script>
 <script>
 const isAdminTier = <?= $isAdminTier ? 'true' : 'false' ?>;
-let pooCache = [], catalogItems = [];
+const isSuperAdmin = <?= $isSuperAdmin ? 'true' : 'false' ?>;
+let pooCache = [], catalogItems = [], branchOptions = null;
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const statusLabel = { open: 'Open', partially_delivered: 'Partially Delivered', delivered: 'Delivered', completed: 'Completed', cancelled: 'Cancelled' };
 const peso = n => '₱' + Number(n || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+const qty = n => Number(n || 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
+
+async function loadBranchOptions(selectId) {
+    if (!isSuperAdmin) return;
+    if (!branchOptions) {
+        const res = await fetch('api/branches.php');
+        const data = await res.json();
+        branchOptions = data.success ? data.branches.filter(b => b.is_active == 1) : [];
+    }
+    document.getElementById(selectId).innerHTML = '<option value="">Select branch...</option>' +
+        branchOptions.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
+}
+
+function progressPercent(done, total) {
+    const ordered = Number(total || 0);
+    if (ordered <= 0) return 0;
+    return Math.min(100, Math.max(0, (Number(done || 0) / ordered) * 100));
+}
+
+function progressState(done, total) {
+    const delivered = Number(done || 0);
+    const ordered = Number(total || 0);
+    if (ordered > 0 && delivered > ordered + 0.0001) return 'over';
+    if (ordered > 0 && delivered + 0.0001 >= ordered) return 'complete';
+    return '';
+}
+
+function deliveryProgressCell(done, total) {
+    const percent = progressPercent(done, total);
+    const label = `${qty(done)} / ${qty(total)}`;
+    return `
+        <div class="poo-progress ${progressState(done, total)}">
+            <div class="d-flex align-items-center gap-2">
+                <span class="poo-progress-text">${label}</span>
+                <div class="progress flex-grow-1" role="progressbar" aria-label="Delivered to client" aria-valuenow="${Math.round(percent)}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar" style="width: ${percent}%"></div>
+                </div>
+            </div>
+            <div class="small text-muted">${Math.round(percent)}% delivered</div>
+        </div>`;
+}
 
 async function loadPos() {
     const res  = await fetch('api/po_outgoing.php');
@@ -124,14 +176,16 @@ async function loadPos() {
             <td>${escapeHtml(p.client_name)}</td>
             <td>${escapeHtml(p.outgoing_quotation_number || '—')}</td>
             <td>${peso(p.total_amount)}</td>
+            <td>${deliveryProgressCell(p.delivered_qty, p.ordered_qty)}</td>
             <td><span class="badge-status ${p.status}">${statusLabel[p.status] || p.status}</span></td>
             <td class="text-end"><i class="fas fa-chevron-right text-muted"></i></td>
-        </tr>`).join('') : '<tr><td colspan="7" class="text-muted small">No purchase orders yet.</td></tr>';
+        </tr>`).join('') : '<tr><td colspan="8" class="text-muted small">No purchase orders yet.</td></tr>';
 }
 
 async function openPoModal() {
     document.getElementById('pooForm').reset();
     document.getElementById('pooItemRows').innerHTML = '';
+    await loadBranchOptions('pooBranch');
     const [cliRes, itmRes] = await Promise.all([fetch('api/clients.php'), fetch('api/items.php')]);
     const cliData = await cliRes.json(), itmData = await itmRes.json();
     document.getElementById('pooClient').innerHTML = '<option value="">Select…</option>' +
@@ -186,16 +240,21 @@ document.getElementById('pooForm').addEventListener('submit', async (e) => {
     }).filter(i => i.quantity && i.unit_price !== '' && i.description);
     if (!items.length) return alert('Add at least one item with quantity and unit price.');
 
-    const payload = {
-        action: 'create',
+	    const payload = {
+	        action: 'create',
         client_id: document.getElementById('pooClient').value,
         end_user: document.getElementById('pooEndUser').value.trim(),
         place_of_delivery: document.getElementById('pooPlace').value.trim(),
         delivery_term: document.getElementById('pooDeliveryTerm').value.trim(),
         payment_term: document.getElementById('pooPaymentTerm').value.trim(),
-        items,
-    };
-    const res  = await fetch('api/po_outgoing.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+	        items,
+	    };
+	    if (isSuperAdmin) {
+	        const branchId = document.getElementById('pooBranch').value;
+	        if (!branchId) return alert('Select a branch.');
+	        payload.branch_id = branchId;
+	    }
+	    const res  = await fetch('api/po_outgoing.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     const data = await res.json();
     if (!data.success) return alert(data.message);
     bootstrap.Modal.getInstance(document.getElementById('pooModal')).hide();
@@ -217,10 +276,11 @@ async function viewPo(poNumber) {
             <div class="col-6"><strong>Delivery Term:</strong> ${escapeHtml(po.delivery_term || '—')}</div>
             <div class="col-6"><strong>Payment Term:</strong> ${escapeHtml(po.payment_term || '—')}</div>
         </div>
-        <table class="app-table table">
-            <thead><tr><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Issued</th><th>Delivered</th></tr></thead>
-            <tbody>${po.items.map(i => `<tr><td>${escapeHtml(i.item_name || i.description)}</td><td>${i.quantity}</td><td>${peso(i.unit_price)}</td><td>${peso(i.total_price)}</td><td>${i.issued_qty}/${i.quantity}</td><td>${i.delivered_qty}/${i.quantity}</td></tr>`).join('')}</tbody>
-            <tfoot><tr><td colspan="3" class="text-end fw-bold">Total</td><td class="fw-bold">${peso(po.total_amount)}</td><td colspan="2"></td></tr></tfoot>
+        <div class="mb-2 fw-semibold">Item delivery progress</div>
+        <table class="app-table table align-middle">
+            <thead><tr><th>Description</th><th>Ordered</th><th>Issued</th><th>Delivered to Client</th><th>Unit Price</th><th>Total</th></tr></thead>
+            <tbody>${po.items.map(i => `<tr><td>${escapeHtml(i.item_name || i.description)}</td><td>${qty(i.quantity)}</td><td>${qty(i.issued_qty)} / ${qty(i.quantity)}</td><td>${deliveryProgressCell(i.delivered_qty, i.quantity)}</td><td>${peso(i.unit_price)}</td><td>${peso(i.total_price)}</td></tr>`).join('')}</tbody>
+            <tfoot><tr><td colspan="5" class="text-end fw-bold">Total</td><td class="fw-bold">${peso(po.total_amount)}</td></tr></tfoot>
         </table>`;
 
     let footer = '';
@@ -230,7 +290,8 @@ async function viewPo(poNumber) {
     if (isAdminTier && po.status === 'delivered') {
         footer += `<button class="btn btn-primary-app btn-sm" onclick="poAction('${po.po_number}','complete')">Mark Completed</button>`;
     }
-    document.getElementById('pooViewFooter').innerHTML = footer || '<span class="text-muted small">No actions available.</span>';
+    footer += `<a class="btn btn-outline-secondary btn-sm" href="print_document.php?module=po_outgoing&id=${encodeURIComponent(po.po_number)}" data-report-modal><i class="fas fa-print me-1"></i>Print / PDF</a>`;
+    document.getElementById('pooViewFooter').innerHTML = footer;
     new bootstrap.Modal(document.getElementById('pooViewModal')).show();
 }
 

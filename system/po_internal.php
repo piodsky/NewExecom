@@ -4,6 +4,7 @@ requireModule('po_internal');
 $currentUser = getCurrentUser();
 $activePage  = 'po_internal';
 $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], true);
+$isSuperAdmin = $currentUser['role'] === 'super_admin';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -34,6 +35,7 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Purchase Orders (Internal)</div>
+                <div class="small text-muted">Issue purchase orders to suppliers for approved internal purchases.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> PO (Internal)</div>
             </div>
         </div>
@@ -70,9 +72,12 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
       <div class="modal-header"><h5 class="modal-title">New Purchase Order</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <form id="poForm">
-        <div class="modal-body">
-          <div class="row g-2 mb-2">
-            <div class="col-6"><label class="form-label">Supplier</label><select class="form-select" id="poSupplier" required></select></div>
+	        <div class="modal-body">
+	          <div class="row g-2 mb-2">
+	            <?php if ($isSuperAdmin): ?>
+	            <div class="col-12"><label class="form-label">Branch</label><select class="form-select" id="poBranch" required></select></div>
+	            <?php endif; ?>
+	            <div class="col-6"><label class="form-label">Supplier</label><select class="form-select" id="poSupplier" required></select></div>
             <div class="col-6"><label class="form-label">Forwarder</label><input type="text" class="form-control" id="poForwarder"></div>
             <div class="col-12"><label class="form-label">Ship To Address</label><input type="text" class="form-control" id="poShipTo"></div>
           </div>
@@ -105,10 +110,22 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 <script src="vendor/js/bootstrap.bundle.min.js"></script>
 <script>
 const isAdminTier = <?= $isAdminTier ? 'true' : 'false' ?>;
-let poCache = [], catalogItems = [];
+const isSuperAdmin = <?= $isSuperAdmin ? 'true' : 'false' ?>;
+let poCache = [], catalogItems = [], branchOptions = null;
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const statusLabel = { draft: 'Draft', sent: 'Sent', partially_received: 'Partially Received', received: 'Received', cancelled: 'Cancelled' };
 const peso = n => '₱' + Number(n || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+
+async function loadBranchOptions(selectId) {
+    if (!isSuperAdmin) return;
+    if (!branchOptions) {
+        const res = await fetch('api/branches.php');
+        const data = await res.json();
+        branchOptions = data.success ? data.branches.filter(b => b.is_active == 1) : [];
+    }
+    document.getElementById(selectId).innerHTML = '<option value="">Select branch...</option>' +
+        branchOptions.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
+}
 
 async function loadPos() {
     const res  = await fetch('api/po_internal.php');
@@ -130,6 +147,7 @@ async function loadPos() {
 async function openPoModal() {
     document.getElementById('poForm').reset();
     document.getElementById('poItemRows').innerHTML = '';
+    await loadBranchOptions('poBranch');
     const [supRes, itmRes] = await Promise.all([fetch('api/suppliers.php'), fetch('api/items.php')]);
     const supData = await supRes.json(), itmData = await itmRes.json();
     document.getElementById('poSupplier').innerHTML = '<option value="">Select…</option>' +
@@ -184,14 +202,19 @@ document.getElementById('poForm').addEventListener('submit', async (e) => {
     }).filter(i => i.quantity && i.unit_cost !== '' && i.description);
     if (!items.length) return alert('Add at least one item with quantity and unit cost.');
 
-    const payload = {
-        action: 'create',
+	    const payload = {
+	        action: 'create',
         supplier_id: document.getElementById('poSupplier').value,
         forwarder: document.getElementById('poForwarder').value.trim(),
         ship_to_address: document.getElementById('poShipTo').value.trim(),
-        items,
-    };
-    const res  = await fetch('api/po_internal.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+	        items,
+	    };
+	    if (isSuperAdmin) {
+	        const branchId = document.getElementById('poBranch').value;
+	        if (!branchId) return alert('Select a branch.');
+	        payload.branch_id = branchId;
+	    }
+	    const res  = await fetch('api/po_internal.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     const data = await res.json();
     if (!data.success) return alert(data.message);
     bootstrap.Modal.getInstance(document.getElementById('poModal')).hide();
@@ -224,7 +247,7 @@ async function viewPo(poNumber) {
     } else if (isAdminTier && po.status === 'sent') {
         footer += `<button class="btn btn-danger btn-sm" onclick="poAction('${po.po_number}','cancel')">Cancel</button>`;
     }
-    footer += `<a href="print_po_internal.php?po_number=${encodeURIComponent(po.po_number)}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fas fa-print me-1"></i>Print</a>`;
+    footer += `<a href="print_po_internal.php?po_number=${encodeURIComponent(po.po_number)}" data-report-modal class="btn btn-outline-secondary btn-sm"><i class="fas fa-print me-1"></i>Print</a>`;
     document.getElementById('poViewFooter').innerHTML = footer || '<span class="text-muted small">No actions available.</span>';
     new bootstrap.Modal(document.getElementById('poViewModal')).show();
 }

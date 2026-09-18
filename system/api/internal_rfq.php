@@ -59,7 +59,7 @@ if ($method === 'GET') {
     }
 
     if (!empty($_GET['approved_prs'])) {
-        $sql = "SELECT pr_number, purpose FROM pr_requests WHERE status = 'approved' AND is_deleted = 0";
+        $sql = "SELECT pr_number, branch_id, purpose FROM pr_requests WHERE status = 'approved' AND is_deleted = 0";
         $params = [];
         if ($scope !== null) { $sql .= ' AND branch_id = ?'; $params[] = $scope; }
         $sql .= ' ORDER BY created_at DESC';
@@ -91,7 +91,7 @@ if ($method === 'POST') {
         if ($scope !== null && $branchId !== $scope) jsonResponse(false, 'Access denied for that branch.');
 
         $prNumber = trim($data['pr_number'] ?? '') ?: null;
-        $sentDate = trim($data['sent_date'] ?? '') ?: null;
+        $sentDate = inputDateTime($data['sent_date'] ?? null, 'Date and time sent');
         $items    = is_array($data['items'] ?? null) ? $data['items'] : [];
 
         if ($prNumber) {

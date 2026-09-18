@@ -21,8 +21,10 @@ $user   = getCurrentUser();
 $scope  = getUserBranchScope($user);
 $db     = getDB();
 
-$from = trim($_GET['from'] ?? '') ?: date('Y-m-01');
-$to   = trim($_GET['to'] ?? '') ?: date('Y-m-d');
+[$from, $to] = inputDateTimeRange(
+    $_GET['from'] ?? null, $_GET['to'] ?? null,
+    date('Y-m-01 00:00:00'), date('Y-m-d 23:59:59')
+);
 
 $branchId = null;
 if ($scope !== null) {
@@ -33,7 +35,7 @@ if ($scope !== null) {
 
 $saleType = trim($_GET['sale_type'] ?? ''); // '', 'internal', 'outgoing'
 
-$where  = 'ii.is_deleted = 0 AND iss.is_deleted = 0 AND DATE(iss.date_created) BETWEEN ? AND ?';
+$where  = 'ii.is_deleted = 0 AND iss.is_deleted = 0 AND iss.date_created BETWEEN ? AND ?';
 $params = [$from, $to];
 if ($branchId) { $where .= ' AND iss.branch_id = ?'; $params[] = $branchId; }
 if ($saleType === 'internal') { $where .= ' AND iss.po_number IS NULL'; }

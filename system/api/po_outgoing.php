@@ -75,7 +75,14 @@ if ($method === 'GET') {
     }
 
     $sql = 'SELECT p.po_number, p.branch_id, b.name AS branch_name, p.client_name, p.outgoing_quotation_number,
-                   p.status, p.total_amount, u.full_name AS created_by_name, p.created_at
+                   p.status, p.total_amount, u.full_name AS created_by_name, p.created_at,
+                   COALESCE((SELECT SUM(pi.quantity)
+                             FROM po_outgoing_items pi
+                             WHERE pi.po_number = p.po_number AND pi.is_deleted = 0), 0) AS ordered_qty,
+                   COALESCE((SELECT SUM(dri.quantity)
+                             FROM delivery_report_items dri
+                             JOIN delivery_reports dr ON dr.dr_number = dri.dr_number
+                             WHERE dr.po_number = p.po_number AND dri.is_deleted = 0 AND dr.is_deleted = 0), 0) AS delivered_qty
             FROM po_outgoing p JOIN branches b ON b.id = p.branch_id JOIN users u ON u.id = p.created_by
             WHERE p.is_deleted = 0';
     $params = [];

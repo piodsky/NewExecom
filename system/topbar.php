@@ -8,8 +8,26 @@
 $tbUser    = $currentUser ?? ['full_name' => 'User', 'role' => 'user', 'avatar_path' => null];
 $tbInitial = strtoupper(substr($tbUser['full_name'], 0, 1));
 $tbAvatar  = avatarUrl($tbUser);
+require_once __DIR__ . '/date_time.php';
 ?>
+<div class="topbar-search" id="topbarSearch">
+    <i class="fas fa-magnifying-glass tsi"></i>
+    <input type="text" id="topbarSearchInput" placeholder="Search here..." autocomplete="off">
+    <div class="topbar-search-results d-none" id="topbarSearchResults"></div>
+</div>
+
 <div class="topbar-actions">
+    <?php if (in_array($activePage ?? '', [
+        'purchase_requisitions', 'internal_rfq', 'po_internal', 'receiving_reports', 'inventory',
+        'stock_transfers', 'issuances', 'outgoing_rfq', 'outgoing_quotations', 'po_outgoing',
+        'delivery_reports', 'cost_profit_reports', 'reports', 'branches', 'suppliers', 'clients',
+        'items', 'settings', 'access_levels', 'audit_logs',
+    ], true)): ?>
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="moduleReportButton" title="Preview, print or download the module report">
+        <i class="fas fa-file-pdf me-1"></i><span class="d-none d-sm-inline">Report</span>
+    </button>
+    <?php include __DIR__ . '/report_tools.php'; ?>
+    <?php endif; ?>
     <div class="dropdown">
         <button class="topbar-icon-btn" type="button" id="topbarBell" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
             <i class="fas fa-bell"></i>
@@ -140,4 +158,55 @@ async function topbarMarkAllRead() {
 
 document.getElementById('topbarBell')?.addEventListener('show.bs.dropdown', topbarLoadNotifications);
 topbarLoadNotifications();
+
+// Quick nav search — filters the already permission-filtered sidebar links
+// rendered on this page, rather than keeping a second hardcoded page list
+// that could drift out of sync with what a given role can actually see.
+(function () {
+    const input   = document.getElementById('topbarSearchInput');
+    const results = document.getElementById('topbarSearchResults');
+    if (!input || !results) return;
+
+    function navLinks() {
+        return [...document.querySelectorAll('.sidebar-link')].filter(a => !a.classList.contains('disabled'));
+    }
+
+    function render(matches) {
+        if (!matches.length) {
+            results.innerHTML = '<div class="topbar-search-empty">No matching pages.</div>';
+            results.classList.remove('d-none');
+            return;
+        }
+        results.innerHTML = matches.map((a, i) => {
+            const icon = a.querySelector('.nav-icon i')?.outerHTML || '<i class="fas fa-circle"></i>';
+            const label = a.textContent.trim();
+            return `<a href="${a.getAttribute('href')}" class="${i === 0 ? 'tsr-active' : ''}">${icon}<span>${topbarEscapeHtml(label)}</span></a>`;
+        }).join('');
+        results.classList.remove('d-none');
+    }
+
+    function search() {
+        const q = input.value.trim().toLowerCase();
+        if (!q) { results.classList.add('d-none'); results.innerHTML = ''; return; }
+        const matches = navLinks().filter(a => a.textContent.trim().toLowerCase().includes(q));
+        render(matches);
+    }
+
+    input.addEventListener('input', search);
+    input.addEventListener('focus', () => { if (input.value.trim()) search(); });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const first = results.querySelector('a');
+            if (first) window.location.href = first.getAttribute('href');
+        } else if (e.key === 'Escape') {
+            input.blur();
+            results.classList.add('d-none');
+        }
+    });
+    document.addEventListener('click', (e) => {
+        if (!document.getElementById('topbarSearch').contains(e.target)) {
+            results.classList.add('d-none');
+        }
+    });
+})();
 </script>

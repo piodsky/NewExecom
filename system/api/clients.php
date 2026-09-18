@@ -13,13 +13,19 @@ $method = $_SERVER['REQUEST_METHOD'];
 $isAdminTier = in_array($user['role'], ['super_admin', 'branch_admin'], true);
 
 if ($method === 'GET') {
-    $q = trim($_GET['q'] ?? '');
-    $sql = 'SELECT id, name, address, contact_person, contact_number, is_active, created_at FROM clients';
+    $q    = trim($_GET['q'] ?? '');
+    // Default (and every existing caller — RFQ/Quotation/PO Outgoing pickers,
+    // this page's own list) sees business clients only, so a walk-in buyer
+    // registered from the POS never shows up as a selectable government/
+    // business client. Pass type=walkin or type=all to see past that.
+    $type = trim($_GET['type'] ?? 'business');
+
+    $sql    = 'SELECT id, name, address, contact_person, contact_number, client_type, is_active, created_at FROM clients';
+    $where  = [];
     $params = [];
-    if ($q !== '') {
-        $sql .= ' WHERE name LIKE ? OR contact_person LIKE ?';
-        $params = ["%{$q}%", "%{$q}%"];
-    }
+    if ($q !== '') { $where[] = '(name LIKE ? OR contact_person LIKE ?)'; $params[] = "%{$q}%"; $params[] = "%{$q}%"; }
+    if ($type === 'business' || $type === 'walkin') { $where[] = 'client_type = ?'; $params[] = $type; }
+    if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
     $sql .= ' ORDER BY name';
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
@@ -37,12 +43,13 @@ if ($method === 'POST') {
         $address = trim($data['address'] ?? '');
         $contact = trim($data['contact_person'] ?? '');
         $number  = trim($data['contact_number'] ?? '');
+        $type    = in_array($data['client_type'] ?? '', ['business', 'walkin'], true) ? $data['client_type'] : 'business';
         if ($name === '') jsonResponse(false, 'Client name is required.');
 
         if ($action === 'create') {
             $db->prepare(
-                'INSERT INTO clients (name, address, contact_person, contact_number) VALUES (?,?,?,?)'
-            )->execute([$name, $address ?: null, $contact ?: null, $number ?: null]);
+                'INSERT INTO clients (name, address, contact_person, contact_number, client_type) VALUES (?,?,?,?,?)'
+            )->execute([$name, $address ?: null, $contact ?: null, $number ?: null, $type]);
             logAudit('CREATE_CLIENT', 'clients', "Created client \"{$name}\"");
             jsonResponse(true, 'Client added.');
         }
@@ -50,8 +57,8 @@ if ($method === 'POST') {
         $id = (int)($data['id'] ?? 0);
         if (!$id) jsonResponse(false, 'Invalid client.');
         $db->prepare(
-            'UPDATE clients SET name=?, address=?, contact_person=?, contact_number=? WHERE id=?'
-        )->execute([$name, $address ?: null, $contact ?: null, $number ?: null, $id]);
+            'UPDATE clients SET name=?, address=?, contact_person=?, contact_number=?, client_type=? WHERE id=?'
+        )->execute([$name, $address ?: null, $contact ?: null, $number ?: null, $type, $id]);
         logAudit('UPDATE_CLIENT', 'clients', "Updated client \"{$name}\"");
         jsonResponse(true, 'Client updated.');
     }

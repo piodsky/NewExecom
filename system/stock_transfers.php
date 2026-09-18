@@ -35,6 +35,7 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Stock Transfer</div>
+                <div class="small text-muted">Move inventory from one branch to another with tracking.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Stock Transfer</div>
             </div>
         </div>
@@ -123,6 +124,8 @@ let stCache = [], currentAvail = { units: [], stock: [] }, curDirection = '';
 
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const statusLabel = { pending: 'Pending', in_transit: 'In Transit', received: 'Received', cancelled: 'Cancelled' };
+const qty = n => Number(n || 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
+const inputQty = n => Number(n || 0).toFixed(2).replace(/\.?0+$/, '');
 
 function setDirection(dir) {
     curDirection = dir;
@@ -144,7 +147,7 @@ async function loadTransfers() {
             <td>${escapeHtml(t.to_branch_name)}</td>
             <td><span class="badge-status ${t.status}">${statusLabel[t.status] || t.status}</span></td>
             <td>${escapeHtml(t.requested_by_name)}</td>
-            <td>${t.date_created ? t.date_created.slice(0,10) : '—'}</td>
+            <td>${AppDateTime.format(t.date_created)}</td>
             <td class="text-end"><i class="fas fa-chevron-right text-muted"></i></td>
         </tr>`).join('') : '<tr><td colspan="7" class="text-muted small">No transfers yet.</td></tr>';
 }
@@ -187,37 +190,100 @@ async function fetchAvailable(branchId) {
     if (!data.success) return alert(data.message);
     currentAvail = data;
     document.getElementById('stLineRows').innerHTML = '';
-    const unitRows = currentAvail.units.map(u => `
-        <div class="st-avail-row">
-            <span>${escapeHtml(u.item_name)} <span class="text-muted">(SN: ${escapeHtml(u.serial_number)})</span></span>
-            <button type="button" class="btn btn-sm btn-light" onclick='addStLine("unit", ${JSON.stringify(u).replace(/'/g,"&#39;")})'><i class="fas fa-plus"></i> Add</button>
-        </div>`).join('');
-    const stockRows = currentAvail.stock.map(s => `
-        <div class="st-avail-row">
-            <span>${escapeHtml(s.item_name)} <span class="text-muted">(${s.quantity_on_hand} ${escapeHtml(s.unit)} on hand)</span></span>
-            <button type="button" class="btn btn-sm btn-light" onclick='addStLine("stock", ${JSON.stringify(s).replace(/'/g,"&#39;")})'><i class="fas fa-plus"></i> Add</button>
-        </div>`).join('');
+    renderStAvailableItems();
+}
+
+function queuedStStockQty(itemId, excludeRow = null) {
+    return [...document.querySelectorAll('#stLineRows .st-line-row')]
+        .filter(row => row !== excludeRow && String(row.dataset.itemId || '') === String(itemId))
+        .reduce((sum, row) => sum + Number(row.querySelector('.st-qty')?.value || 0), 0);
+}
+
+function queuedStUnitIds() {
+    return new Set([...document.querySelectorAll('#stLineRows .st-line-row')]
+        .map(row => row.dataset.inventoryUnitId)
+        .filter(Boolean)
+        .map(String));
+}
+
+function remainingStStock(itemId, excludeRow = null) {
+    const stock = currentAvail.stock.find(s => String(s.item_id) === String(itemId));
+    if (!stock) return 0;
+    return Math.max(0, Number(stock.quantity_on_hand || 0) - queuedStStockQty(itemId, excludeRow));
+}
+
+function renderStAvailableItems() {
+    const pickedUnits = queuedStUnitIds();
+    const unitRows = currentAvail.units.map(u => {
+        const picked = pickedUnits.has(String(u.id));
+        return `
+            <div class="st-avail-row">
+                <span>${escapeHtml(u.item_name)} <span class="text-muted">(SN: ${escapeHtml(u.serial_number)})</span></span>
+                <button type="button" class="btn btn-sm btn-light" onclick='addStLine("unit", ${JSON.stringify(u).replace(/'/g,"&#39;")})' ${picked ? 'disabled' : ''}><i class="fas fa-plus"></i> ${picked ? 'Queued' : 'Add'}</button>
+            </div>`;
+    }).join('');
+    const stockRows = currentAvail.stock.map(s => {
+        const queued = queuedStStockQty(s.item_id);
+        const left = Math.max(0, Number(s.quantity_on_hand || 0) - queued);
+        return `
+            <div class="st-avail-row">
+                <span>${escapeHtml(s.item_name)} <span class="text-muted">(${qty(s.quantity_on_hand)} ${escapeHtml(s.unit)} on hand)</span></span>
+                <span>
+                    ${queued > 0 ? `<span class="text-muted me-2">${qty(queued)} queued</span>` : ''}
+                    <strong class="me-2">${qty(left)} left</strong>
+                    <button type="button" class="btn btn-sm btn-light" onclick='addStLine("stock", ${JSON.stringify(s).replace(/'/g,"&#39;")})' ${left <= 0 ? 'disabled' : ''}><i class="fas fa-plus"></i> ${left <= 0 ? 'All queued' : 'Add'}</button>
+                </span>
+            </div>`;
+    }).join('');
     document.getElementById('stAvailList').innerHTML = (unitRows + stockRows) || '<div class="text-muted small">No available stock at this branch.</div>';
+}
+
+function onStQtyChanged(input) {
+    const row = input.closest('.st-line-row');
+    if (!row) return;
+    const max = remainingStStock(row.dataset.itemId, row);
+    if (Number(input.value || 0) > max) input.value = inputQty(max);
+    if (Number(input.value || 0) < 0) input.value = '';
+    renderStAvailableItems();
+}
+
+function removeStLine(button) {
+    button.closest('.st-line-row')?.remove();
+    renderStAvailableItems();
 }
 
 function addStLine(kind, item) {
     const wrap = document.createElement('div');
     wrap.className = 'st-line-row';
     if (kind === 'unit') {
+        if (queuedStUnitIds().has(String(item.id))) {
+            alert('This serial unit is already queued for transfer.');
+            renderStAvailableItems();
+            return;
+        }
         wrap.dataset.inventoryUnitId = item.id;
         wrap.innerHTML = `<span>${escapeHtml(item.item_name)} (SN: ${escapeHtml(item.serial_number)})</span><span class="text-muted small">1 unit</span>
-            <button type="button" class="btn btn-sm btn-light" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>`;
+            <button type="button" class="btn btn-sm btn-light" onclick="removeStLine(this)"><i class="fas fa-trash"></i></button>`;
     } else {
+        const left = remainingStStock(item.item_id);
+        if (left <= 0) {
+            alert('No remaining stock left to queue for this item.');
+            renderStAvailableItems();
+            return;
+        }
         wrap.dataset.itemId = item.item_id;
         wrap.innerHTML = `<span>${escapeHtml(item.item_name)}</span>
-            <input type="number" step="0.01" class="form-control form-control-sm st-qty" placeholder="Qty" max="${item.quantity_on_hand}">
-            <button type="button" class="btn btn-sm btn-light" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>`;
+            <input type="number" step="0.01" min="0.01" class="form-control form-control-sm st-qty" placeholder="Qty" value="${inputQty(left)}" max="${inputQty(left)}" oninput="onStQtyChanged(this)">
+            <button type="button" class="btn btn-sm btn-light" onclick="removeStLine(this)"><i class="fas fa-trash"></i></button>`;
     }
     document.getElementById('stLineRows').appendChild(wrap);
+    renderStAvailableItems();
 }
 
 document.getElementById('stForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const overStock = currentAvail.stock.find(s => queuedStStockQty(s.item_id) > Number(s.quantity_on_hand || 0) + 0.0001);
+    if (overStock) return alert(`Cannot transfer more than the ${qty(overStock.quantity_on_hand)} on hand for ${overStock.item_name}.`);
     const items = [...document.querySelectorAll('#stLineRows .st-line-row')].map(row => {
         if (row.dataset.inventoryUnitId) return { inventory_unit_id: row.dataset.inventoryUnitId };
         return { item_id: row.dataset.itemId, quantity: row.querySelector('.st-qty').value };
@@ -255,7 +321,7 @@ async function viewTransfer(transferNumber) {
             <tbody>${t.items.map(i => `<tr><td>${escapeHtml(i.description_snapshot)}</td><td>${i.serial_snapshot ? 'SN: ' + escapeHtml(i.serial_snapshot) : i.quantity}</td></tr>`).join('')}</tbody>
         </table>`;
 
-    const actions = [];
+    const actions = [`<a class="btn btn-outline-secondary btn-sm me-auto" href="print_document.php?module=stock_transfer&id=${encodeURIComponent(t.transfer_number)}" data-report-modal><i class="fas fa-print me-1"></i>Print / PDF</a>`];
     if (isAdminTier && t.status === 'pending' && (isSuperAdmin || myBranchId == t.from_branch_id)) {
         actions.push(`<button class="btn btn-primary-app btn-sm" onclick="doTransferAction('${t.transfer_number}','ship')">Ship</button>`);
         actions.push(`<button class="btn btn-outline-danger btn-sm" onclick="doTransferAction('${t.transfer_number}','cancel')">Cancel</button>`);

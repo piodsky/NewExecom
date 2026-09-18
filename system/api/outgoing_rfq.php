@@ -82,8 +82,8 @@ if ($method === 'POST') {
         $client = $clientStmt->fetch();
         if (!$client) jsonResponse(false, 'Client not found.');
 
-        $receivedDate = trim($data['received_date'] ?? '') ?: date('Y-m-d');
-        $dueDate      = trim($data['due_date'] ?? '') ?: null;
+        $receivedDate = inputDateTime($data['received_date'] ?? null, 'Date and time received', date('Y-m-d H:i:s'));
+        $dueDate      = inputDateTime($data['due_date'] ?? null, 'Due date and time');
         $items        = is_array($data['items'] ?? null) ? $data['items'] : [];
         $items = array_values(array_filter($items, fn($it) => trim($it['description'] ?? '') !== '' && (float)($it['quantity'] ?? 0) > 0));
         if (!$items) jsonResponse(false, 'At least one item with a description and quantity is required.');

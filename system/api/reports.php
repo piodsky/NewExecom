@@ -21,10 +21,9 @@ if ($scope !== null) {
     $params[] = $scope;
 }
 
-$from = trim($_GET['from'] ?? '');
-$to   = trim($_GET['to'] ?? '');
-if ($from !== '') { $where[] = 'created_at >= ?'; $params[] = $from . ' 00:00:00'; }
-if ($to   !== '') { $where[] = 'created_at <= ?'; $params[] = $to   . ' 23:59:59'; }
+[$from, $to] = inputDateTimeRange($_GET['from'] ?? null, $_GET['to'] ?? null);
+if ($from !== null) { $where[] = 'created_at >= ?'; $params[] = $from; }
+if ($to !== null) { $where[] = 'created_at <= ?'; $params[] = $to; }
 
 $sqlWhere = implode(' AND ', $where);
 $stmt = $db->prepare(

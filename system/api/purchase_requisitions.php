@@ -69,7 +69,7 @@ if ($method === 'POST') {
 
         $department = trim($data['department'] ?? '');
         $purpose    = trim($data['purpose'] ?? '');
-        $neededDate = trim($data['needed_date'] ?? '') ?: null;
+        $neededDate = inputDateTime($data['needed_date'] ?? null, 'Date and time needed');
         $items      = is_array($data['items'] ?? null) ? $data['items'] : [];
         $submit     = !empty($data['submit']);
 

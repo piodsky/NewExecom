@@ -5,9 +5,11 @@
    ============================================================ */
 
 :root {
-    --sidebar-w: 270px;
+    --sidebar-w: 264px;
     --navy: #1e3a8a;
-    --navy-hover: rgba(255,255,255,.12);
+    --navy-hover: rgba(255,255,255,.08);
+    --sidebar-bg: #0f1d38;
+    --sidebar-bg-2: #142a4d;
     --body-bg: #f1f5f9;
     --card-shadow: 0 2px 12px rgba(0,0,0,.07);
     --primary: #2563eb;
@@ -34,10 +36,10 @@ body {
 /* ── Sidebar ── */
 .sidebar {
     width: var(--sidebar-w);
-    /* Same dusk navy-to-amber palette as the dashboard's Quote of the Day
-       card, run top-to-bottom instead of left-to-right to fit a tall, narrow
-       panel — the amber settles at the foot rather than the far edge. */
-    background: linear-gradient(165deg, #0b1a33 0%, #13294f 35%, #24406b 60%, #5b4632 88%, #7a5528 100%);
+    /* Clean, solid dusk-navy panel — a subtle top-to-bottom deepening rather
+       than a multi-hue gradient, so nav labels stay high-contrast and the
+       whole rail reads as one calm surface instead of a decorative scene. */
+    background: linear-gradient(180deg, var(--sidebar-bg-2) 0%, var(--sidebar-bg) 55%);
     position: fixed;
     top: 0; left: 0; bottom: 0;
     z-index: 1050;
@@ -45,23 +47,16 @@ body {
     flex-direction: column;
     transition: transform .3s ease;
     /* The sidebar no longer scrolls as one piece — .sidebar-nav does, below.
-       Scrolling the whole column pushed the brand, the user card and the
-       footer artwork off-screen the moment the module list grew past the
-       viewport, so the illustration was only ever visible at scroll top. */
+       Scrolling the whole column would push the brand and branch footer
+       off-screen the moment the module list grew past the viewport. */
     overflow: hidden;
-}
-/* Same faint glow as the quote card, anchored low rather than to one side —
-   atmosphere, not a shape, so it never competes with the nav text over it. */
-.sidebar::after {
-    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
-    background: radial-gradient(ellipse 90% 45% at 50% 100%, rgba(251,191,120,.16), transparent 70%);
 }
 .sidebar > * { position: relative; z-index: 1; }
 
 .sidebar-brand {
     flex: 0 0 auto;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid rgba(255,255,255,.1);
+    padding: 1.35rem 1.5rem 1.15rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
     display: flex;
     align-items: center;
     gap: .75rem;
@@ -72,7 +67,7 @@ body {
    background, so its dark half would disappear straight into the navy
    sidebar without something light behind it. */
 .sidebar-brand .brand-icon {
-    width: 42px; height: 42px;
+    width: 40px; height: 40px;
     background: #fff;
     border-radius: 10px;
     padding: 3px;
@@ -81,57 +76,10 @@ body {
     overflow: hidden;
 }
 .sidebar-brand .brand-icon img { width: 100%; height: 100%; object-fit: contain; }
-.sidebar-brand .brand-name { font-weight: 700; font-size: 1rem; line-height: 1.2; }
-.sidebar-brand .brand-sub  { font-size: .65rem; opacity: .7; line-height: 1.2; }
-
-.sidebar-user {
-    flex: 0 0 auto;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    color: rgba(255,255,255,.9);
-}
-.sidebar-user .su-row { display: flex; align-items: center; gap: .65rem; }
-.sidebar-user .avatar {
-    position: relative;
-    width: 42px; height: 42px;
-    background: rgba(255,255,255,.2);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: .95rem; color: #fff; flex-shrink: 0;
-    overflow: hidden;
-}
-/* Discord-style online badge — border matches the sidebar's own gradient at
-   this point so the dot reads as cut out of the avatar, not pasted on. */
-.sidebar-user .su-dot {
-    position: absolute; right: -1px; bottom: -1px;
-    width: 11px; height: 11px;
-    background: #22c55e;
-    border: 2px solid #16307a;
-    border-radius: 50%;
-}
-.sidebar-user .su-info { min-width: 0; flex: 1 1 auto; }
-.sidebar-user .u-name  {
-    font-weight: 700; font-size: .84rem; line-height: 1.25;
-    overflow-wrap: break-word;
-}
-.sidebar-user .su-meta {
-    display: flex; align-items: center; flex-wrap: wrap;
-    gap: .4rem; margin-top: .25rem; font-size: .66rem;
-}
-.sidebar-user .su-role {
-    display: inline-flex; align-items: center; gap: .3rem;
-    color: #7dd3fc; font-weight: 600;
-}
-.sidebar-user .su-role i { font-size: .62rem; }
-.sidebar-user .su-sep { opacity: .3; }
-.sidebar-user .su-online {
-    display: inline-flex; align-items: center; gap: .3rem;
-    color: rgba(255,255,255,.7);
-}
-.sidebar-user .su-online-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 0 2px rgba(34,197,94,.25);
+.sidebar-brand .brand-name { font-weight: 800; font-size: 1.05rem; line-height: 1.2; letter-spacing: .01em; }
+.sidebar-brand .brand-sub  {
+    font-size: .6rem; opacity: .55; line-height: 1.3;
+    text-transform: uppercase; letter-spacing: .07em; font-weight: 600;
 }
 
 .sidebar-nav {
@@ -347,39 +295,75 @@ body {
 }
 
 
+/* ── Branch indicator, pinned at the foot of the sidebar ──
+   A super_admin sees a real <select> (they can view any branch's numbers);
+   a branch-scoped admin/user sees a plain readonly pill naming their own
+   branch, since they have nowhere else to go. */
+.sidebar-branch {
+    flex: 0 0 auto;
+    margin-top: auto;
+    padding: .9rem 1rem;
+    border-top: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-branch-label {
+    font-size: .6rem; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; color: rgba(255,255,255,.35);
+    margin-bottom: .45rem;
+}
+.sidebar-branch-pill {
+    display: flex; align-items: center; gap: .6rem;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+    padding: .55rem .7rem;
+    color: #fff;
+}
+.sidebar-branch-pill i.pin { color: #60a5fa; font-size: .85rem; flex-shrink: 0; }
+.sidebar-branch-pill .sb-name { font-size: .8rem; font-weight: 600; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-branch-pill select {
+    flex: 1 1 auto; min-width: 0;
+    background: transparent; border: none; color: #fff;
+    font-size: .8rem; font-weight: 600;
+    outline: none; cursor: pointer;
+    appearance: none; -webkit-appearance: none;
+}
+.sidebar-branch-pill select option { color: #0f172a; }
+.sidebar-branch-pill i.chev { color: rgba(255,255,255,.4); font-size: .7rem; flex-shrink: 0; }
+
 .sidebar-section-title {
-    padding: .6rem 1.5rem .3rem;
-    font-size: .65rem;
+    padding: .9rem 1.5rem .35rem;
+    font-size: .63rem;
     font-weight: 700;
-    letter-spacing: .08em;
+    letter-spacing: .09em;
     text-transform: uppercase;
-    color: rgba(255,255,255,.4);
+    color: rgba(255,255,255,.35);
 }
 .sidebar-link {
     display: flex;
     align-items: center;
     gap: .75rem;
-    padding: .6rem 1.5rem;
-    color: rgba(255,255,255,.8);
+    margin: .1rem .75rem;
+    padding: .55rem .85rem;
+    border-radius: 9px;
+    color: rgba(255,255,255,.72);
     text-decoration: none;
-    font-size: .85rem;
+    font-size: .84rem;
     font-weight: 500;
-    border-left: 3px solid transparent;
-    transition: all .2s;
+    transition: all .15s;
 }
 .sidebar-link:hover {
     background: var(--navy-hover);
     color: #fff;
-    border-left-color: rgba(255,255,255,.4);
 }
 .sidebar-link.active {
-    background: rgba(255,255,255,.15);
+    background: linear-gradient(135deg, var(--primary), #1d4ed8);
     color: #fff;
-    border-left-color: #60a5fa;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(37,99,235,.35);
 }
 .sidebar-link .nav-icon {
     width: 20px; text-align: center;
-    font-size: .9rem; flex-shrink: 0;
+    font-size: .88rem; flex-shrink: 0;
 }
 .sidebar-link .badge-count {
     margin-left: auto;
@@ -436,6 +420,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 1.25rem;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -443,6 +428,12 @@ body {
 }
 .page-title { font-size: 1.15rem; font-weight: 700; color: var(--text); margin: 0; }
 .page-subtitle { font-size: .78rem; color: var(--muted); margin: 0; }
+/* Every page's .top-navbar has exactly two direct children: the title block,
+   then the actions wrapper that includes topbar.php. Letting the second one
+   grow (rather than sizing to content) is what gives the search box inside
+   it real room to sit between the title and the bell/profile icons, without
+   editing every page's markup individually. */
+.top-navbar > div:nth-child(2) { flex: 1 1 auto; min-width: 0; justify-content: flex-end; }
 
 /* ── Content Area ── */
 .content-area { padding: 1.5rem 1.75rem; flex: 1; }
@@ -637,6 +628,62 @@ body {
 .txn-meta { font-size: .78rem; color: var(--muted); }
 .txn-title { font-size: .85rem; font-weight: 600; margin: 0; }
 
+/* ── Dashboard: greeting header ── */
+.dash-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;
+}
+.dash-greeting { font-size: 1.35rem; font-weight: 800; color: var(--text); margin: 0; }
+.dash-subtitle { font-size: .82rem; color: var(--muted); margin-top: .15rem; }
+.dash-date-pill {
+    display: flex; align-items: center; gap: .5rem;
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    padding: .55rem .9rem; font-size: .82rem; font-weight: 600; color: var(--text);
+    box-shadow: var(--card-shadow);
+}
+.dash-date-pill i { color: var(--primary); }
+
+/* ── Dashboard: activity timeline (connected dots) ── */
+.activity-timeline { position: relative; }
+.at-item { position: relative; display: flex; gap: .85rem; padding-bottom: 1.1rem; }
+.at-item:last-child { padding-bottom: 0; }
+.at-item::before {
+    content: ''; position: absolute; left: 5px; top: 22px; bottom: -4px;
+    width: 2px; background: #eef2f7;
+}
+.at-item:last-child::before { display: none; }
+.at-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 3px;
+    box-shadow: 0 0 0 3px #fff, 0 0 0 4px currentColor;
+}
+.at-dot.blue   { background: #2563eb; color: rgba(37,99,235,.25); }
+.at-dot.green  { background: #16a34a; color: rgba(22,163,74,.25); }
+.at-dot.amber  { background: #d97706; color: rgba(217,119,6,.25); }
+.at-dot.red    { background: #dc2626; color: rgba(220,38,38,.25); }
+.at-dot.purple { background: #7c3aed; color: rgba(124,58,237,.25); }
+.at-dot.gray   { background: #64748b; color: rgba(100,116,139,.25); }
+.at-title { font-size: .84rem; font-weight: 600; color: var(--text); margin: 0; }
+.at-meta  { font-size: .74rem; color: var(--muted); margin-top: .1rem; }
+
+/* ── Dashboard: Top Products list ── */
+.tp-row {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .6rem 0; border-bottom: 1px solid #f1f5f9;
+}
+.tp-row:last-child { border-bottom: none; }
+.tp-rank {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: var(--body-bg); color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .72rem; font-weight: 700; flex-shrink: 0;
+}
+.tp-name { font-size: .83rem; font-weight: 600; color: var(--text); }
+.tp-meta { font-size: .72rem; color: var(--muted); }
+.tp-amount { margin-left: auto; text-align: right; flex-shrink: 0; }
+.tp-amount .tp-rev { font-size: .83rem; font-weight: 700; color: var(--text); }
+.tp-amount .tp-qty { font-size: .7rem; color: var(--muted); }
+
 /* ── Toast ── */
 #toastContainer { z-index: 9999; }
 .toast { border-radius: 10px; font-size: .85rem; }
@@ -652,6 +699,36 @@ body {
     }
     .sidebar-overlay.show { display: block; }
 }
+
+/* ── Topbar quick search — filters the current sidebar's own nav links ── */
+.topbar-search { position: relative; flex: 1 1 auto; max-width: 380px; margin-right: auto; }
+.topbar-search i.tsi { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .85rem; pointer-events: none; }
+.topbar-search input {
+    width: 100%; height: 40px;
+    background: var(--body-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0 14px 0 38px;
+    font-size: .85rem; color: var(--text);
+    outline: none; transition: border-color .15s, background .15s;
+}
+.topbar-search input:focus { background: #fff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.topbar-search-results {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.12);
+    max-height: 320px; overflow-y: auto; z-index: 200;
+}
+.topbar-search-results a {
+    display: flex; align-items: center; gap: .65rem;
+    padding: .6rem .9rem; font-size: .84rem; color: var(--text);
+    text-decoration: none; border-bottom: 1px solid #f1f5f9;
+}
+.topbar-search-results a:last-child { border-bottom: none; }
+.topbar-search-results a:hover, .topbar-search-results a.tsr-active { background: var(--body-bg); }
+.topbar-search-results a i { width: 18px; text-align: center; color: var(--muted); }
+.topbar-search-empty { padding: .9rem; font-size: .8rem; color: var(--muted); text-align: center; }
+@media (max-width: 768px) { .topbar-search { display: none; } }
 
 /* ── Top Navbar — notifications + account ── */
 .topbar-actions { display: flex; align-items: center; gap: .6rem; }

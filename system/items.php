@@ -30,6 +30,7 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Item Catalog</div>
+                <div class="small text-muted">Maintain item names, units, pricing, and stock tracking setup.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Item Catalog</div>
             </div>
         </div>

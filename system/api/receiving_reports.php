@@ -1,7 +1,7 @@
 <?php
 // Receiving Report — Internal: goods arriving from EXECOM's own supplier
-// into a branch. Posting one is the single place stock enters the system:
-// it writes the receiving lines AND the resulting inventory rows (serialized
+// into a branch. Posting one writes the receiving lines AND the resulting
+// inventory rows (serialized
 // units or bulk stock) in one transaction, then rolls the parent PO's status
 // forward. Admin-tier only.
 require_once '../config.php';
@@ -16,8 +16,10 @@ $isAdminTier = in_array($user['role'], ['super_admin', 'branch_admin'], true);
 
 function loadRr(PDO $db, string $rrNumber): ?array {
     $stmt = $db->prepare(
-        'SELECT r.*, b.name AS branch_name, u.full_name AS received_by_name
+        'SELECT r.*, b.name AS branch_name, u.full_name AS received_by_name,
+                p.supplier_name, p.supplier_address
          FROM receiving_reports r JOIN branches b ON b.id = r.branch_id JOIN users u ON u.id = r.received_by
+         LEFT JOIN po_internal p ON p.po_number = r.po_number
          WHERE r.rr_number = ? AND r.is_deleted = 0'
     );
     $stmt->execute([$rrNumber]);
@@ -25,7 +27,7 @@ function loadRr(PDO $db, string $rrNumber): ?array {
     if (!$rr) return null;
 
     $itemStmt = $db->prepare(
-        'SELECT rri.id, rri.item_id, i.name AS item_name, rri.quantity, rri.unit_cost, rri.serial_number
+        'SELECT rri.id, rri.item_id, i.name AS item_name, i.unit, rri.quantity, rri.unit_cost, rri.serial_number
          FROM receiving_report_items rri LEFT JOIN items i ON i.id = rri.item_id
          WHERE rri.rr_number = ? AND rri.is_deleted = 0 ORDER BY rri.id'
     );
@@ -71,7 +73,7 @@ if ($method === 'POST') {
         jsonResponse(false, 'This Purchase Order is not open for receiving.');
     }
 
-    $dateReceived   = trim($data['date_received'] ?? '') ?: date('Y-m-d');
+    $dateReceived   = inputDateTime($data['date_received'] ?? null, 'Date and time received', date('Y-m-d H:i:s'));
     $conditionNotes = trim($data['condition_notes'] ?? '');
     $lines          = is_array($data['items'] ?? null) ? $data['items'] : [];
     $lines = array_values(array_filter($lines, fn($l) => !empty($l['item_id']) && (float)($l['quantity'] ?? 0) > 0));
@@ -92,6 +94,20 @@ if ($method === 'POST') {
     $receivedStmt->execute([$poNumber]);
     $alreadyReceived = [];
     foreach ($receivedStmt->fetchAll() as $row) { $alreadyReceived[$row['item_id']] = (float)$row['qty']; }
+
+    $lineTotals = [];
+    foreach ($lines as $l) {
+        $itemId = (int)$l['item_id'];
+        $lineTotals[$itemId] = ($lineTotals[$itemId] ?? 0) + (float)$l['quantity'];
+    }
+
+    foreach ($lineTotals as $itemId => $receiveQty) {
+        $orderedQty = $ordered[$itemId] ?? 0;
+        $remaining  = $orderedQty - ($alreadyReceived[$itemId] ?? 0);
+        if ($receiveQty > $remaining + 0.0001) {
+            jsonResponse(false, "Cannot receive {$receiveQty}; only {$remaining} remains ordered for this item.");
+        }
+    }
 
     foreach ($lines as $l) {
         $itemId = (int)$l['item_id'];

@@ -191,80 +191,58 @@ $expired = isset($_GET['expired']);
   .ls-footer .ls-conn { color: var(--ls-accent-conn); }
   .ls-footer .ls-conn::before { content: '● '; }
 
-  /* ═══════════════ LEFT BRAND PANEL ═══════════════ */
+  /* ═══════════════ LEFT BRAND PANEL ═══════════════
+     Fully offline: no stock photography, nothing fetched — just a dark navy
+     surface, the vendored logo, and a CSS-drawn grid/glow for texture. */
   .brand-panel {
     flex: 1 1 auto; min-width: 0; position: relative;
-    background: #fff;
+    background: linear-gradient(165deg, #0a1730 0%, #12274e 55%, #17305e 100%);
     overflow: hidden;
-    display: flex; gap: 30px;
-    padding: 56px 40px 48px 56px;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 56px 64px;
+    color: #fff;
   }
-  .brand-text { display: flex; flex-direction: column; flex: 0 0 380px; max-width: 380px; }
-  .brand-head { display: flex; align-items: center; gap: 18px; }
-  /* contain, not cover: the mark is a round badge on a transparent square, so
-     cover would crop its outer ring against the circular mask. */
+  .bp-grid {
+    position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 70% 70% at 30% 40%, #000 40%, transparent 90%);
+  }
+  .bp-glow {
+    position: absolute; z-index: 0; pointer-events: none; border-radius: 50%;
+    width: 520px; height: 520px; top: -160px; right: -160px;
+    background: radial-gradient(circle, rgba(37,99,235,.35), transparent 70%);
+  }
+  .brand-text { position: relative; z-index: 1; display: flex; flex-direction: column; max-width: 460px; }
+  .brand-head { display: flex; align-items: center; gap: 16px; }
   .brand-seal {
-    width: 84px; height: 84px; border-radius: 50%; object-fit: contain; flex: 0 0 auto;
-    background: #fff; padding: 4px; box-shadow: 0 4px 14px rgba(18, 58, 128, 0.18);
+    width: 60px; height: 60px; border-radius: 14px; object-fit: contain; flex: 0 0 auto;
+    background: #fff; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.25);
   }
-  .brand-name { font-size: 3.4rem; font-weight: 800; letter-spacing: 0.06em; color: #1a4faa; line-height: 1; }
-  .brand-title { font-size: 1.3rem; font-weight: 700; color: #123a80; line-height: 1.3; margin-top: 22px; }
-  .brand-rule { width: 56px; height: 4px; border-radius: 2px; background: #1a56b0; margin: 18px 0; }
-  .brand-desc { font-size: 0.95rem; color: #33415c; line-height: 1.7; }
+  .brand-word { font-size: 1.7rem; font-weight: 800; letter-spacing: .03em; color: #fff; line-height: 1.15; }
+  .brand-word small { display: block; font-size: .62rem; font-weight: 700; letter-spacing: .16em; color: #7fa8f5; text-transform: uppercase; margin-top: 2px; }
   .brand-tagline {
-    margin-top: auto; padding-top: 32px;
-    font-size: 2.5rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; color: #1c1e21;
+    margin-top: 40px;
+    font-size: 2.1rem; font-weight: 800; line-height: 1.25; letter-spacing: -0.01em; color: #fff;
   }
-  .brand-tagline span { color: #1877f2; }
+  .brand-desc { margin-top: 14px; font-size: .95rem; color: rgba(255,255,255,.65); line-height: 1.65; max-width: 400px; }
 
-  /* ── Photo collage (Facebook style) ── */
-  .collage { position: relative; flex: 1 1 auto; min-width: 460px; max-width: 500px; height: 600px; align-self: center; margin: 0 auto; }
-  .cl-img { background: url("image/image2.jpg") center 70% / cover no-repeat; }
-  .cl-emoji { position: absolute; top: 34px; left: 0; z-index: 5; font-size: 45px; line-height: 1; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15)); }
-  .cl-back {
-    position: absolute; top: 108px; left: 10px; width: 150px; height: 220px;
-    border-radius: 18px; overflow: hidden; z-index: 1; box-shadow: 0 10px 30px rgba(20, 30, 60, 0.18);
+  /* Capability strip — the mockup's photo icon row, drawn with FontAwesome
+     glyphs already vendored locally instead of a stock image. */
+  .brand-caps { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 46px; }
+  .bc-item { display: flex; flex-direction: column; align-items: center; gap: 9px; width: 68px; text-align: center; }
+  .bc-icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem; color: #93b8f7;
   }
-  .cl-back .cl-img { position: absolute; inset: 0; background-position: 30% 62%; }
-  .cl-back-icon {
-    position: absolute; top: 10px; left: 10px; z-index: 2; width: 26px; height: 26px; border-radius: 8px;
-    background: rgba(255,255,255,0.92); color: #8a93a6; display: flex; align-items: center; justify-content: center; font-size: 0.72rem;
-  }
-  .cl-main {
-    position: absolute; top: 0; left: 176px; width: 250px; height: 430px;
-    border-radius: 22px; overflow: hidden; z-index: 2; box-shadow: 0 18px 44px rgba(20, 30, 60, 0.25);
-  }
-  .cl-main .cl-img { position: absolute; inset: 0; background-position: center 75%; }
-  .cl-main-bar { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 2; width: 55%; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.95); }
-  .cl-time {
-    position: absolute; top: 30px; left: 380px; z-index: 4;
-    background: #6f6af8; color: #fff; font-weight: 700; font-size: 0.85rem; padding: 7px 14px; border-radius: 999px;
-    display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 20px rgba(111, 106, 248, 0.4);
-  }
-  .cl-story { position: absolute; bottom: 15px; left: 14px; right: 14px; z-index: 2; display: flex; align-items: center; gap: 9px; }
-  .cl-story .bar { flex: 1; height: 19px; border: 3px solid rgba(255,255,255,0.95); border-radius: 999px; }
-  .cl-story .dot { width: 19px; height: 19px; border: 3px solid rgba(255,255,255,0.95); border-radius: 50%; }
-  .cl-post {
-    position: absolute; top: 300px; left: 50px; width: 176px; height: 230px;
-    background: #fff; border-radius: 16px; z-index: 3; box-shadow: 0 16px 40px rgba(20, 30, 60, 0.2); padding: 12px;
-  }
-  .cl-post-icon {
-    width: 26px; height: 26px; border-radius: 8px; background: #1877f2; color: #fff;
-    display: flex; align-items: center; justify-content: center; font-size: 0.72rem; margin-bottom: 9px;
-  }
-  .cl-post .cl-img { width: 100%; height: 120px; border-radius: 10px; }
-  .cl-post-line { height: 9px; border-radius: 5px; background: #e9ebf0; margin-top: 10px; }
-  .cl-post-line.short { width: 60%; }
-  .cl-avatar {
-    position: absolute; top: 462px; left: 206px; z-index: 4; width: 128px; height: 128px; border-radius: 50%;
-    border: 5px solid #1877f2; background: #fff; padding: 4px; box-shadow: 0 12px 30px rgba(20, 30, 60, 0.25);
-  }
-  .cl-avatar .cl-img { width: 100%; height: 100%; border-radius: 50%; background-position: center 80%; }
-  .cl-heart {
-    position: absolute; top: 348px; left: 396px; z-index: 4; width: 62px; height: 62px; border-radius: 50%;
-    background: linear-gradient(135deg, #ff4d67, #e6215a); color: #fff; font-size: 1.35rem;
-    display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 28px rgba(230, 33, 90, 0.4);
-  }
+  .bc-item span { font-size: .68rem; font-weight: 600; color: rgba(255,255,255,.6); line-height: 1.3; }
+
+  .brand-stats { position: relative; z-index: 1; display: flex; gap: 34px; margin-top: 54px; }
+  .brand-stats div { display: flex; flex-direction: column; }
+  .brand-stats strong { font-size: 1.5rem; font-weight: 800; color: #fff; }
+  .brand-stats span { font-size: .7rem; color: rgba(255,255,255,.55); margin-top: 2px; }
 
   /* ═══════════════ RIGHT FORM PANEL ═══════════════ */
   /* 720px = the original 480px plus half again, so the panel's left edge moves
@@ -369,22 +347,14 @@ $expired = isset($_GET['expired']);
   .page-footer .pf-links span { white-space: nowrap; }
 
   /* ═══════════════ RESPONSIVE ═══════════════ */
-  /* Was 1250px, when the form panel was 480px wide. The wider panel needs 966px
-     of brand side to keep the collage whole — see the note on .form-panel. */
-  @media (max-width: 1690px) {
-    .collage { display: none; }
-    .brand-text { flex: 1 1 auto; max-width: 460px; }
-    .brand-panel { justify-content: center; }
-  }
   @media (max-width: 900px) {
     .main-split { flex-direction: column; }
-    .brand-panel { flex: 0 0 auto; padding: 36px 28px; justify-content: center; text-align: center; }
-    .brand-text { max-width: none; }
+    .brand-panel { flex: 0 0 auto; padding: 40px 28px; text-align: center; }
+    .brand-text { max-width: none; margin: 0 auto; }
     .brand-head { flex-direction: column; align-items: center; gap: 10px; }
-    .brand-name { font-size: 2.4rem; }
-    .brand-title { font-size: 1.1rem; margin-top: 14px; }
-    .brand-rule { margin: 16px auto; }
-    .brand-tagline { font-size: 1.7rem; padding-top: 24px; }
+    .brand-tagline { font-size: 1.6rem; }
+    .brand-caps { justify-content: center; }
+    .brand-stats { justify-content: center; }
     .form-panel { flex: 1 1 auto; border-left: none; padding: 36px 24px 44px; }
   }
 </style>
@@ -444,40 +414,31 @@ $expired = isset($_GET['expired']);
 
 <!-- ═══════════════ LEFT: BRAND ═══════════════ -->
 <div class="brand-panel">
+  <div class="bp-grid" aria-hidden="true"></div>
+  <div class="bp-glow" aria-hidden="true"></div>
+
   <div class="brand-text">
     <div class="brand-head">
-      <img src="image/execom_logo.png" alt="EXECOM Computer Sales & Services" style="width:100%;max-width:340px;height:auto;">
+      <img src="image/execom_icon.png" alt="" class="brand-seal">
+      <div class="brand-word"><?= e(APP_NAME) ?><small>Logistics &amp; Procurement System</small></div>
     </div>
-    <div class="brand-title">Private Company Logistics System</div>
-    <div class="brand-rule"></div>
-    <p class="brand-desc">Create, track, and print purchase orders, manage suppliers and master data, and stay on top of every request from one place.</p>
-    <div class="brand-tagline">Serving<br>the city<br><span>you love</span>.</div>
-  </div>
 
-  <div class="collage" aria-hidden="true">
-    <span class="cl-emoji">&#128516;</span>
-    <div class="cl-back">
-      <div class="cl-img"></div>
-      <div class="cl-back-icon"><i class="fas fa-image"></i></div>
+    <div class="brand-tagline">Smarter inventory.<br>Stronger operations.</div>
+    <p class="brand-desc">Powering your business, branch by branch — purchase orders, suppliers, inventory, and reports, all from one place.</p>
+
+    <div class="brand-caps">
+      <div class="bc-item"><div class="bc-icon"><i class="fas fa-file-invoice-dollar"></i></div><span>Procurement</span></div>
+      <div class="bc-item"><div class="bc-icon"><i class="fas fa-boxes-stacked"></i></div><span>Inventory</span></div>
+      <div class="bc-item"><div class="bc-icon"><i class="fas fa-warehouse"></i></div><span>Warehouse</span></div>
+      <div class="bc-item"><div class="bc-icon"><i class="fas fa-truck"></i></div><span>Distribution</span></div>
+      <div class="bc-item"><div class="bc-icon"><i class="fas fa-chart-line"></i></div><span>Reporting</span></div>
     </div>
-    <div class="cl-main">
-      <div class="cl-img"></div>
-      <div class="cl-main-bar"></div>
-      <div class="cl-story">
-        <div class="bar"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-      </div>
+
+    <div class="brand-stats">
+      <div><strong>5</strong><span>Branches</span></div>
+      <div><strong>10+</strong><span>Modules</span></div>
+      <div><strong>1</strong><span>System</span></div>
     </div>
-    <div class="cl-time"><i class="fas fa-clock"></i> 16:45</div>
-    <div class="cl-post">
-      <div class="cl-post-icon"><i class="fas fa-star"></i></div>
-      <div class="cl-img"></div>
-      <div class="cl-post-line"></div>
-      <div class="cl-post-line short"></div>
-    </div>
-    <div class="cl-avatar"><div class="cl-img"></div></div>
-    <div class="cl-heart"><i class="fas fa-heart"></i></div>
   </div>
 </div>
 

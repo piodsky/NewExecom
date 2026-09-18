@@ -30,6 +30,7 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Suppliers</div>
+                <div class="small text-muted">Maintain supplier profiles used for canvass, RFQ, and purchase orders.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Suppliers</div>
             </div>
         </div>

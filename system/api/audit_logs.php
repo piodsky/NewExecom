@@ -15,10 +15,9 @@ const MAX_ROWS = 1000;
 $where  = ['1=1'];
 $params = [];
 
-$from = trim($_GET['from'] ?? '');
-$to   = trim($_GET['to'] ?? '');
-if ($from !== '') { $where[] = 'created_at >= ?'; $params[] = $from . ' 00:00:00'; }
-if ($to   !== '') { $where[] = 'created_at <= ?'; $params[] = $to   . ' 23:59:59'; }
+[$from, $to] = inputDateTimeRange($_GET['from'] ?? null, $_GET['to'] ?? null);
+if ($from !== null) { $where[] = 'created_at >= ?'; $params[] = $from; }
+if ($to !== null) { $where[] = 'created_at <= ?'; $params[] = $to; }
 
 foreach (['user' => 'username', 'module' => 'module', 'action' => 'action'] as $key => $col) {
     $val = trim($_GET[$key] ?? '');

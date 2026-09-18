@@ -64,6 +64,7 @@ $activePage  = 'audit_logs';
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Activity Log</div>
+                <div class="small text-muted">Review recorded user actions and system activity for accountability.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Activity Log</div>
             </div>
         </div>
@@ -77,9 +78,9 @@ $activePage  = 'audit_logs';
             <div class="panel-body">
                 <div class="al-filters">
                     <div class="al-field"><label for="alFrom">From</label>
-                        <input type="date" id="alFrom" class="form-control form-control-sm"></div>
+                        <input type="datetime-local" step="1" id="alFrom" class="form-control form-control-sm"></div>
                     <div class="al-field"><label for="alTo">To</label>
-                        <input type="date" id="alTo" class="form-control form-control-sm"></div>
+                        <input type="datetime-local" step="1" id="alTo" class="form-control form-control-sm"></div>
                     <div class="al-field"><label for="alUser">User</label>
                         <select id="alUser" class="form-select form-select-sm"><option value="">Everyone</option></select></div>
                     <div class="al-field"><label for="alModule">Module</label>
@@ -134,11 +135,7 @@ let currentRows = [];
 let filtersLoaded = false;
 
 function fmtWhen(v) {
-    if (!v) return '—';
-    const d = new Date(String(v).replace(' ', 'T'));
-    if (isNaN(d)) return escapeHtml(v);
-    return `${d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })}`
-         + `<small>${d.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}</small>`;
+    return AppDateTime.format(v);
 }
 
 // CREATE_PO -> "Create PO". The stored action is a machine token; nobody

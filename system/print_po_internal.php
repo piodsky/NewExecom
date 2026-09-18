@@ -50,9 +50,11 @@ th { background: #eef2ff; }
 .no-print { text-align: center; margin-bottom: 1rem; }
 @media print { .no-print { display: none; } body { margin: 0; } }
 </style>
+<?php include __DIR__ . '/report_tools.php'; ?>
 </head>
 <body>
-<div class="no-print"><button onclick="window.print()">Print</button></div>
+<div class="no-print"><button onclick="window.print()">Print</button> <button type="button" data-report-document="documentPrintSource" data-report-title="Purchase Order <?= e($po['po_number']) ?>">Preview / Download PDF</button></div>
+<main id="documentPrintSource">
 <?php include 'print_letterhead.php'; ?>
 <h1>PURCHASE ORDER</h1>
 
@@ -93,5 +95,6 @@ th { background: #eef2ff; }
     <div>Received By:</div>
     <div class="sign-line">Printed Name &amp; Signature</div>
 </div>
+</main>
 </body>
 </html>

@@ -29,6 +29,7 @@ $activePage  = 'branches';
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Branches</div>
+                <div class="small text-muted">Maintain branch records used for documents, inventory, and users.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Branches</div>
             </div>
         </div>

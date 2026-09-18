@@ -44,9 +44,11 @@ body { font-family: 'Times New Roman', Times, serif; color: #1e293b; max-width: 
 .no-print { text-align: center; margin-bottom: 1rem; font-family: Arial, sans-serif; }
 @media print { .no-print { display: none; } body { margin: 0; } }
 </style>
+<?php include __DIR__ . '/report_tools.php'; ?>
 </head>
 <body>
-<div class="no-print"><button onclick="window.print()">Print</button></div>
+<div class="no-print"><button onclick="window.print()">Print</button> <button type="button" data-report-document="documentPrintSource" data-report-title="Quotation <?= e($q['quotation_number']) ?>">Preview / Download PDF</button></div>
+<main id="documentPrintSource">
 <?php include 'print_letterhead.php'; ?>
 
 <div class="q-date"><?= strtoupper(date('F j, Y', strtotime($q['created_at']))) ?></div>
@@ -83,5 +85,6 @@ foreach ($items as $it) {
     <div><?= e($q['prepared_by_name'] ?? '') ?></div>
     <div>Sales Representative</div>
 </div>
+</main>
 </body>
 </html>

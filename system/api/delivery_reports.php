@@ -18,8 +18,10 @@ $isAdminTier = in_array($user['role'], ['super_admin', 'branch_admin'], true);
 
 function loadDr(PDO $db, string $drNumber): ?array {
     $stmt = $db->prepare(
-        'SELECT d.*, b.name AS branch_name, u.full_name AS delivered_by_name
+        'SELECT d.*, b.name AS branch_name, u.full_name AS delivered_by_name,
+                p.client_name, p.client_address, p.place_of_delivery
          FROM delivery_reports d JOIN branches b ON b.id = d.branch_id JOIN users u ON u.id = d.delivered_by
+         LEFT JOIN po_outgoing p ON p.po_number = d.po_number
          WHERE d.dr_number = ? AND d.is_deleted = 0'
     );
     $stmt->execute([$drNumber]);
@@ -27,7 +29,7 @@ function loadDr(PDO $db, string $drNumber): ?array {
     if (!$dr) return null;
 
     $itemStmt = $db->prepare(
-        'SELECT dri.id, dri.item_id, i.name AS item_name, dri.quantity
+        'SELECT dri.id, dri.item_id, i.name AS item_name, i.unit, dri.quantity
          FROM delivery_report_items dri JOIN items i ON i.id = dri.item_id
          WHERE dri.dr_number = ? AND dri.is_deleted = 0 ORDER BY dri.id'
     );
@@ -74,9 +76,9 @@ if ($method === 'POST') {
     }
 
     $forwarder     = trim($data['forwarder'] ?? '');
-    $dateDelivered = trim($data['date_delivered'] ?? '') ?: date('Y-m-d');
+    $dateDelivered = inputDateTime($data['date_delivered'] ?? null, 'Date and time delivered', date('Y-m-d H:i:s'));
     $receivedBy    = trim($data['received_by'] ?? '');
-    $dateAccepted  = trim($data['date_accepted'] ?? '') ?: null;
+    $dateAccepted  = inputDateTime($data['date_accepted'] ?? null, 'Date and time accepted');
     $lines         = is_array($data['items'] ?? null) ? $data['items'] : [];
     $lines = array_values(array_filter($lines, fn($l) => !empty($l['item_id']) && (float)($l['quantity'] ?? 0) > 0));
     if (!$lines) jsonResponse(false, 'At least one delivered item is required.');
@@ -97,12 +99,17 @@ if ($method === 'POST') {
     $alreadyDelivered = [];
     foreach ($deliveredStmt->fetchAll() as $row) { $alreadyDelivered[$row['item_id']] = (float)$row['qty']; }
 
+    $lineTotals = [];
     foreach ($lines as $l) {
         $itemId = (int)$l['item_id'];
         if (!isset($ordered[$itemId])) jsonResponse(false, 'One of the selected items is not a catalog-linked line on this PO.');
+        $lineTotals[$itemId] = ($lineTotals[$itemId] ?? 0) + (float)$l['quantity'];
+    }
+
+    foreach ($lineTotals as $itemId => $deliverQty) {
         $remaining = $ordered[$itemId] - ($alreadyDelivered[$itemId] ?? 0);
-        if ((float)$l['quantity'] > $remaining + 0.0001) {
-            jsonResponse(false, "Cannot deliver more than the remaining {$remaining} ordered for this item.");
+        if ($deliverQty > $remaining + 0.0001) {
+            jsonResponse(false, "Cannot deliver {$deliverQty}; only {$remaining} remains ordered for this item.");
         }
     }
 

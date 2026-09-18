@@ -197,7 +197,8 @@ CREATE TABLE suppliers (
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Government/other end-clients for the Outgoing side (an LGU office, etc).
+-- Government/other end-clients for the Outgoing side (an LGU office, etc),
+-- plus walk-in retail buyers registered from the Issuance POS screen.
 -- Documents also snapshot the client name/address as free text at the time
 -- (see po_outgoing.client_name/client_address) so an old printed document
 -- never silently changes when this master record is edited later.
@@ -207,6 +208,7 @@ CREATE TABLE clients (
     address         VARCHAR(255) NULL,
     contact_person  VARCHAR(150) NULL,
     contact_number  VARCHAR(50)  NULL,
+    client_type     ENUM('business','walkin') NOT NULL DEFAULT 'business',
     is_active       TINYINT(1)   NOT NULL DEFAULT 1,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -220,7 +222,7 @@ CREATE TABLE pr_requests (
     requested_by  INT          NOT NULL,
     department    VARCHAR(150) NULL,
     purpose       VARCHAR(255) NULL,
-    needed_date   DATE         NULL,
+    needed_date   DATETIME     NULL,
     status        ENUM('draft','pending','approved','rejected','converted') NOT NULL DEFAULT 'draft',
     approved_by   INT          NULL,
     approved_at   DATETIME     NULL,
@@ -255,7 +257,7 @@ CREATE TABLE internal_rfq (
     rfq_number  VARCHAR(30) NOT NULL UNIQUE,
     branch_id   INT         NOT NULL,
     pr_number   VARCHAR(30) NULL,
-    sent_date   DATE        NULL,
+    sent_date   DATETIME    NULL,
     status      ENUM('open','converted','cancelled') NOT NULL DEFAULT 'open',
     created_by  INT         NOT NULL,
     is_deleted  TINYINT(1)  NOT NULL DEFAULT 0,
@@ -304,8 +306,8 @@ CREATE TABLE outgoing_rfq (
     client_id      INT          NULL,
     client_name    VARCHAR(255) NULL,   -- snapshot, in case client_id is unset or edited later
     client_address VARCHAR(255) NULL,
-    received_date  DATE         NULL,
-    due_date       DATE         NULL,
+    received_date  DATETIME     NULL,
+    due_date       DATETIME     NULL,
     status         ENUM('open','quoted','converted','cancelled') NOT NULL DEFAULT 'open',
     created_by     INT          NOT NULL,
     is_deleted     TINYINT(1)   NOT NULL DEFAULT 0,
@@ -460,7 +462,7 @@ CREATE TABLE receiving_reports (
     branch_id        INT         NOT NULL,
     po_number        VARCHAR(30) NULL,
     received_by      INT         NOT NULL,
-    date_received    DATE        NULL,
+    date_received    DATETIME    NULL,
     condition_notes  VARCHAR(255) NULL,
     is_deleted       TINYINT(1)  NOT NULL DEFAULT 0,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -493,9 +495,9 @@ CREATE TABLE delivery_reports (
     po_number       VARCHAR(30)  NULL,
     delivered_by    INT          NOT NULL,
     forwarder       VARCHAR(150) NULL,
-    date_delivered  DATE         NULL,
+    date_delivered  DATETIME     NULL,
     received_by     VARCHAR(150) NULL,   -- client-side signatory (free text)
-    date_accepted   DATE         NULL,
+    date_accepted   DATETIME     NULL,
     is_deleted      TINYINT(1)   NOT NULL DEFAULT 0,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (branch_id) REFERENCES branches(id),
@@ -530,8 +532,8 @@ CREATE TABLE inventory_units (
     source_rr_number      VARCHAR(30)   NULL,
     reserved_for_client_id INT          NULL,
     reserved_for_po_number VARCHAR(30)  NULL,
-    date_received         DATE          NULL,
-    date_out              DATE          NULL,
+    date_received         DATETIME      NULL,
+    date_out              DATETIME      NULL,
     location              VARCHAR(100)  NULL,   -- shelf/bin, free text
     remarks               VARCHAR(255)  NULL,
     is_deleted            TINYINT(1)    NOT NULL DEFAULT 0,
@@ -555,6 +557,25 @@ CREATE TABLE inventory_stock (
     UNIQUE KEY item_branch (item_id, branch_id),
     FOREIGN KEY (item_id) REFERENCES items(id),
     FOREIGN KEY (branch_id) REFERENCES branches(id)
+);
+
+-- Quick Scan: a serial can be scanned in before anyone has picked which item
+-- it belongs to. It waits here until Segregate assigns it to an item, at
+-- which point it becomes a normal row in inventory_units and is soft-deleted
+-- here (see lib/quick_scan_inventory.php).
+CREATE TABLE inventory_unassigned_units (
+    id             INT AUTO_INCREMENT PRIMARY KEY,
+    branch_id      INT           NOT NULL,
+    serial_number  VARCHAR(100)  NOT NULL,
+    date_received  DATETIME      NULL,
+    remarks        VARCHAR(255)  NULL,
+    scanned_by     INT           NULL,
+    is_deleted     TINYINT(1)    NOT NULL DEFAULT 0,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (branch_id) REFERENCES branches(id),
+    FOREIGN KEY (scanned_by) REFERENCES users(id),
+    INDEX idx_invunassigned_branch (branch_id),
+    INDEX idx_invunassigned_serial (serial_number)
 );
 
 -- ── 7. Stock Transfer — Internal, branch to branch ───────────────────────
@@ -601,10 +622,14 @@ CREATE TABLE issuances (
     issuance_number  VARCHAR(30) NOT NULL UNIQUE,
     branch_id        INT         NOT NULL,
     client_id        INT         NULL,   -- NULL = walk-in retail sale
+    walkin_name      VARCHAR(150) NULL,  -- walk-in buyer, only set when client_id is NULL
+    walkin_address   VARCHAR(255) NULL,
+    walkin_contact   VARCHAR(50)  NULL,
     po_number        VARCHAR(30) NULL,   -- fulfilling a specific government order
     issued_by        INT         NOT NULL,
     date_created     DATETIME    NULL,
-    total_amount     DECIMAL(15,2) NOT NULL DEFAULT 0,
+    total_amount     DECIMAL(15,2) NOT NULL DEFAULT 0,  -- net of discount_amount below
+    discount_amount  DECIMAL(15,2) NOT NULL DEFAULT 0,  -- optional whole-sale discount; already prorated into issuance_items.total_price, so SUM(issuance_items.total_price) still equals total_amount
     is_deleted       TINYINT(1)  NOT NULL DEFAULT 0,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (branch_id) REFERENCES branches(id),

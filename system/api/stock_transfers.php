@@ -132,9 +132,14 @@ if ($method === 'POST') {
         $stockCheck = $db->prepare('SELECT s.quantity_on_hand, i.name FROM inventory_stock s JOIN items i ON i.id = s.item_id WHERE s.item_id = ? AND s.branch_id = ?');
 
         $prepared = [];
+        $seenUnitIds = [];
+        $stockTotals = [];
+        $stockAvailable = [];
         foreach ($lines as $l) {
             if (!empty($l['inventory_unit_id'])) {
                 $unitId = (int)$l['inventory_unit_id'];
+                if (isset($seenUnitIds[$unitId])) jsonResponse(false, 'A serialized unit was selected more than once.');
+                $seenUnitIds[$unitId] = true;
                 $unitCheck->execute([$unitId, $fromBranchId]);
                 $unit = $unitCheck->fetch();
                 if (!$unit) jsonResponse(false, 'One of the selected units is no longer available at the source branch.');
@@ -145,10 +150,17 @@ if ($method === 'POST') {
                 $stockCheck->execute([$itemId, $fromBranchId]);
                 $stock = $stockCheck->fetch();
                 if (!$stock || (float)$stock['quantity_on_hand'] < $qty) jsonResponse(false, 'Not enough stock on hand for one of the selected items.');
+                $stockTotals[$itemId] = ($stockTotals[$itemId] ?? 0) + $qty;
+                $stockAvailable[$itemId] = (float)$stock['quantity_on_hand'];
                 $prepared[] = ['inventory_unit_id' => null, 'item_id' => $itemId, 'quantity' => $qty, 'description_snapshot' => $stock['name']];
             }
         }
         if (!$prepared) jsonResponse(false, 'At least one valid item is required.');
+        foreach ($stockTotals as $itemId => $qty) {
+            if ($qty > ($stockAvailable[$itemId] ?? 0) + 0.0001) {
+                jsonResponse(false, 'Not enough stock on hand for one of the selected items.');
+            }
+        }
 
         $db->beginTransaction();
         try {

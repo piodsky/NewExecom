@@ -30,6 +30,7 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Receiving Reports</div>
+                <div class="small text-muted">Record supplier deliveries and add accepted items to inventory.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Receiving Reports</div>
             </div>
         </div>
@@ -69,7 +70,7 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
         <div class="modal-body">
           <div class="row g-2 mb-2">
             <div class="col-6"><label class="form-label">Purchase Order</label><select class="form-select" id="rrPo" onchange="onRrPoPicked()" required></select></div>
-            <div class="col-6"><label class="form-label">Date Received</label><input type="date" class="form-control" id="rrDate" value="<?= date('Y-m-d') ?>"></div>
+            <div class="col-6"><label class="form-label">Date &amp; Time Received</label><input type="datetime-local" step="1" class="form-control" id="rrDate" value="<?= date('Y-m-d\TH:i:s') ?>"></div>
             <div class="col-12"><label class="form-label">Condition Notes</label><input type="text" class="form-control" id="rrCondition" placeholder="e.g. all items in good condition"></div>
           </div>
 
@@ -97,6 +98,7 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
       <div class="modal-header"><h5 class="modal-title" id="rrViewTitle">Receiving Report</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body" id="rrViewBody"></div>
+      <div class="modal-footer"><a class="btn btn-outline-secondary btn-sm" id="rrPrintLink" data-report-modal><i class="fas fa-print me-1"></i>Print / PDF</a></div>
     </div>
   </div>
 </div>
@@ -107,6 +109,8 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 let rrCache = [], currentPoItems = [];
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const peso = n => '₱' + Number(n || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+const qty = n => Number(n || 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
+const inputQty = n => Number(n || 0).toFixed(2).replace(/\.?0+$/, '');
 
 async function loadRrs() {
     const res  = await fetch('api/receiving_reports.php');
@@ -118,7 +122,7 @@ async function loadRrs() {
             <td><strong>${escapeHtml(r.rr_number)}</strong></td>
             <td>${escapeHtml(r.branch_name)}</td>
             <td>${escapeHtml(r.po_number)}</td>
-            <td>${r.date_received || '—'}</td>
+            <td>${AppDateTime.format(r.date_received)}</td>
             <td>${escapeHtml(r.received_by_name)}</td>
             <td class="text-end"><i class="fas fa-chevron-right text-muted"></i></td>
         </tr>`).join('') : '<tr><td colspan="6" class="text-muted small">No receiving reports yet.</td></tr>';
@@ -126,7 +130,7 @@ async function loadRrs() {
 
 async function openRrModal() {
     document.getElementById('rrForm').reset();
-    document.getElementById('rrDate').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('rrDate').value = AppDateTime.nowInput();
     document.getElementById('rrPoItemsWrap').style.display = 'none';
     const res  = await fetch('api/po_internal.php?open_for_receiving=1');
     const data = await res.json();
@@ -143,38 +147,98 @@ async function onRrPoPicked() {
     const res  = await fetch('api/po_internal.php?id=' + encodeURIComponent(poNumber));
     const data = await res.json();
     if (!data.success) return alert(data.message);
-    currentPoItems = data.po.items.filter(i => i.item_id).map(i => ({ ...i, remaining: i.quantity - i.received_qty }));
-
-    document.getElementById('rrAvailList').innerHTML = currentPoItems.map(i => `
-        <div class="rr-avail-row">
-            <span>${escapeHtml(i.item_name)} <span class="text-muted">(ordered ${i.quantity}, received ${i.received_qty})</span></span>
-            <span>
-                <strong class="me-2">${i.remaining} left</strong>
-                ${i.remaining > 0 ? `<button type="button" class="btn btn-sm btn-light" onclick="addRrLine(${i.item_id})"><i class="fas fa-plus"></i> Add</button>` : ''}
-            </span>
-        </div>`).join('') || '<div class="text-muted small">This PO has no catalog-linked items to receive.</div>';
-
+    currentPoItems = data.po.items.filter(i => i.item_id).map(i => ({
+        ...i,
+        item_id: String(i.item_id),
+        quantity: Number(i.quantity || 0),
+        received_qty: Number(i.received_qty || 0),
+        remaining: Math.max(0, Number(i.quantity || 0) - Number(i.received_qty || 0)),
+        is_serialized: Number(i.is_serialized || 0) === 1,
+    }));
+    renderRrAvailableItems();
     document.getElementById('rrPoItemsWrap').style.display = '';
 }
 
+function getRrItem(itemId) {
+    return currentPoItems.find(i => String(i.item_id) === String(itemId));
+}
+
+function queuedRrQty(itemId, excludeRow = null) {
+    return [...document.querySelectorAll('#rrLineRows .rr-line-row')]
+        .filter(row => row !== excludeRow && String(row.dataset.itemId) === String(itemId))
+        .reduce((sum, row) => sum + Number(row.querySelector('.rr-qty').value || 0), 0);
+}
+
+function remainingToQueue(itemId, excludeRow = null) {
+    const item = getRrItem(itemId);
+    if (!item) return 0;
+    return Math.max(0, item.remaining - queuedRrQty(itemId, excludeRow));
+}
+
+function renderRrAvailableItems() {
+    const rows = currentPoItems.map(i => {
+        const queued = queuedRrQty(i.item_id);
+        const left = Math.max(0, i.remaining - queued);
+        const disabled = left <= 0 ? 'disabled' : '';
+        const label = left <= 0 ? 'All queued' : 'Add';
+        return `
+            <div class="rr-avail-row">
+                <span>${escapeHtml(i.item_name)} <span class="text-muted">(ordered ${qty(i.quantity)}, received ${qty(i.received_qty)})</span></span>
+                <span>
+                    ${queued > 0 ? `<span class="text-muted me-2">${qty(queued)} queued</span>` : ''}
+                    <strong class="me-2">${qty(left)} left</strong>
+                    <button type="button" class="btn btn-sm btn-light" onclick="addRrLine('${escapeHtml(i.item_id)}')" ${disabled}><i class="fas fa-plus"></i> ${label}</button>
+                </span>
+            </div>`;
+    }).join('');
+    document.getElementById('rrAvailList').innerHTML = rows || '<div class="text-muted small">This PO has no catalog-linked items to receive.</div>';
+}
+
+function onRrQtyChanged(input) {
+    const row = input.closest('.rr-line-row');
+    if (!row) return;
+    const max = remainingToQueue(row.dataset.itemId, row);
+    const value = Number(input.value || 0);
+    if (value > max) input.value = inputQty(max);
+    if (Number(input.value || 0) < 0) input.value = '';
+    renderRrAvailableItems();
+}
+
+function removeRrLine(button) {
+    button.closest('.rr-line-row')?.remove();
+    renderRrAvailableItems();
+}
+
 function addRrLine(itemId) {
-    const item = currentPoItems.find(i => i.item_id === itemId);
+    const item = getRrItem(itemId);
     if (!item) return;
+    const left = remainingToQueue(itemId);
+    if (left <= 0) {
+        alert('No remaining quantity left to receive for this item.');
+        renderRrAvailableItems();
+        return;
+    }
+    const qtyValue = item.is_serialized ? 1 : inputQty(left);
     const wrap = document.createElement('div');
     wrap.className = 'rr-line-row';
-    wrap.dataset.itemId = itemId;
+    wrap.dataset.itemId = item.item_id;
     wrap.dataset.serialized = item.is_serialized ? '1' : '0';
     wrap.innerHTML = `
         <span>${escapeHtml(item.item_name)}</span>
-        <input type="number" step="0.01" class="form-control form-control-sm rr-qty" placeholder="Qty" value="${item.is_serialized ? 1 : ''}" ${item.is_serialized ? 'readonly' : ''} max="${item.remaining}">
+        <input type="number" step="0.01" min="0.01" class="form-control form-control-sm rr-qty" placeholder="Qty" value="${qtyValue}" ${item.is_serialized ? 'readonly' : ''} max="${inputQty(left)}" oninput="onRrQtyChanged(this)">
         <input type="number" step="0.01" class="form-control form-control-sm rr-cost" placeholder="Unit Cost" value="${item.unit_cost ?? ''}">
         <input type="text" class="form-control form-control-sm rr-serial" placeholder="${item.is_serialized ? 'Serial number (required)' : 'Serial (n/a)'}" ${item.is_serialized ? '' : 'disabled'}>
-        <button type="button" class="btn btn-sm btn-light" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>`;
+        <button type="button" class="btn btn-sm btn-light" onclick="removeRrLine(this)"><i class="fas fa-trash"></i></button>`;
     document.getElementById('rrLineRows').appendChild(wrap);
+    renderRrAvailableItems();
 }
 
 document.getElementById('rrForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const overQueued = currentPoItems.find(i => queuedRrQty(i.item_id) > i.remaining + 0.0001);
+    if (overQueued) {
+        return alert(`Cannot receive more than the remaining ${qty(overQueued.remaining)} ordered for ${overQueued.item_name}.`);
+    }
     const items = [...document.querySelectorAll('#rrLineRows .rr-line-row')].map(row => ({
         item_id: row.dataset.itemId,
         quantity: row.querySelector('.rr-qty').value,
@@ -201,12 +265,13 @@ async function viewRr(rrNumber) {
     const data = await res.json();
     if (!data.success) return alert(data.message);
     const rr = data.rr;
+    document.getElementById('rrPrintLink').href = 'print_document.php?' + new URLSearchParams({ module: 'receiving_reports', id: rr.rr_number });
     document.getElementById('rrViewTitle').textContent = rr.rr_number;
     document.getElementById('rrViewBody').innerHTML = `
         <div class="row g-2 mb-3">
             <div class="col-6"><strong>Branch:</strong> ${escapeHtml(rr.branch_name)}</div>
             <div class="col-6"><strong>PO Number:</strong> ${escapeHtml(rr.po_number)}</div>
-            <div class="col-6"><strong>Date Received:</strong> ${rr.date_received || '—'}</div>
+            <div class="col-6"><strong>Date &amp; Time Received:</strong> ${AppDateTime.format(rr.date_received)}</div>
             <div class="col-6"><strong>Received By:</strong> ${escapeHtml(rr.received_by_name)}</div>
             <div class="col-12"><strong>Condition Notes:</strong> ${escapeHtml(rr.condition_notes || '—')}</div>
         </div>

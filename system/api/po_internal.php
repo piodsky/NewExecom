@@ -24,7 +24,7 @@ function loadPoInternal(PDO $db, string $poNumber): ?array {
     if (!$po) return null;
 
     $itemStmt = $db->prepare(
-        'SELECT pi.id, pi.item_id, i.name AS item_name, pi.description, pi.quantity, pi.unit, pi.unit_cost, pi.total_cost,
+        'SELECT pi.id, pi.item_id, i.name AS item_name, i.is_serialized, pi.description, pi.quantity, pi.unit, pi.unit_cost, pi.total_cost,
                 COALESCE((SELECT SUM(rri.quantity) FROM receiving_report_items rri
                           JOIN receiving_reports rr ON rr.rr_number = rri.rr_number
                           WHERE rr.po_number = pi.po_number AND rri.item_id = pi.item_id AND rri.is_deleted = 0 AND rr.is_deleted = 0), 0) AS received_qty

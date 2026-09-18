@@ -40,6 +40,11 @@ if (session_status() === PHP_SESSION_NONE) {
     }
 })();
 
+// Use the same local clock for form defaults, document numbers and SQL writes.
+define('APP_TIMEZONE', $_ENV['APP_TIMEZONE'] ?? 'Asia/Manila');
+date_default_timezone_set(APP_TIMEZONE);
+require_once __DIR__ . '/lib/datetime.php';
+
 // Local development only. Never leave APP_DEBUG=1 on a deployed instance —
 // it puts PHP errors and database connection details back on screen.
 function appDebug(): bool {
@@ -91,6 +96,7 @@ function getDB() {
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
             ]);
+            $pdo->exec('SET time_zone = ' . $pdo->quote((new DateTimeImmutable())->format('P')));
         } catch (PDOException $e) {
             dbConnectionFailure(DB_NAME . ' @ ' . DB_HOST, $e->getMessage());
         }
@@ -235,6 +241,7 @@ const ACCESS_MODULES = [
     'items'                => 'Item Catalog',
     'reports'              => 'Reports',
     'settings'             => 'User Management',
+    'system_guide'         => 'System Guide',
 ];
 
 // Resolution order: per-account override (user_module_access) > per-role

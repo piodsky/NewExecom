@@ -18,6 +18,8 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 <style>
 .badge-status.active   { background: #dcfce7; color: #166534; }
 .badge-status.inactive { background: #fee2e2; color: #991b1b; }
+.badge-status.business { background: #dbeafe; color: #1e40af; }
+.badge-status.walkin   { background: #ede9fe; color: #5b21b6; }
 </style>
 </head>
 <body>
@@ -30,6 +32,7 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Clients</div>
+                <div class="small text-muted">Maintain client records used for outgoing RFQs, quotations, and deliveries.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Clients</div>
             </div>
         </div>
@@ -41,8 +44,13 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
     <div class="content-area">
         <div class="panel">
             <div class="panel-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div class="panel-title">Government &amp; Other End-Clients</div>
+                <div class="panel-title">Clients &amp; Buyers</div>
                 <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" id="cliTypeFilter" style="width:170px" onchange="loadClients()">
+                        <option value="all">All types</option>
+                        <option value="business">Business / Government</option>
+                        <option value="walkin">Walk-in buyers</option>
+                    </select>
                     <input type="text" class="form-control form-control-sm" id="cliSearch" placeholder="Search…" style="width:200px" onkeyup="if(event.key==='Enter')loadClients()">
                     <?php if ($isAdminTier): ?>
                     <button class="btn btn-primary-app btn-sm" onclick="openClientModal()"><i class="fas fa-plus me-1"></i>New Client</button>
@@ -50,10 +58,11 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
                 </div>
             </div>
             <div class="panel-body">
+                <p class="text-muted small mb-2">Business/Government clients are the formal end-clients used on RFQ, Quotation, and PO documents. Walk-in buyers are registered automatically the first time their name is used on an Issuance (POS) sale.</p>
                 <div class="table-responsive">
                 <table class="app-table table">
-                    <thead><tr><th>Name</th><th>Address</th><th>Contact Person</th><th>Number</th><th>Status</th><th></th></tr></thead>
-                    <tbody id="cliBody"><tr><td colspan="6" class="text-muted small">Loading…</td></tr></tbody>
+                    <thead><tr><th>Name</th><th>Type</th><th>Address</th><th>Contact Person</th><th>Number</th><th>Status</th><th></th></tr></thead>
+                    <tbody id="cliBody"><tr><td colspan="7" class="text-muted small">Loading…</td></tr></tbody>
                 </table>
                 </div>
             </div>
@@ -71,6 +80,12 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
         <div class="modal-body">
           <input type="hidden" id="cId">
           <div class="mb-2"><label class="form-label">Name / Office</label><input type="text" class="form-control" id="cName" required></div>
+          <div class="mb-2"><label class="form-label">Type</label>
+              <select class="form-select" id="cType">
+                  <option value="business">Business / Government</option>
+                  <option value="walkin">Walk-in buyer</option>
+              </select>
+          </div>
           <div class="mb-2"><label class="form-label">Address</label><input type="text" class="form-control" id="cAddress"></div>
           <div class="row g-2">
             <div class="col-6"><label class="form-label">Contact Person</label><input type="text" class="form-control" id="cContactPerson"></div>
@@ -94,14 +109,16 @@ let cliCache = [];
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 async function loadClients() {
-    const q = document.getElementById('cliSearch').value.trim();
-    const res  = await fetch('api/clients.php?q=' + encodeURIComponent(q));
+    const q    = document.getElementById('cliSearch').value.trim();
+    const type = document.getElementById('cliTypeFilter').value;
+    const res  = await fetch('api/clients.php?q=' + encodeURIComponent(q) + '&type=' + encodeURIComponent(type));
     const data = await res.json();
     if (!data.success) return alert(data.message);
     cliCache = data.clients;
     document.getElementById('cliBody').innerHTML = cliCache.length ? cliCache.map(c => `
         <tr>
             <td>${escapeHtml(c.name)}</td>
+            <td><span class="badge-status ${c.client_type}">${c.client_type === 'walkin' ? 'Walk-in' : 'Business'}</span></td>
             <td>${escapeHtml(c.address || '—')}</td>
             <td>${escapeHtml(c.contact_person || '—')}</td>
             <td>${escapeHtml(c.contact_number || '—')}</td>
@@ -109,12 +126,13 @@ async function loadClients() {
             <td class="text-end">${isAdminTier ? `
                 <button class="btn-sm-action" onclick="editClient(${c.id})" title="Edit"><i class="fas fa-pen"></i></button>
                 <button class="btn-sm-action" onclick="toggleClient(${c.id})" title="Toggle"><i class="fas fa-power-off"></i></button>` : ''}</td>
-        </tr>`).join('') : '<tr><td colspan="6" class="text-muted small">No clients found.</td></tr>';
+        </tr>`).join('') : '<tr><td colspan="7" class="text-muted small">No clients found.</td></tr>';
 }
 
 function openClientModal() {
     document.getElementById('clientForm').reset();
     document.getElementById('cId').value = '';
+    document.getElementById('cType').value = 'business';
     document.getElementById('clientModalTitle').textContent = 'New Client';
     new bootstrap.Modal(document.getElementById('clientModal')).show();
 }
@@ -123,6 +141,7 @@ function editClient(id) {
     if (!c) return;
     document.getElementById('cId').value = c.id;
     document.getElementById('cName').value = c.name;
+    document.getElementById('cType').value = c.client_type || 'business';
     document.getElementById('cAddress').value = c.address || '';
     document.getElementById('cContactPerson').value = c.contact_person || '';
     document.getElementById('cContactNumber').value = c.contact_number || '';
@@ -135,6 +154,7 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
     const payload = {
         action: id ? 'update' : 'create', id: id || undefined,
         name: document.getElementById('cName').value.trim(),
+        client_type: document.getElementById('cType').value,
         address: document.getElementById('cAddress').value.trim(),
         contact_person: document.getElementById('cContactPerson').value.trim(),
         contact_number: document.getElementById('cContactNumber').value.trim(),

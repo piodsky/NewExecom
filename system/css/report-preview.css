@@ -1,0 +1,48 @@
+.report-dialog { border: 0; border-radius: 14px; padding: 0; width: min(1100px, 96vw); max-width: 96vw; height: 92vh; max-height: 96vh; background: #fff; color: #1e293b; box-shadow: 0 24px 80px #0006; }
+.report-dialog::backdrop { background: #0b1220bb; }
+.report-dialog[open] { display: flex; flex-direction: column; }
+.report-toolbar, .report-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .7rem; padding: 14px 20px; flex-shrink: 0; }
+.report-toolbar { border-bottom: 1px solid #dbe2ea; }
+.report-toolbar h2 { font-size: 1rem; margin: 0 auto 0 0; font-weight: 700; }
+.report-toolbar select { width: auto; }
+.report-dialog .btn { border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; background: #fff; color: #1e293b; cursor: pointer; font: 13px Arial, sans-serif; }
+.report-dialog .btn-primary-app { background: #1e40af; border-color: #1e40af; color: #fff; }
+.report-dialog .btn:disabled { opacity: .5; cursor: default; }
+.report-actions { border-top: 1px solid #dbe2ea; justify-content: flex-end; }
+.report-layout { margin-right: auto; font-size: .8rem; }
+.report-body { position: relative; flex: 1; min-height: 0; background: #e2e8f0; overflow: auto; }
+.report-frame { border: 0; width: 100%; height: 100%; display: block; }
+.report-frame[hidden] { display: none; }
+.report-message { padding: 3rem 1rem; text-align: center; }
+.report-document-loading { position: absolute; inset: 0; z-index: 1; background: #e2e8f0; }
+.report-source-host { position: absolute; top: 0; left: 0; height: 0; overflow: hidden; width: 816px; }
+.report-sheet { box-sizing: border-box; width: 816px; padding: 26px; background: #fff; color: #1e293b; font: 13px/1.45 Arial, Helvetica, sans-serif; }
+.report-sheet h1 { font-size: 22px; text-align: center; margin: 12px 0 20px; }
+.report-sheet h2 { font-size: 16px; margin: 20px 0 8px; }
+.report-sheet p { margin: 6px 0; }
+.report-sheet table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 12px 0; }
+.report-sheet th, .report-sheet td { border: 1px solid #94a3b8; padding: 6px; vertical-align: top; overflow-wrap: anywhere; font-size: 11px; white-space: pre-line; }
+.report-sheet th { background: #eef2ff; font-weight: bold; }
+.report-sheet .report-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; margin: 12px 0; }
+.report-sheet .report-meta > div { overflow-wrap: anywhere; white-space: pre-line; }
+.report-sheet .report-total { text-align: right; font-size: 15px; font-weight: bold; padding: 10px 0; }
+.report-sheet .report-signatures { display: flex; gap: 40px; margin-top: 55px; }
+.report-sheet .report-signatures > div { flex: 1; border-top: 1px solid #334155; padding-top: 6px; text-align: center; }
+.report-document-page { background: #e2e8f0; margin: 0; }
+.report-document-page .document-actions { max-width: 816px; margin: 16px auto; display: flex; gap: 12px; align-items: center; padding: 0 12px; }
+.report-document-page > .report-sheet { margin: 0 auto 30px; max-width: 100%; }
+.report-embedded .report-dialog { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; margin: 0; border-radius: 0; box-shadow: none; }
+.report-embedded .report-toolbar h2, .report-embedded .report-toolbar [data-close] { display: none; }
+.report-embedded .document-actions, .report-embedded .no-print { display: none; }
+.report-embedded body { margin: 0; padding: 0; max-width: none; }
+.report-embedded .pv-card { width: 100%; height: 100vh; border-radius: 0; box-shadow: none; }
+.report-embedded .pv-header, .report-embedded .pv-footer > a { display: none; }
+.report-embedded .pdf-preview-frame { min-height: 0; }
+@media (max-width: 600px) { .report-toolbar, .report-actions { padding: 10px; gap: 6px; } .report-toolbar h2 { width: 100%; } }
+@media print {
+    body.report-document-page { background: #fff; }
+    .report-document-page .document-actions, .report-dialog { display: none !important; }
+    .report-document-page > .report-sheet { width: 100%; max-width: none; margin: 0; padding: 0; }
+    .report-sheet tr, .report-signatures { break-inside: avoid; }
+    .report-sheet thead { display: table-header-group; }
+}

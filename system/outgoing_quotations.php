@@ -34,6 +34,7 @@ $fromRfq = trim($_GET['from_rfq'] ?? '');
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Quotations (Outgoing)</div>
+                <div class="small text-muted">Your price offer to the client, created from an RFQ or entered directly.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Quotations (Outgoing)</div>
             </div>
         </div>
@@ -71,9 +72,12 @@ $fromRfq = trim($_GET['from_rfq'] ?? '');
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <form id="oqForm">
         <div class="modal-body">
-          <input type="hidden" id="oqRfqNumber">
-          <div class="row g-2 mb-2">
-            <div class="col-6" id="oqClientWrap"><label class="form-label">Client</label><select class="form-select" id="oqClient"></select></div>
+	          <input type="hidden" id="oqRfqNumber">
+	          <div class="row g-2 mb-2">
+	            <?php if ($isSuperAdmin): ?>
+	            <div class="col-12" id="oqBranchWrap"><label class="form-label">Branch</label><select class="form-select" id="oqBranch" required></select></div>
+	            <?php endif; ?>
+	            <div class="col-6" id="oqClientWrap"><label class="form-label">Client</label><select class="form-select" id="oqClient"></select></div>
             <div class="col-3"><label class="form-label">Price Validity (days)</label><input type="number" class="form-control" id="oqValidity"></div>
             <div class="col-3"><label class="form-label">Lead Time</label><input type="text" class="form-control" id="oqLeadTime" placeholder="e.g. 15 working days"></div>
           </div>
@@ -130,11 +134,23 @@ $fromRfq = trim($_GET['from_rfq'] ?? '');
 <script src="vendor/js/bootstrap.bundle.min.js"></script>
 <script>
 const isAdminTier = <?= $isAdminTier ? 'true' : 'false' ?>;
+const isSuperAdmin = <?= $isSuperAdmin ? 'true' : 'false' ?>;
 const initialFromRfq = <?= json_encode($fromRfq) ?>;
-let oqCache = [];
+let oqCache = [], branchOptions = null;
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const peso = n => '₱' + Number(n || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
 const statusLabel = { active: 'Active', converted: 'Converted', cancelled: 'Cancelled' };
+
+async function loadBranchOptions(selectId) {
+    if (!isSuperAdmin) return;
+    if (!branchOptions) {
+        const res = await fetch('api/branches.php');
+        const data = await res.json();
+        branchOptions = data.success ? data.branches.filter(b => b.is_active == 1) : [];
+    }
+    document.getElementById(selectId).innerHTML = '<option value="">Select branch...</option>' +
+        branchOptions.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
+}
 
 async function loadOqs() {
     const res  = await fetch('api/outgoing_quotations.php');
@@ -189,6 +205,7 @@ async function openQModal(rfqNumber) {
 
     if (rfqNumber) {
         document.getElementById('oqModalTitle').textContent = 'New Quotation for ' + rfqNumber;
+        if (isSuperAdmin) document.getElementById('oqBranchWrap').style.display = 'none';
         document.getElementById('oqClientWrap').style.display = 'none';
         document.getElementById('oqAddItemBtn').style.display = 'none';
         const res  = await fetch('api/outgoing_rfq.php?id=' + encodeURIComponent(rfqNumber));
@@ -197,6 +214,10 @@ async function openQModal(rfqNumber) {
         data.rfq.items.forEach(i => addOqItemRow(i.description, i.quantity, i.unit || '', '', i.item_id));
     } else {
         document.getElementById('oqModalTitle').textContent = 'New Quotation';
+        if (isSuperAdmin) {
+            document.getElementById('oqBranchWrap').style.display = '';
+            await loadBranchOptions('oqBranch');
+        }
         document.getElementById('oqClientWrap').style.display = '';
         document.getElementById('oqAddItemBtn').style.display = '';
         await loadClientOptions();
@@ -224,6 +245,11 @@ document.getElementById('oqForm').addEventListener('submit', async (e) => {
         const clientId = document.getElementById('oqClient').value;
         if (!clientId) return alert('Select a client.');
         payload.client_id = clientId;
+        if (isSuperAdmin) {
+            const branchId = document.getElementById('oqBranch').value;
+            if (!branchId) return alert('Select a branch.');
+            payload.branch_id = branchId;
+        }
     }
     payload.price_validity_days = document.getElementById('oqValidity').value;
     payload.lead_time = document.getElementById('oqLeadTime').value.trim();
@@ -259,7 +285,7 @@ async function viewOq(quotationNumber) {
         footer = `<button class="btn btn-danger btn-sm me-auto" onclick="oqAction('${q.quotation_number}','cancel')">Cancel</button>
                    <button class="btn btn-primary-app btn-sm" onclick="openConvertModal('${q.quotation_number}')">Convert to PO</button>`;
     }
-    footer += `<a href="print_quotation.php?quotation_number=${encodeURIComponent(q.quotation_number)}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fas fa-print me-1"></i>Print</a>`;
+    footer += `<a href="print_quotation.php?quotation_number=${encodeURIComponent(q.quotation_number)}" data-report-modal class="btn btn-outline-secondary btn-sm"><i class="fas fa-print me-1"></i>Print</a>`;
     document.getElementById('oqViewFooter').innerHTML = footer || '<span class="text-muted small">No actions available.</span>';
     new bootstrap.Modal(document.getElementById('oqViewModal')).show();
 }

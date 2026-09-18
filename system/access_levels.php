@@ -25,6 +25,7 @@ $activePage  = 'access_levels';
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Access Levels</div>
+                <div class="small text-muted">Control which roles can open each system module.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Access Levels</div>
             </div>
         </div>

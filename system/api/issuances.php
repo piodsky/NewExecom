@@ -17,7 +17,11 @@ $isAdminTier = in_array($user['role'], ['super_admin', 'branch_admin'], true);
 
 function loadIssuance(PDO $db, string $issuanceNumber): ?array {
     $stmt = $db->prepare(
-        'SELECT iss.*, b.name AS branch_name, c.name AS client_name, u.full_name AS issued_by_name
+        'SELECT iss.*, b.name AS branch_name,
+                COALESCE(c.name, iss.walkin_name) AS client_name,
+                COALESCE(c.address, iss.walkin_address) AS client_address,
+                COALESCE(c.client_type, IF(iss.walkin_name IS NOT NULL, \'walkin\', NULL)) AS client_type,
+                u.full_name AS issued_by_name
          FROM issuances iss
          JOIN branches b ON b.id = iss.branch_id
          LEFT JOIN clients c ON c.id = iss.client_id
@@ -40,6 +44,33 @@ function loadIssuance(PDO $db, string $issuanceNumber): ?array {
     $itemStmt->execute([$issuanceNumber]);
     $iss['items'] = $itemStmt->fetchAll();
     return $iss;
+}
+
+// Spreads an optional whole-sale discount across each prepared line's total
+// (and recomputed unit_price), in integer cents, so the last line absorbs
+// any rounding remainder and SUM(line totals) still lands exactly on
+// subtotal - discount. Keeps issuance_items.total_price as the true "what we
+// sold it for" (see api/cost_profit_reports.php) even with a discount applied.
+function applyDiscountToLines(array $prepared, float $discount): array {
+    if ($discount <= 0) return $prepared;
+    $totalCents = 0;
+    foreach ($prepared as $p) $totalCents += (int)round($p['total'] * 100);
+    if ($totalCents <= 0) return $prepared;
+    $discountCents = min((int)round($discount * 100), $totalCents);
+    $remaining = $discountCents;
+    $count = count($prepared);
+    $i = 0;
+    foreach ($prepared as &$p) {
+        $i++;
+        $lineCents = (int)round($p['total'] * 100);
+        $share = $i === $count ? $remaining : (int)floor($discountCents * $lineCents / $totalCents);
+        $remaining -= $share;
+        $newLineCents = $lineCents - $share;
+        $p['total'] = $newLineCents / 100;
+        $p['unit_price'] = $p['quantity'] > 0 ? round($p['total'] / $p['quantity'], 2) : $p['total'];
+    }
+    unset($p);
+    return $prepared;
 }
 
 // Rolls a linked Outgoing PO's status forward or back based on how much of
@@ -97,16 +128,23 @@ if ($method === 'GET') {
         $branchId = (int)$catalogFor;
         if ($scope !== null && $branchId !== $scope) jsonResponse(false, 'Access denied for that branch.');
 
+        // sku/serial_number double as this branch's barcode values — a
+        // scanned code is matched against them client-side on the POS screen
+        // rather than requiring a separate barcode column.
         $unitStmt = $db->prepare(
-            "SELECT u.id, u.item_id, i.name AS item_name, i.default_price, u.serial_number, u.unit_cost
+            "SELECT u.id, u.item_id, i.name AS item_name, i.sku, i.unit, i.default_price, ic.name AS category_name,
+                    u.serial_number, u.unit_cost
              FROM inventory_units u JOIN items i ON i.id = u.item_id
+             LEFT JOIN item_categories ic ON ic.id = i.category_id
              WHERE u.branch_id = ? AND u.status = 'in_stock' AND u.is_deleted = 0 ORDER BY i.name"
         );
         $unitStmt->execute([$branchId]);
 
         $stockStmt = $db->prepare(
-            'SELECT s.item_id, i.name AS item_name, i.unit, i.default_price, s.quantity_on_hand
+            'SELECT s.item_id, i.name AS item_name, i.sku, i.unit, i.default_price, ic.name AS category_name,
+                    s.quantity_on_hand
              FROM inventory_stock s JOIN items i ON i.id = s.item_id
+             LEFT JOIN item_categories ic ON ic.id = i.category_id
              WHERE s.branch_id = ? AND s.quantity_on_hand > 0 ORDER BY i.name'
         );
         $stockStmt->execute([$branchId]);
@@ -114,7 +152,9 @@ if ($method === 'GET') {
         jsonResponse(true, '', ['units' => $unitStmt->fetchAll(), 'stock' => $stockStmt->fetchAll()]);
     }
 
-    $sql = 'SELECT iss.issuance_number, iss.branch_id, b.name AS branch_name, c.name AS client_name,
+    $sql = 'SELECT iss.issuance_number, iss.branch_id, b.name AS branch_name,
+                   COALESCE(c.name, iss.walkin_name) AS client_name,
+                   COALESCE(c.client_type, IF(iss.walkin_name IS NOT NULL, \'walkin\', NULL)) AS client_type,
                    iss.total_amount, u.full_name AS issued_by_name, iss.date_created, iss.created_at
             FROM issuances iss
             JOIN branches b ON b.id = iss.branch_id
@@ -143,6 +183,7 @@ if ($method === 'POST') {
         // items and, once posted, rolls the PO's status forward.
         $poNumber = trim($data['po_number'] ?? '') ?: null;
         $poItemIds = null;
+        $poRemaining = null;
         if ($poNumber) {
             $poStmt = $db->prepare('SELECT * FROM po_outgoing WHERE po_number = ? AND is_deleted = 0');
             $poStmt->execute([$poNumber]);
@@ -155,6 +196,28 @@ if ($method === 'POST') {
             $poItemStmt = $db->prepare('SELECT DISTINCT item_id FROM po_outgoing_items WHERE po_number = ? AND is_deleted = 0 AND item_id IS NOT NULL');
             $poItemStmt->execute([$poNumber]);
             $poItemIds = array_map('intval', $poItemStmt->fetchAll(PDO::FETCH_COLUMN));
+
+            $orderedStmt = $db->prepare('SELECT item_id, SUM(quantity) AS qty FROM po_outgoing_items WHERE po_number = ? AND is_deleted = 0 AND item_id IS NOT NULL GROUP BY item_id');
+            $orderedStmt->execute([$poNumber]);
+            $ordered = [];
+            foreach ($orderedStmt->fetchAll() as $row) { $ordered[(int)$row['item_id']] = (float)$row['qty']; }
+
+            $issuedStmt = $db->prepare(
+                "SELECT COALESCE(ii.item_id, u.item_id) AS item_id, SUM(ii.quantity) AS qty
+                 FROM issuance_items ii
+                 JOIN issuances iss ON iss.issuance_number = ii.issuance_number
+                 LEFT JOIN inventory_units u ON u.id = ii.inventory_unit_id
+                 WHERE iss.po_number = ? AND ii.is_deleted = 0 AND iss.is_deleted = 0
+                 GROUP BY COALESCE(ii.item_id, u.item_id)"
+            );
+            $issuedStmt->execute([$poNumber]);
+            $issued = [];
+            foreach ($issuedStmt->fetchAll() as $row) { $issued[(int)$row['item_id']] = (float)$row['qty']; }
+
+            $poRemaining = [];
+            foreach ($ordered as $itemId => $orderedQty) {
+                $poRemaining[$itemId] = max(0, $orderedQty - ($issued[$itemId] ?? 0));
+            }
         }
 
         $clientId = !empty($data['client_id']) ? (int)$data['client_id'] : ($poNumber ? $poRow['client_id'] : null);
@@ -164,6 +227,20 @@ if ($method === 'POST') {
             if (!$clientCheck->fetchColumn()) jsonResponse(false, 'Client not found.');
         }
 
+        // No client on record — this is a walk-in sale. Name is the only
+        // thing the printed slip actually needs; address and contact number
+        // are nice-to-have and stay optional. The name/address/contact are
+        // also written onto the issuance itself as a print-safe snapshot,
+        // same pattern as the client_name/client_address snapshot on the
+        // outgoing documents.
+        $walkinName = $walkinAddress = $walkinContact = null;
+        if (!$clientId) {
+            $walkinName = trim($data['walkin_name'] ?? '');
+            if ($walkinName === '') jsonResponse(false, 'Buyer name is required for a walk-in sale.');
+            $walkinAddress = trim($data['walkin_address'] ?? '') ?: null;
+            $walkinContact = trim($data['walkin_contact'] ?? '') ?: null;
+        }
+
         $lines = is_array($data['items'] ?? null) ? $data['items'] : [];
         if (!$lines) jsonResponse(false, 'At least one item is required.');
 
@@ -171,16 +248,23 @@ if ($method === 'POST') {
         $stockCheck = $db->prepare('SELECT s.quantity_on_hand, i.name FROM inventory_stock s JOIN items i ON i.id = s.item_id WHERE s.item_id = ? AND s.branch_id = ?');
 
         $prepared = [];
+        $seenUnitIds = [];
+        $stockTotals = [];
+        $stockAvailable = [];
+        $poLineTotals = [];
         foreach ($lines as $l) {
             $unitPrice = (float)($l['unit_price'] ?? -1);
             if ($unitPrice < 0) jsonResponse(false, 'Unit price is required for every line.');
 
             if (!empty($l['inventory_unit_id'])) {
                 $unitId = (int)$l['inventory_unit_id'];
+                if (isset($seenUnitIds[$unitId])) jsonResponse(false, 'A serialized unit was selected more than once.');
+                $seenUnitIds[$unitId] = true;
                 $unitCheck->execute([$unitId, $branchId]);
                 $unit = $unitCheck->fetch();
                 if (!$unit) jsonResponse(false, 'One of the selected units is no longer available at this branch.');
                 if ($poItemIds !== null && !in_array((int)$unit['item_id'], $poItemIds, true)) jsonResponse(false, 'That unit is not one of the items ordered on this PO.');
+                if ($poRemaining !== null) $poLineTotals[(int)$unit['item_id']] = ($poLineTotals[(int)$unit['item_id']] ?? 0) + 1;
                 $prepared[] = ['inventory_unit_id' => $unitId, 'item_id' => null, 'quantity' => 1, 'unit_price' => $unitPrice, 'total' => $unitPrice, 'label' => $unit['name']];
             } elseif (!empty($l['item_id']) && (float)($l['quantity'] ?? 0) > 0) {
                 $itemId = (int)$l['item_id'];
@@ -189,20 +273,62 @@ if ($method === 'POST') {
                 $stockCheck->execute([$itemId, $branchId]);
                 $stock = $stockCheck->fetch();
                 if (!$stock || (float)$stock['quantity_on_hand'] < $qty) jsonResponse(false, 'Not enough stock on hand for one of the selected items.');
+                $stockTotals[$itemId] = ($stockTotals[$itemId] ?? 0) + $qty;
+                $stockAvailable[$itemId] = (float)$stock['quantity_on_hand'];
+                if ($poRemaining !== null) $poLineTotals[$itemId] = ($poLineTotals[$itemId] ?? 0) + $qty;
                 $prepared[] = ['inventory_unit_id' => null, 'item_id' => $itemId, 'quantity' => $qty, 'unit_price' => $unitPrice, 'total' => $qty * $unitPrice, 'label' => $stock['name']];
             }
         }
         if (!$prepared) jsonResponse(false, 'At least one valid item is required.');
+        foreach ($stockTotals as $itemId => $qty) {
+            if ($qty > ($stockAvailable[$itemId] ?? 0) + 0.0001) {
+                jsonResponse(false, 'Not enough stock on hand for one of the selected items.');
+            }
+        }
+        foreach ($poLineTotals as $itemId => $qty) {
+            $remaining = $poRemaining[$itemId] ?? 0;
+            if ($qty > $remaining + 0.0001) {
+                jsonResponse(false, "Cannot issue {$qty}; only {$remaining} remains ordered for this PO item.");
+            }
+        }
+
+        // Optional whole-sale discount (e.g. senior/PWD or a loyal-customer
+        // deduction) — not per line, applied once at checkout.
+        $discountRaw = trim((string)($data['discount_amount'] ?? '0'));
+        if ($discountRaw === '') $discountRaw = '0';
+        if (!preg_match('/^\d{1,13}(?:\.\d{1,2})?$/D', $discountRaw)) {
+            jsonResponse(false, 'Discount must be zero or greater, with at most two decimal places.');
+        }
+        $discount = (float)$discountRaw;
+        $subtotal = array_sum(array_column($prepared, 'total'));
+        if ($discount > $subtotal + 0.0001) jsonResponse(false, 'Discount cannot exceed the subtotal.');
+        $prepared = applyDiscountToLines($prepared, $discount);
 
         $db->beginTransaction();
         try {
             $issuanceNumber = mintDocNumber($db, $branchId, 'ISS');
             $total = array_sum(array_column($prepared, 'total'));
 
+            // Match the walk-in buyer to one already on file (by name), or
+            // register them — so next time this same buyer shows up in the
+            // POS client dropdown and in Client Management, instead of being
+            // typed in from scratch every visit.
+            if (!$clientId && $walkinName !== '') {
+                $matchStmt = $db->prepare("SELECT id FROM clients WHERE client_type = 'walkin' AND name = ? LIMIT 1");
+                $matchStmt->execute([$walkinName]);
+                $clientId = $matchStmt->fetchColumn() ?: null;
+                if (!$clientId) {
+                    $db->prepare(
+                        "INSERT INTO clients (name, address, contact_number, client_type) VALUES (?,?,?,'walkin')"
+                    )->execute([$walkinName, $walkinAddress, $walkinContact]);
+                    $clientId = (int)$db->lastInsertId();
+                }
+            }
+
             $db->prepare(
-                'INSERT INTO issuances (issuance_number, branch_id, client_id, po_number, issued_by, date_created, total_amount)
-                 VALUES (?,?,?,?,?,NOW(),?)'
-            )->execute([$issuanceNumber, $branchId, $clientId, $poNumber, $user['id'], $total]);
+                'INSERT INTO issuances (issuance_number, branch_id, client_id, walkin_name, walkin_address, walkin_contact, po_number, issued_by, date_created, total_amount, discount_amount)
+                 VALUES (?,?,?,?,?,?,?,?,NOW(),?,?)'
+            )->execute([$issuanceNumber, $branchId, $clientId, $walkinName, $walkinAddress, $walkinContact, $poNumber, $user['id'], $total, $discount]);
 
             $itemStmt = $db->prepare(
                 'INSERT INTO issuance_items (issuance_number, inventory_unit_id, item_id, quantity, unit_price, total_price)
@@ -211,7 +337,7 @@ if ($method === 'POST') {
             foreach ($prepared as $p) {
                 $itemStmt->execute([$issuanceNumber, $p['inventory_unit_id'], $p['item_id'], $p['quantity'], $p['unit_price'], $p['total']]);
                 if ($p['inventory_unit_id']) {
-                    $db->prepare("UPDATE inventory_units SET status = 'issued', date_out = CURDATE() WHERE id = ?")->execute([$p['inventory_unit_id']]);
+                    $db->prepare("UPDATE inventory_units SET status = 'issued', date_out = NOW() WHERE id = ?")->execute([$p['inventory_unit_id']]);
                 } else {
                     $db->prepare('UPDATE inventory_stock SET quantity_on_hand = quantity_on_hand - ? WHERE item_id = ? AND branch_id = ?')
                        ->execute([$p['quantity'], $p['item_id'], $branchId]);

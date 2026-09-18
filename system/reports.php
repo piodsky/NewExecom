@@ -25,6 +25,7 @@ $activePage  = 'reports';
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Reports</div>
+                <div class="small text-muted">Generate PDF-ready reports from the currently loaded module data.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Reports</div>
             </div>
         </div>
@@ -36,8 +37,8 @@ $activePage  = 'reports';
     <div class="content-area">
         <div class="panel mb-3">
             <div class="panel-body d-flex flex-wrap gap-2 align-items-end">
-                <div><label class="form-label">From</label><input type="date" class="form-control form-control-sm" id="rFrom"></div>
-                <div><label class="form-label">To</label><input type="date" class="form-control form-control-sm" id="rTo"></div>
+                <div><label class="form-label">From Date &amp; Time</label><input type="datetime-local" step="1" class="form-control form-control-sm" id="rFrom"></div>
+                <div><label class="form-label">To Date &amp; Time</label><input type="datetime-local" step="1" class="form-control form-control-sm" id="rTo"></div>
                 <button class="btn btn-primary-app btn-sm" onclick="loadReport()"><i class="fas fa-filter me-1"></i>Filter</button>
                 <button class="btn btn-light btn-sm" onclick="exportCsv()"><i class="fas fa-file-csv me-1"></i>Export CSV</button>
             </div>
@@ -47,9 +48,9 @@ $activePage  = 'reports';
             <div class="panel-header"><div class="panel-title">Activity Report</div></div>
             <div class="panel-body">
                 <p class="text-muted small mb-2">
-                    This is a starting template — it will be replaced by the real Cost/Profit
-                    Reports module (revenue vs. matched cost, per branch and per item category)
-                    once the procurement and sales modules are built.
+                    Review activity for the selected date and time range (up to 500 records).
+                    Use Report above to preview, print or download a PDF. Each module also
+                    has its own Report button for its records.
                 </p>
                 <div class="table-responsive">
                 <table class="app-table table" id="reportTable">
@@ -78,10 +79,14 @@ async function loadReport() {
     const res  = await fetch('api/reports.php?' + params.toString());
     const data = await res.json();
     if (!data.success) return alert(data.message);
+    window.moduleReportMeta = [
+        ['From', from ? AppDateTime.format(from) : 'Any date'],
+        ['To', to ? AppDateTime.format(to) : 'Any date'],
+    ];
     rowsCache = data.rows;
     document.getElementById('reportBody').innerHTML = rowsCache.length ? rowsCache.map(r => `
         <tr>
-            <td>${new Date(r.created_at).toLocaleString()}</td>
+            <td>${AppDateTime.format(r.created_at)}</td>
             <td>${escapeHtml(r.username || 'system')}</td>
             <td>${escapeHtml(r.action)}</td>
             <td>${escapeHtml(r.module || '—')}</td>

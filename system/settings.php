@@ -29,6 +29,7 @@ $activePage  = 'settings';
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">User Management</div>
+                <div class="small text-muted">Create users and assign roles, branches, and account access.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Users</div>
             </div>
         </div>

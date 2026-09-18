@@ -4,6 +4,7 @@ requireModule('internal_rfq');
 $currentUser = getCurrentUser();
 $activePage  = 'internal_rfq';
 $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], true);
+$isSuperAdmin = $currentUser['role'] === 'super_admin';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -35,6 +36,7 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">RFQ (Internal)</div>
+                <div class="small text-muted">Ask suppliers for prices based on approved purchase requisitions.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> RFQ (Internal)</div>
             </div>
         </div>
@@ -71,12 +73,15 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
       <div class="modal-header"><h5 class="modal-title">New RFQ</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <form id="rfqForm">
-        <div class="modal-body">
-          <div class="mb-2">
+	        <div class="modal-body">
+	          <?php if ($isSuperAdmin): ?>
+	          <div class="mb-2"><label class="form-label">Branch</label><select class="form-select" id="rfqBranch" required></select></div>
+	          <?php endif; ?>
+	          <div class="mb-2">
             <label class="form-label">From an approved requisition (optional)</label>
             <select class="form-select" id="rfqFromPr" onchange="onPrPicked()"><option value="">— None, add items manually —</option></select>
           </div>
-          <div class="mb-2"><label class="form-label">Sent Date</label><input type="date" class="form-control" id="rfqSentDate"></div>
+          <div class="mb-2"><label class="form-label">Date &amp; Time Sent</label><input type="datetime-local" step="1" class="form-control" id="rfqSentDate"></div>
           <div id="rfqManualItemsWrap">
               <label class="form-label">Items</label>
               <div id="rfqItemRows"></div>
@@ -108,9 +113,21 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 <script src="vendor/js/bootstrap.bundle.min.js"></script>
 <script>
 const isAdminTier = <?= $isAdminTier ? 'true' : 'false' ?>;
-let rfqCache = [], suppliersCache = [];
+const isSuperAdmin = <?= $isSuperAdmin ? 'true' : 'false' ?>;
+let rfqCache = [], suppliersCache = [], branchOptions = null;
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const statusLabel = { open: 'Open', converted: 'Converted', cancelled: 'Cancelled' };
+
+async function loadBranchOptions(selectId) {
+    if (!isSuperAdmin) return;
+    if (!branchOptions) {
+        const res = await fetch('api/branches.php');
+        const data = await res.json();
+        branchOptions = data.success ? data.branches.filter(b => b.is_active == 1) : [];
+    }
+    document.getElementById(selectId).innerHTML = '<option value="">Select branch...</option>' +
+        branchOptions.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
+}
 
 async function loadRfqs() {
     const res  = await fetch('api/internal_rfq.php');
@@ -122,7 +139,7 @@ async function loadRfqs() {
             <td><strong>${escapeHtml(r.rfq_number)}</strong></td>
             <td>${escapeHtml(r.branch_name)}</td>
             <td>${escapeHtml(r.pr_number || '—')}</td>
-            <td>${r.sent_date || '—'}</td>
+            <td>${AppDateTime.format(r.sent_date)}</td>
             <td>${escapeHtml(r.created_by_name)}</td>
             <td><span class="badge-status ${r.status}">${statusLabel[r.status] || r.status}</span></td>
             <td class="text-end"><i class="fas fa-chevron-right text-muted"></i></td>
@@ -132,6 +149,7 @@ async function loadRfqs() {
 async function openRfqModal() {
     document.getElementById('rfqForm').reset();
     document.getElementById('rfqItemRows').innerHTML = '';
+    await loadBranchOptions('rfqBranch');
     addRfqItemRow();
     const res  = await fetch('api/internal_rfq.php?approved_prs=1');
     const data = await res.json();
@@ -140,7 +158,9 @@ async function openRfqModal() {
     new bootstrap.Modal(document.getElementById('rfqModal')).show();
 }
 function onPrPicked() {
-    document.getElementById('rfqManualItemsWrap').style.display = document.getElementById('rfqFromPr').value ? 'none' : '';
+    const select = document.getElementById('rfqFromPr');
+    document.getElementById('rfqManualItemsWrap').style.display = select.value ? 'none' : '';
+    if (isSuperAdmin) document.getElementById('rfqBranch').disabled = false;
 }
 
 function addRfqItemRow(desc = '', qty = '', unit = '') {
@@ -158,6 +178,11 @@ document.getElementById('rfqForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const prNumber = document.getElementById('rfqFromPr').value;
     const payload = { action: 'create', pr_number: prNumber || undefined, sent_date: document.getElementById('rfqSentDate').value };
+    if (isSuperAdmin) {
+        const branchId = document.getElementById('rfqBranch').value;
+        if (!branchId) return alert('Select a branch.');
+        payload.branch_id = branchId;
+    }
     if (!prNumber) {
         const items = [...document.querySelectorAll('#rfqItemRows .pr-item-row')].map(row => ({
             description: row.querySelector('.rfq-desc').value.trim(),
@@ -212,7 +237,8 @@ async function viewRfq(rfqNumber) {
         footer = `<button class="btn btn-danger btn-sm me-auto" onclick="rfqAction('${rfq.rfq_number}','cancel')">Cancel RFQ</button>
                    <button class="btn btn-primary-app btn-sm" onclick="rfqAction('${rfq.rfq_number}','convert_to_po')">Convert Winning Quotes to PO</button>`;
     }
-    document.getElementById('rfqViewFooter').innerHTML = footer || '<span class="text-muted small">No actions available.</span>';
+    footer += `<a class="btn btn-outline-secondary btn-sm" href="print_document.php?module=internal_rfq&id=${encodeURIComponent(rfq.rfq_number)}" data-report-modal><i class="fas fa-print me-1"></i>Print / PDF</a>`;
+    document.getElementById('rfqViewFooter').innerHTML = footer;
     new bootstrap.Modal(document.getElementById('rfqViewModal')).show();
 }
 

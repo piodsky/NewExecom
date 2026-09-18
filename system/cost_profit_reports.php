@@ -30,6 +30,7 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">Cost/Profit Reports</div>
+                <div class="small text-muted">Review sales cost, revenue, and profit by date, branch, and sale type.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Cost/Profit Reports</div>
             </div>
         </div>
@@ -41,8 +42,8 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
     <div class="content-area">
         <div class="panel mb-3">
             <div class="panel-body d-flex flex-wrap gap-2 align-items-end">
-                <div><label class="form-label">From</label><input type="date" class="form-control form-control-sm" id="cprFrom"></div>
-                <div><label class="form-label">To</label><input type="date" class="form-control form-control-sm" id="cprTo"></div>
+                <div><label class="form-label">From Date &amp; Time</label><input type="datetime-local" step="1" class="form-control form-control-sm" id="cprFrom"></div>
+                <div><label class="form-label">To Date &amp; Time</label><input type="datetime-local" step="1" class="form-control form-control-sm" id="cprTo"></div>
                 <?php if ($isSuperAdmin): ?>
                 <div><label class="form-label">Branch</label>
                     <select class="form-select form-select-sm" id="cprBranch"><option value="">All Branches</option></select></div>
@@ -177,7 +178,9 @@ function rowHtml(label, r) {
 
 async function loadReport() {
     const params = new URLSearchParams();
-    const from = document.getElementById('cprFrom').value, to = document.getElementById('cprTo').value;
+    const today = AppDateTime.nowInput().slice(0, 10);
+    const from = document.getElementById('cprFrom').value || today.slice(0, 8) + '01T00:00:00';
+    const to = document.getElementById('cprTo').value || today + 'T23:59:59';
     if (from) params.set('from', from);
     if (to)   params.set('to', to);
     if (isSuperAdmin) {
@@ -186,10 +189,17 @@ async function loadReport() {
     }
     const saleType = document.getElementById('cprSaleType').value;
     if (saleType) params.set('sale_type', saleType);
+    const reportBranch = isSuperAdmin ? document.getElementById('cprBranch').selectedOptions[0].textContent : null;
 
     const res  = await fetch('api/cost_profit_reports.php?' + params.toString());
     const data = await res.json();
     if (!data.success) return alert(data.message);
+
+    window.moduleReportMeta = [
+        ['From', AppDateTime.format(from)], ['To', AppDateTime.format(to)],
+        ['Sale Type', saleType === 'internal' ? 'Internal (Walk-in / Retail)' : saleType === 'outgoing' ? 'Outgoing (Client Orders)' : 'All Sales'],
+    ];
+    if (reportBranch) window.moduleReportMeta.push(['Branch', reportBranch]);
 
     document.getElementById('cprRevenue').textContent = peso(data.totals.revenue);
     document.getElementById('cprCost').textContent = peso(data.totals.cost);
@@ -216,7 +226,7 @@ async function loadReport() {
     txCache = data.transactions;
     document.getElementById('cprTxBody').innerHTML = txCache.length ? txCache.map(t => `
         <tr>
-            <td>${t.date_created ? t.date_created.slice(0,10) : '—'}</td>
+            <td>${AppDateTime.format(t.date_created)}</td>
             <td>${escapeHtml(t.issuance_number)}</td>
             <td>${escapeHtml(t.branch_name)}</td>
             <td>${escapeHtml(t.client_name)}</td>
@@ -232,7 +242,7 @@ async function loadReport() {
 function exportCsv() {
     if (!txCache.length) return alert('Nothing to export.');
     const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const csv = ['Date,Issuance,Branch,Client,PO,Item,Qty,Revenue,Cost,Margin']
+    const csv = ['Date & Time,Issuance,Branch,Client,PO,Item,Qty,Revenue,Cost,Margin']
         .concat(txCache.map(t => [t.date_created, t.issuance_number, t.branch_name, t.client_name, t.po_number, t.item_name, t.quantity, t.revenue, t.cost, t.margin].map(esc).join(',')))
         .join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -243,9 +253,9 @@ function exportCsv() {
 }
 
 (async function init() {
-    const today = new Date().toISOString().slice(0, 10);
-    document.getElementById('cprFrom').value = today.slice(0, 8) + '01';
-    document.getElementById('cprTo').value = today;
+    const today = AppDateTime.nowInput().slice(0, 10);
+    document.getElementById('cprFrom').value = today.slice(0, 8) + '01T00:00:00';
+    document.getElementById('cprTo').value = today + 'T23:59:59';
     if (isSuperAdmin) await loadBranchOptions();
     loadReport();
 })();

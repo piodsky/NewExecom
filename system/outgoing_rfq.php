@@ -4,6 +4,7 @@ requireModule('outgoing_rfq');
 $currentUser = getCurrentUser();
 $activePage  = 'outgoing_rfq';
 $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], true);
+$isSuperAdmin = $currentUser['role'] === 'super_admin';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -33,6 +34,7 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
             <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="page-title">RFQ (Outgoing)</div>
+                <div class="small text-muted">Client request/canvass received before preparing your price offer.</div>
                 <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> RFQ (Outgoing)</div>
             </div>
         </div>
@@ -69,11 +71,14 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
       <div class="modal-header"><h5 class="modal-title">Log an Outgoing RFQ</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <form id="orfqForm">
-        <div class="modal-body">
-          <div class="row g-2 mb-2">
-            <div class="col-6"><label class="form-label">Client</label><select class="form-select" id="orfqClient" required></select></div>
-            <div class="col-3"><label class="form-label">Received Date</label><input type="date" class="form-control" id="orfqReceived" value="<?= date('Y-m-d') ?>"></div>
-            <div class="col-3"><label class="form-label">Due Date</label><input type="date" class="form-control" id="orfqDue"></div>
+	        <div class="modal-body">
+	          <div class="row g-2 mb-2">
+	            <?php if ($isSuperAdmin): ?>
+	            <div class="col-12"><label class="form-label">Branch</label><select class="form-select" id="orfqBranch" required></select></div>
+	            <?php endif; ?>
+	            <div class="col-12"><label class="form-label">Client</label><select class="form-select" id="orfqClient" required></select></div>
+            <div class="col-md-6"><label class="form-label">Date &amp; Time Received</label><input type="datetime-local" step="1" class="form-control" id="orfqReceived" value="<?= date('Y-m-d\TH:i:s') ?>"></div>
+            <div class="col-md-6"><label class="form-label">Due Date &amp; Time</label><input type="datetime-local" step="1" class="form-control" id="orfqDue"></div>
           </div>
           <label class="form-label">Items Being Canvassed</label>
           <div id="orfqItemRows"></div>
@@ -104,9 +109,21 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 <script src="vendor/js/bootstrap.bundle.min.js"></script>
 <script>
 const isAdminTier = <?= $isAdminTier ? 'true' : 'false' ?>;
-let orfqCache = [];
+const isSuperAdmin = <?= $isSuperAdmin ? 'true' : 'false' ?>;
+let orfqCache = [], branchOptions = null;
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const statusLabel = { open: 'Open', quoted: 'Quoted', converted: 'Converted', cancelled: 'Cancelled' };
+
+async function loadBranchOptions(selectId) {
+    if (!isSuperAdmin) return;
+    if (!branchOptions) {
+        const res = await fetch('api/branches.php');
+        const data = await res.json();
+        branchOptions = data.success ? data.branches.filter(b => b.is_active == 1) : [];
+    }
+    document.getElementById(selectId).innerHTML = '<option value="">Select branch...</option>' +
+        branchOptions.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
+}
 
 async function loadOrfqs() {
     const res  = await fetch('api/outgoing_rfq.php');
@@ -117,8 +134,8 @@ async function loadOrfqs() {
         <tr style="cursor:pointer" onclick="viewOrfq('${r.rfq_number}')">
             <td><strong>${escapeHtml(r.rfq_number)}</strong></td>
             <td>${escapeHtml(r.client_name)}</td>
-            <td>${r.received_date || '—'}</td>
-            <td>${r.due_date || '—'}</td>
+            <td>${AppDateTime.format(r.received_date)}</td>
+            <td>${AppDateTime.format(r.due_date)}</td>
             <td><span class="badge-status ${r.status}">${statusLabel[r.status] || r.status}</span></td>
             <td class="text-end"><i class="fas fa-chevron-right text-muted"></i></td>
         </tr>`).join('') : '<tr><td colspan="6" class="text-muted small">No RFQs logged yet.</td></tr>';
@@ -144,10 +161,11 @@ function addOrfqItemRow(desc = '', qty = '', unit = '') {
 }
 
 async function openRfqModal() {
-    document.getElementById('orfqForm').reset();
-    document.getElementById('orfqReceived').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('orfqItemRows').innerHTML = '';
-    addOrfqItemRow();
+	    document.getElementById('orfqForm').reset();
+	    document.getElementById('orfqReceived').value = AppDateTime.nowInput();
+	    document.getElementById('orfqItemRows').innerHTML = '';
+	    await loadBranchOptions('orfqBranch');
+	    addOrfqItemRow();
     await loadClientOptions('orfqClient');
     new bootstrap.Modal(document.getElementById('orfqModal')).show();
 }
@@ -161,14 +179,19 @@ document.getElementById('orfqForm').addEventListener('submit', async (e) => {
     })).filter(i => i.description && i.quantity);
     if (!items.length) return alert('Add at least one item with a description and quantity.');
 
-    const payload = {
-        action: 'create',
+	    const payload = {
+	        action: 'create',
         client_id: document.getElementById('orfqClient').value,
         received_date: document.getElementById('orfqReceived').value,
         due_date: document.getElementById('orfqDue').value,
-        items,
-    };
-    const res  = await fetch('api/outgoing_rfq.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+	        items,
+	    };
+	    if (isSuperAdmin) {
+	        const branchId = document.getElementById('orfqBranch').value;
+	        if (!branchId) return alert('Select a branch.');
+	        payload.branch_id = branchId;
+	    }
+	    const res  = await fetch('api/outgoing_rfq.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     const data = await res.json();
     if (!data.success) return alert(data.message);
     bootstrap.Modal.getInstance(document.getElementById('orfqModal')).hide();
@@ -185,8 +208,8 @@ async function viewOrfq(rfqNumber) {
         <div class="row g-2 mb-3">
             <div class="col-6"><strong>Client:</strong> ${escapeHtml(rfq.client_name)}</div>
             <div class="col-6"><strong>Branch:</strong> ${escapeHtml(rfq.branch_name)}</div>
-            <div class="col-6"><strong>Received:</strong> ${rfq.received_date || '—'}</div>
-            <div class="col-6"><strong>Due:</strong> ${rfq.due_date || '—'}</div>
+            <div class="col-6"><strong>Received:</strong> ${AppDateTime.format(rfq.received_date)}</div>
+            <div class="col-6"><strong>Due:</strong> ${AppDateTime.format(rfq.due_date)}</div>
         </div>
         <table class="app-table table">
             <thead><tr><th>Description</th><th>Qty</th><th>Unit</th></tr></thead>
@@ -198,7 +221,8 @@ async function viewOrfq(rfqNumber) {
         footer = `<button class="btn btn-danger btn-sm me-auto" onclick="orfqAction('${rfq.rfq_number}','cancel')">Cancel</button>
                    <a href="outgoing_quotations.php?from_rfq=${encodeURIComponent(rfq.rfq_number)}" class="btn btn-primary-app btn-sm">Create Quotation</a>`;
     }
-    document.getElementById('orfqViewFooter').innerHTML = footer || '<span class="text-muted small">No actions available.</span>';
+    footer += `<a class="btn btn-outline-secondary btn-sm" href="print_document.php?module=outgoing_rfq&id=${encodeURIComponent(rfq.rfq_number)}" data-report-modal><i class="fas fa-print me-1"></i>Print / PDF</a>`;
+    document.getElementById('orfqViewFooter').innerHTML = footer;
     new bootstrap.Modal(document.getElementById('orfqViewModal')).show();
 }
 
