@@ -56,25 +56,146 @@ $stmt = $db->prepare($unitsSql); $stmt->execute($unitsParams); $unitCount = (int
 $stmt = $db->prepare($stockSql); $stmt->execute($stockParams); $bulkQty = (float)$stmt->fetchColumn();
 $inventoryItems = $unitCount + $bulkQty;
 
-// ── Monthly Purchase Order Summary (year to date, both PO tables combined) ──
-$monthlyPo = array_fill(1, 12, 0);
-foreach (['po_internal', 'po_outgoing'] as $table) {
-    $sql = "SELECT MONTH(created_at) AS m, COUNT(*) AS cnt FROM {$table}
-            WHERE is_deleted = 0 AND YEAR(created_at) = YEAR(CURDATE())";
-    $params = [];
-    if ($scope !== null) { $sql .= ' AND branch_id = ?'; $params[] = $scope; }
-    $sql .= ' GROUP BY MONTH(created_at)';
+// ── Financial totals for an arbitrary date range — same revenue/cost match
+// used by Cost/Profit Reports (api/cost_profit_reports.php): revenue is what
+// Issuance actually sold a line for, cost is the serialized unit's own cost
+// or, for a bulk item, items.default_cost as a standard-cost estimate. ──
+function dashboardFinancials(PDO $db, string $from, string $to, ?int $scope): array {
+    $where  = 'ii.is_deleted = 0 AND iss.is_deleted = 0 AND iss.date_created BETWEEN ? AND ?';
+    $params = [$from, $to];
+    if ($scope !== null) { $where .= ' AND iss.branch_id = ?'; $params[] = $scope; }
+    $stmt = $db->prepare(
+        "SELECT COALESCE(SUM(ii.total_price),0) AS revenue,
+                COALESCE(SUM(COALESCE(iu.unit_cost, it.default_cost, 0) * ii.quantity),0) AS cost
+         FROM issuance_items ii
+         JOIN issuances iss ON iss.issuance_number = ii.issuance_number
+         LEFT JOIN inventory_units iu ON iu.id = ii.inventory_unit_id
+         LEFT JOIN items it ON it.id = COALESCE(ii.item_id, iu.item_id)
+         WHERE $where"
+    );
+    $stmt->execute($params);
+    $row     = $stmt->fetch();
+    $revenue = (float)$row['revenue'];
+    $cost    = (float)$row['cost'];
+    $profit  = $revenue - $cost;
+    return [
+        'revenue'    => $revenue,
+        'cost'       => $cost,
+        'profit'     => $profit,
+        'margin_pct' => $revenue > 0 ? round($profit / $revenue * 100, 1) : 0.0,
+    ];
+}
+function dashboardPctChange(float $cur, float $prev): ?float {
+    if (abs($prev) < 0.005) { return $cur > 0 ? null : 0.0; } // null = "new" (no prior baseline)
+    return round(($cur - $prev) / abs($prev) * 100, 1);
+}
+
+// This-month-to-date vs the same number of days into last month, so an
+// early-month glance isn't comparing a partial month against a full one.
+$curFrom = new DateTime(date('Y-m-01 00:00:00'));
+$curTo   = new DateTime();
+$prevFrom = (clone $curFrom)->modify('-1 month');
+$prevLast = (clone $curFrom)->modify('-1 day')->setTime(23, 59, 59);
+$prevTo   = (clone $prevFrom)->modify('+' . $curFrom->diff($curTo)->days . ' days')->setTime(23, 59, 59);
+if ($prevTo > $prevLast) { $prevTo = $prevLast; }
+
+$financials = dashboardFinancials($db, $curFrom->format('Y-m-d H:i:s'), $curTo->format('Y-m-d H:i:s'), $scope);
+$financialsPrev = dashboardFinancials($db, $prevFrom->format('Y-m-d H:i:s'), $prevTo->format('Y-m-d H:i:s'), $scope);
+$financials['revenue_change'] = dashboardPctChange($financials['revenue'], $financialsPrev['revenue']);
+$financials['profit_change']  = dashboardPctChange($financials['profit'], $financialsPrev['profit']);
+
+// ── Revenue vs Cost — last 6 months (current month included, partial) ──
+$monthlySales = [];
+for ($i = 5; $i >= 0; $i--) {
+    $mFrom = (clone $curFrom)->modify("-{$i} months");
+    $mTo   = $i === 0 ? $curTo : (clone $mFrom)->modify('+1 month')->modify('-1 day')->setTime(23, 59, 59);
+    $f = dashboardFinancials($db, $mFrom->format('Y-m-d H:i:s'), $mTo->format('Y-m-d H:i:s'), $scope);
+    $monthlySales[] = ['label' => $mFrom->format('M'), 'revenue' => $f['revenue'], 'cost' => $f['cost']];
+}
+
+// ── Branch performance — revenue this month, every active branch (even at
+// zero) so an underperforming branch is visible, not just missing. Narrows
+// to one row for a branch-scoped user, same as Cost/Profit Reports. ──
+$bpSql = "SELECT b.id AS branch_id, b.name AS branch_name,
+                 COALESCE(SUM(ii.total_price), 0) AS revenue
+          FROM branches b
+          LEFT JOIN issuances iss ON iss.branch_id = b.id AND iss.is_deleted = 0
+                 AND iss.date_created BETWEEN ? AND ?
+          LEFT JOIN issuance_items ii ON ii.issuance_number = iss.issuance_number AND ii.is_deleted = 0
+          WHERE b.is_active = 1";
+$bpParams = [$curFrom->format('Y-m-d H:i:s'), $curTo->format('Y-m-d H:i:s')];
+if ($scope !== null) { $bpSql .= ' AND b.id = ?'; $bpParams[] = $scope; }
+$bpSql .= ' GROUP BY b.id, b.name ORDER BY revenue DESC';
+$stmt = $db->prepare($bpSql);
+$stmt->execute($bpParams);
+$branchPerformance = array_map(
+    fn($r) => ['branch_id' => (int)$r['branch_id'], 'branch_name' => $r['branch_name'], 'revenue' => (float)$r['revenue']],
+    $stmt->fetchAll()
+);
+
+// ── Needs Attention — counts of things waiting on a decision, so management
+// doesn't have to open every module to find them. ──
+function dashboardCount(PDO $db, string $sql, array $params): int {
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
-    foreach ($stmt->fetchAll() as $row) {
-        $monthlyPo[(int)$row['m']] += (int)$row['cnt'];
-    }
+    return (int)$stmt->fetchColumn();
 }
-$currentMonth = (int)date('n');
-$monthNames   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-$monthlyPoSeries = [];
-for ($m = 1; $m <= $currentMonth; $m++) {
-    $monthlyPoSeries[] = ['label' => $monthNames[$m - 1], 'count' => $monthlyPo[$m]];
+$prPendingSql = "SELECT COUNT(*) FROM pr_requests WHERE is_deleted = 0 AND status = 'pending'";
+$prPendingParams = [];
+if ($scope !== null) { $prPendingSql .= ' AND branch_id = ?'; $prPendingParams[] = $scope; }
+
+$stPendingSql = "SELECT COUNT(*) FROM stock_transfers WHERE is_deleted = 0 AND status IN ('pending','in_transit')";
+$stPendingParams = [];
+if ($scope !== null) { $stPendingSql .= ' AND (from_branch_id = ? OR to_branch_id = ?)'; $stPendingParams[] = $scope; $stPendingParams[] = $scope; }
+
+$ordersOpenSql = "SELECT COUNT(*) FROM po_outgoing WHERE is_deleted = 0 AND status IN ('open','partially_delivered')";
+$ordersOpenParams = [];
+if ($scope !== null) { $ordersOpenSql .= ' AND branch_id = ?'; $ordersOpenParams[] = $scope; }
+
+$lowStockSql = 'SELECT COUNT(*) FROM inventory_stock WHERE reorder_level > 0 AND quantity_on_hand <= reorder_level';
+$lowStockParams = [];
+if ($scope !== null) { $lowStockSql .= ' AND branch_id = ?'; $lowStockParams[] = $scope; }
+
+$needsAttention = [
+    'pr_pending'    => dashboardCount($db, $prPendingSql, $prPendingParams),
+    'stock_pending' => dashboardCount($db, $stPendingSql, $stPendingParams),
+    'orders_open'   => dashboardCount($db, $ordersOpenSql, $ordersOpenParams),
+    'low_stock'     => dashboardCount($db, $lowStockSql, $lowStockParams),
+];
+
+// ── Low stock alerts — the actual items behind needs_attention.low_stock ──
+$lowStockItemsSql = "SELECT it.name AS item_name, b.name AS branch_name,
+                             s.quantity_on_hand, s.reorder_level
+                      FROM inventory_stock s
+                      JOIN items it ON it.id = s.item_id
+                      JOIN branches b ON b.id = s.branch_id
+                      WHERE s.reorder_level > 0 AND s.quantity_on_hand <= s.reorder_level";
+$lowStockItemsParams = [];
+if ($scope !== null) { $lowStockItemsSql .= ' AND s.branch_id = ?'; $lowStockItemsParams[] = $scope; }
+$lowStockItemsSql .= ' ORDER BY (s.quantity_on_hand - s.reorder_level) ASC LIMIT 6';
+$stmt = $db->prepare($lowStockItemsSql);
+$stmt->execute($lowStockItemsParams);
+$lowStockItems = $stmt->fetchAll();
+
+// ── Client order pipeline — current backlog snapshot of po_outgoing, not
+// date-filtered (it's "what's in flight right now", not a monthly count) ──
+$pipelineSql = 'SELECT status, COUNT(*) AS cnt FROM po_outgoing WHERE is_deleted = 0';
+$pipelineParams = [];
+if ($scope !== null) { $pipelineSql .= ' AND branch_id = ?'; $pipelineParams[] = $scope; }
+$pipelineSql .= ' GROUP BY status';
+$stmt = $db->prepare($pipelineSql);
+$stmt->execute($pipelineParams);
+$pipelineCounts = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+$pipelineLabels = [
+    'open'                => 'Open',
+    'partially_delivered' => 'Partial',
+    'delivered'           => 'Delivered',
+    'completed'           => 'Completed',
+    'cancelled'           => 'Cancelled',
+];
+$orderPipeline = [];
+foreach ($pipelineLabels as $key => $label) {
+    $orderPipeline[] = ['status' => $key, 'label' => $label, 'count' => (int)($pipelineCounts[$key] ?? 0)];
 }
 
 // ── Top 5 Products (by what was actually issued/sold) ──
@@ -116,7 +237,12 @@ jsonResponse(true, '', [
         'received_items'        => $receivedItems,
         'inventory_items'       => $inventoryItems,
     ],
-    'monthly_po'      => $monthlyPoSeries,
-    'top_products'    => $topProducts,
-    'recent_activity' => $recentActivity,
+    'financials'         => $financials,
+    'monthly_sales'      => $monthlySales,
+    'branch_performance' => $branchPerformance,
+    'needs_attention'    => $needsAttention,
+    'low_stock_items'    => $lowStockItems,
+    'order_pipeline'     => $orderPipeline,
+    'top_products'       => $topProducts,
+    'recent_activity'    => $recentActivity,
 ]);

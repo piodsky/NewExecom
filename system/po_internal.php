@@ -134,7 +134,7 @@ async function loadPos() {
     poCache = data.pos;
     document.getElementById('poBody').innerHTML = poCache.length ? poCache.map(p => `
         <tr style="cursor:pointer" onclick="viewPo('${p.po_number}')">
-            <td><strong>${escapeHtml(p.po_number)}</strong></td>
+            <td><span class="doc-number doc-poi">${escapeHtml(p.po_number)}</span></td>
             <td>${escapeHtml(p.branch_name)}</td>
             <td>${escapeHtml(p.supplier_name)}</td>
             <td>${escapeHtml(p.internal_rfq_number || '—')}</td>

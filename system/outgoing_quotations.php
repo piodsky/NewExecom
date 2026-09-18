@@ -159,7 +159,7 @@ async function loadOqs() {
     oqCache = data.quotations;
     document.getElementById('oqBody').innerHTML = oqCache.length ? oqCache.map(q => `
         <tr style="cursor:pointer" onclick="viewOq('${q.quotation_number}')">
-            <td><strong>${escapeHtml(q.quotation_number)}</strong></td>
+            <td><span class="doc-number doc-oq">${escapeHtml(q.quotation_number)}</span></td>
             <td>${escapeHtml(q.client_name || '—')}</td>
             <td>${escapeHtml(q.rfq_number || '—')}</td>
             <td>${peso(q.total_amount)}</td>

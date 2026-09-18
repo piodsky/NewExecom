@@ -171,7 +171,7 @@ async function loadPos() {
     pooCache = data.pos;
     document.getElementById('pooBody').innerHTML = pooCache.length ? pooCache.map(p => `
         <tr style="cursor:pointer" onclick="viewPo('${p.po_number}')">
-            <td><strong>${escapeHtml(p.po_number)}</strong></td>
+            <td><span class="doc-number doc-poo">${escapeHtml(p.po_number)}</span></td>
             <td>${escapeHtml(p.branch_name)}</td>
             <td>${escapeHtml(p.client_name)}</td>
             <td>${escapeHtml(p.outgoing_quotation_number || '—')}</td>

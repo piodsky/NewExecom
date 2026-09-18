@@ -136,7 +136,7 @@ async function loadRfqs() {
     rfqCache = data.rfqs;
     document.getElementById('rfqBody').innerHTML = rfqCache.length ? rfqCache.map(r => `
         <tr style="cursor:pointer" onclick="viewRfq('${r.rfq_number}')">
-            <td><strong>${escapeHtml(r.rfq_number)}</strong></td>
+            <td><span class="doc-number doc-irfq">${escapeHtml(r.rfq_number)}</span></td>
             <td>${escapeHtml(r.branch_name)}</td>
             <td>${escapeHtml(r.pr_number || '—')}</td>
             <td>${AppDateTime.format(r.sent_date)}</td>

@@ -91,7 +91,7 @@ async function loadIssuances() {
     issCache = data.issuances;
     document.getElementById('issBody').innerHTML = issCache.length ? issCache.map(i => `
         <tr style="cursor:pointer" onclick="viewIssuance('${i.issuance_number}')">
-            <td><strong>${escapeHtml(i.issuance_number)}</strong></td>
+            <td><span class="doc-number doc-iss">${escapeHtml(i.issuance_number)}</span></td>
             <td>${escapeHtml(i.branch_name)}</td>
             <td>${clientLabel(i)}</td>
             <td>${peso(i.total_amount)}</td>

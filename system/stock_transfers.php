@@ -142,7 +142,7 @@ async function loadTransfers() {
     stCache = data.transfers;
     document.getElementById('stBody').innerHTML = stCache.length ? stCache.map(t => `
         <tr style="cursor:pointer" onclick="viewTransfer('${t.transfer_number}')">
-            <td><strong>${escapeHtml(t.transfer_number)}</strong></td>
+            <td><span class="doc-number doc-st">${escapeHtml(t.transfer_number)}</span></td>
             <td>${escapeHtml(t.from_branch_name)}</td>
             <td>${escapeHtml(t.to_branch_name)}</td>
             <td><span class="badge-status ${t.status}">${statusLabel[t.status] || t.status}</span></td>

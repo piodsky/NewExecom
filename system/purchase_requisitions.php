@@ -133,7 +133,7 @@ async function loadPrs() {
     prCache = data.requisitions;
     document.getElementById('prBody').innerHTML = prCache.length ? prCache.map(p => `
         <tr style="cursor:pointer" onclick="viewPr('${p.pr_number}')">
-            <td><strong>${escapeHtml(p.pr_number)}</strong></td>
+            <td><span class="doc-number doc-pr">${escapeHtml(p.pr_number)}</span></td>
             <td>${escapeHtml(p.branch_name)}</td>
             <td>${escapeHtml(p.purpose || '—')}</td>
             <td>${AppDateTime.format(p.needed_date)}</td>

@@ -521,6 +521,30 @@ body {
 }
 .badge-status::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
 
+/* ── Document number tags ──
+   Every module mints its own number series (PR-, POI-, POO-, RR-, etc. —
+   see mintDocNumber() in config.php). Each series gets its own color here
+   so a document type is recognizable at a glance in any table, regardless
+   of which module you're looking at it from. */
+.doc-number {
+    display: inline-block;
+    font-weight: 700;
+    padding: .2rem .55rem;
+    border-radius: 6px;
+    font-size: .85rem;
+    white-space: nowrap;
+}
+.doc-number.doc-pr   { color: #2563eb; background: rgba(37,99,235,.1); }   /* Purchase Requisition */
+.doc-number.doc-irfq { color: #0891b2; background: rgba(8,145,178,.1); }  /* RFQ (Internal) */
+.doc-number.doc-poi  { color: #7c3aed; background: rgba(124,58,237,.1); } /* PO (Internal) */
+.doc-number.doc-rr   { color: #16a34a; background: rgba(22,163,74,.1); }  /* Receiving Report */
+.doc-number.doc-orfq { color: #db2777; background: rgba(219,39,119,.1); } /* RFQ (Outgoing) */
+.doc-number.doc-oq   { color: #4338ca; background: rgba(67,56,202,.1); }  /* Quotation (Outgoing) */
+.doc-number.doc-poo  { color: #d97706; background: rgba(217,119,6,.1); }  /* PO (Outgoing) */
+.doc-number.doc-dr   { color: #0ea5e9; background: rgba(14,165,233,.1); } /* Delivery Report */
+.doc-number.doc-st   { color: #65a30d; background: rgba(101,163,13,.1); } /* Stock Transfer */
+.doc-number.doc-iss  { color: #e11d48; background: rgba(225,29,72,.1); }  /* Issuance (POS) */
+
 /* ── Quick Action Buttons ── */
 .quick-action {
     display: flex; align-items: center; gap: .85rem;
@@ -542,6 +566,60 @@ body {
     font-size: .9rem; flex-shrink: 0;
 }
 .quick-action:hover .qa-icon { background: rgba(255,255,255,.2) !important; }
+.qa-icon.blue   { background: linear-gradient(135deg,#2563eb,#3b82f6); color: #fff; }
+.qa-icon.green  { background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; }
+.qa-icon.amber  { background: linear-gradient(135deg,#d97706,#f59e0b); color: #fff; }
+.qa-icon.red    { background: linear-gradient(135deg,#dc2626,#ef4444); color: #fff; }
+.qa-icon.purple { background: linear-gradient(135deg,#7c3aed,#8b5cf6); color: #fff; }
+.qa-icon.teal   { background: linear-gradient(135deg,#0891b2,#06b6d4); color: #fff; }
+.qa-count { margin-left: auto; font-size: .95rem; font-weight: 800; flex-shrink: 0; }
+.quick-action:hover .qa-count { color: #fff; }
+
+/* ── KPI trend badge (used on dashboard financial cards) ── */
+.kpi-trend {
+    display: inline-flex; align-items: center; gap: .25rem;
+    padding: .15rem .55rem; border-radius: 20px;
+    font-size: .72rem; font-weight: 700; margin-top: .3rem;
+}
+.kpi-trend.up    { background: rgba(22,163,74,.12); color: #16a34a; }
+.kpi-trend.down  { background: rgba(220,38,38,.12); color: #dc2626; }
+.kpi-trend.flat  { background: rgba(100,116,139,.12); color: #64748b; }
+
+/* ── Branch performance leaderboard (dashboard) ── */
+.lb-row { display: flex; align-items: center; gap: .75rem; padding: .55rem 0; border-bottom: 1px solid #f1f5f9; }
+.lb-row:last-child { border-bottom: none; }
+.lb-rank {
+    width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+    background: #f1f5f9; color: var(--muted);
+    font-size: .72rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+}
+.lb-body { flex: 1; min-width: 0; }
+.lb-name { font-size: .83rem; font-weight: 600; color: var(--text); display: flex; justify-content: space-between; gap: .5rem; }
+.lb-value { font-weight: 700; color: var(--text); flex-shrink: 0; }
+.lb-bar-track { height: 6px; border-radius: 4px; background: #f1f5f9; margin-top: .35rem; overflow: hidden; }
+.lb-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#2563eb,#3b82f6); }
+
+/* ── Client order pipeline pills (dashboard) ── */
+.pipeline-row { display: flex; gap: .6rem; flex-wrap: wrap; }
+.pipeline-pill {
+    flex: 1 1 0; min-width: 80px; text-align: center;
+    padding: .8rem .5rem; border-radius: 10px;
+    background: #f8fafc; border: 1px solid var(--border);
+}
+.pipeline-pill .pp-count { font-size: 1.25rem; font-weight: 800; color: var(--text); line-height: 1; }
+.pipeline-pill .pp-label { font-size: .68rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; margin-top: .3rem; }
+.pipeline-pill.pp-cancelled .pp-count { color: var(--danger); }
+.pipeline-pill.pp-completed .pp-count { color: var(--success); }
+.pipeline-pill.pp-open .pp-count { color: var(--primary); }
+.pipeline-pill.pp-partial .pp-count { color: var(--warning); }
+.pipeline-pill.pp-delivered .pp-count { color: var(--info); }
+
+.section-label {
+    font-size: .72rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .06em;
+    margin: .25rem 0 .6rem;
+}
 
 .modal-header-app .btn-close { filter: invert(1); }
 .modal-content { border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,.2); }

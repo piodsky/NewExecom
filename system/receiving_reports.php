@@ -119,7 +119,7 @@ async function loadRrs() {
     rrCache = data.receiving_reports;
     document.getElementById('rrBody').innerHTML = rrCache.length ? rrCache.map(r => `
         <tr style="cursor:pointer" onclick="viewRr('${r.rr_number}')">
-            <td><strong>${escapeHtml(r.rr_number)}</strong></td>
+            <td><span class="doc-number doc-rr">${escapeHtml(r.rr_number)}</span></td>
             <td>${escapeHtml(r.branch_name)}</td>
             <td>${escapeHtml(r.po_number)}</td>
             <td>${AppDateTime.format(r.date_received)}</td>

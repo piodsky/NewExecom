@@ -132,7 +132,7 @@ async function loadOrfqs() {
     orfqCache = data.rfqs;
     document.getElementById('orfqBody').innerHTML = orfqCache.length ? orfqCache.map(r => `
         <tr style="cursor:pointer" onclick="viewOrfq('${r.rfq_number}')">
-            <td><strong>${escapeHtml(r.rfq_number)}</strong></td>
+            <td><span class="doc-number doc-orfq">${escapeHtml(r.rfq_number)}</span></td>
             <td>${escapeHtml(r.client_name)}</td>
             <td>${AppDateTime.format(r.received_date)}</td>
             <td>${AppDateTime.format(r.due_date)}</td>

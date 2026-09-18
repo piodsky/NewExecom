@@ -120,7 +120,7 @@ async function loadDrs() {
     drCache = data.delivery_reports;
     document.getElementById('drBody').innerHTML = drCache.length ? drCache.map(d => `
         <tr style="cursor:pointer" onclick="viewDr('${d.dr_number}')">
-            <td><strong>${escapeHtml(d.dr_number)}</strong></td>
+            <td><span class="doc-number doc-dr">${escapeHtml(d.dr_number)}</span></td>
             <td>${escapeHtml(d.branch_name)}</td>
             <td>${escapeHtml(d.po_number)}</td>
             <td>${AppDateTime.format(d.date_delivered)}</td>
