@@ -2,7 +2,7 @@
 SQLyog Ultimate v12.09 (64 bit)
 MySQL - 10.4.32-MariaDB : Database - execom_db
 *********************************************************************
-*/
+*/
 
 /*!40101 SET NAMES utf8 */;
 
@@ -11,6 +11,7 @@ MySQL - 10.4.32-MariaDB : Database - execom_db
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+/*!40101 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 CREATE DATABASE /*!32312 IF NOT EXISTS*/`execom_db` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
 
 USE `execom_db`;
@@ -933,6 +934,7 @@ CREATE TABLE `users` (
 
 insert  into `users`(`id`,`username`,`password`,`full_name`,`first_name`,`middle_name`,`last_name`,`suffix`,`branch_id`,`role`,`department`,`last_login`,`avatar_path`,`is_active`,`created_at`) values (1,'admin','$2y$10$0w832hH3EFlb4KMRhAW6zOnCB9MVpvgCg8nP54Wkc/.mVdev4LG/u','System Administrator','System',NULL,'Administrator',NULL,NULL,'super_admin',NULL,'2026-09-18 15:09:44',NULL,1,'2026-09-16 08:21:51'),(13,'mlb.admin','$2y$10$wEdLZi//XnMAmVsEF0kJ8OLXhz/zlRD5eXV3NgCB8RZMbJtn0Xmb2','Rosemarie Tan','Rosemarie',NULL,'Tan',NULL,1,'branch_admin','Branch Management','2026-09-16 13:11:20',NULL,1,'2026-09-16 10:52:39'),(14,'mlb.staff','$2y$10$wEdLZi//XnMAmVsEF0kJ8OLXhz/zlRD5eXV3NgCB8RZMbJtn0Xmb2','Jerome Dagoc','Jerome',NULL,'Dagoc',NULL,1,'branch_user','Sales','2026-09-16 10:55:26',NULL,1,'2026-09-16 10:52:39'),(15,'mrm.admin','$2y$10$wEdLZi//XnMAmVsEF0kJ8OLXhz/zlRD5eXV3NgCB8RZMbJtn0Xmb2','Kevin Salvador','Kevin',NULL,'Salvador',NULL,2,'branch_admin','Branch Management','2026-09-16 10:53:59',NULL,1,'2026-09-16 10:52:39'),(16,'val.admin','$2y$10$wEdLZi//XnMAmVsEF0kJ8OLXhz/zlRD5eXV3NgCB8RZMbJtn0Xmb2','Angela Bacus','Angela',NULL,'Bacus',NULL,5,'branch_admin','Branch Management','2026-09-16 10:55:16',NULL,1,'2026-09-16 10:52:39');
 
+/*!40101 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
