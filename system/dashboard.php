@@ -25,6 +25,16 @@ $dGreetingWord = $dHour < 12 ? 'Morning' : ($dHour < 18 ? 'Afternoon' : 'Evening
 <link href="vendor/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="css/base.css">
+<style>
+/* Recent Transactions status pills — statuses come from several different
+   document types (PR/PO/RR/DR/Issuance), so these are grouped by meaning
+   rather than matching one table's enum. */
+.badge-status.approved, .badge-status.received, .badge-status.delivered,
+.badge-status.completed, .badge-status.converted { background: #dcfce7; color: #166534; }
+.badge-status.pending, .badge-status.draft, .badge-status.sent, .badge-status.open,
+.badge-status.partially_received, .badge-status.partially_delivered { background: #fef3c7; color: #92400e; }
+.badge-status.rejected, .badge-status.cancelled { background: #fee2e2; color: #991b1b; }
+</style>
 </head>
 <body>
 <div class="wrapper">
@@ -46,12 +56,127 @@ $dGreetingWord = $dHour < 12 ? 'Morning' : ($dHour < 18 ? 'Afternoon' : 'Evening
     </div>
 
     <div class="content-area">
-        <div class="dash-header">
-            <div>
-                <h1 class="dash-greeting">Good <?= e($dGreetingWord) ?><?= $dFirst !== '' ? ', ' . e($dFirst) : '' ?>!</h1>
-                <div class="dash-subtitle">Here's what's happening with your logistics today.</div>
+        <div class="dash-hero">
+            <div class="dash-hero-inner">
+                <div class="dash-hero-tag">Smarter Logistics. Stronger Connections.</div>
+                <h1 class="dash-hero-title">EXECOM Logistics System</h1>
+                <p class="dash-hero-sub">Good <?= e($dGreetingWord) ?><?= $dFirst !== '' ? ', ' . e($dFirst) : '' ?>! Efficient procurement, inventory and delivery for your IT and hardware needs — here's what's happening today, <?= date('l, F j, Y') ?>.</p>
+                <div class="dash-hero-chips">
+                    <span class="dash-hero-chip"><i class="fas fa-file-signature"></i> Procurement</span>
+                    <span class="dash-hero-chip"><i class="fas fa-warehouse"></i> Inventory</span>
+                    <span class="dash-hero-chip"><i class="fas fa-truck-fast"></i> Delivery</span>
+                </div>
             </div>
-            <div class="dash-date-pill"><i class="fas fa-calendar-days"></i> <?= date('l, F j, Y') ?></div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-lg-8">
+                <div class="row g-3 mb-3" id="mkKpiCards">
+                    <div class="col-6 col-md-3">
+                        <div class="mk-kpi">
+                            <div class="mk-kpi-icon" style="background:linear-gradient(135deg,#2563eb,#3b82f6)"><i class="fas fa-boxes-stacked"></i></div>
+                            <div class="mk-kpi-value" id="mkInventory">—</div>
+                            <div class="mk-kpi-label">Total Inventory</div>
+                            <div class="mk-kpi-caption">Items in stock</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <a href="purchase_requisitions.php" class="text-decoration-none">
+                        <div class="mk-kpi">
+                            <div class="mk-kpi-icon" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><i class="fas fa-file-signature"></i></div>
+                            <div class="mk-kpi-value" id="mkPendingPr">—</div>
+                            <div class="mk-kpi-label">Pending PR</div>
+                            <div class="mk-kpi-caption">for approval</div>
+                        </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <a href="order_tracking.php" class="text-decoration-none">
+                        <div class="mk-kpi">
+                            <div class="mk-kpi-icon" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6)"><i class="fas fa-file-invoice-dollar"></i></div>
+                            <div class="mk-kpi-value" id="mkOpenPo">—</div>
+                            <div class="mk-kpi-label">Open PO</div>
+                            <div class="mk-kpi-caption">ongoing orders</div>
+                        </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <a href="delivery_reports.php" class="text-decoration-none">
+                        <div class="mk-kpi">
+                            <div class="mk-kpi-icon" style="background:linear-gradient(135deg,#16a34a,#22c55e)"><i class="fas fa-truck-ramp-box"></i></div>
+                            <div class="mk-kpi-value" id="mkDeliveries">—</div>
+                            <div class="mk-kpi-label">Today's Deliveries</div>
+                            <div class="mk-kpi-caption">ready for dispatch</div>
+                        </div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-lg-7">
+                        <div class="panel h-100">
+                            <div class="panel-header">
+                                <div class="panel-title">Inventory Overview</div>
+                                <div class="chart-tabs" id="invTabs">
+                                    <button type="button" class="chart-tab active" data-tab="total" onclick="switchInvTab('total')">Total Stock</button>
+                                    <button type="button" class="chart-tab" data-tab="category" onclick="switchInvTab('category')">By Category</button>
+                                    <button type="button" class="chart-tab" data-tab="branch" onclick="switchInvTab('branch')">By Branch</button>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="chart-box" style="height:230px;"><canvas id="invOverviewChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="panel h-100">
+                            <div class="panel-header"><div class="panel-title">Stock by Category</div></div>
+                            <div class="panel-body">
+                                <div class="chart-box" style="height:130px;" id="catDonutBox"><canvas id="catDonutChart"></canvas></div>
+                                <div id="catDonutLegend" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-lg-8">
+                        <div class="panel h-100">
+                            <div class="panel-header">
+                                <div class="panel-title">Recent Transactions</div>
+                                <a href="order_tracking.php" class="small text-decoration-none">View all <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                            <div class="panel-body p-0" id="recentTransactionsBody"><div class="text-muted small p-3">Loading…</div></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="panel h-100">
+                            <div class="panel-header"><div class="panel-title">Top Suppliers</div></div>
+                            <div class="panel-body" id="topSuppliersBody"><div class="text-muted small">Loading…</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="panel mb-3">
+                    <div class="panel-header"><div class="panel-title">Quick Actions</div></div>
+                    <div class="panel-body">
+                        <?php if ($canPr): ?><a href="purchase_requisitions.php" class="quick-action"><span class="qa-icon blue"><i class="fas fa-file-signature"></i></span><div>Create Purchase Requisition</div></a><?php endif; ?>
+                        <?php if ($canInternalRfq): ?><a href="internal_rfq.php" class="quick-action"><span class="qa-icon teal"><i class="fas fa-file-invoice"></i></span><div>Request RFQ / Quotation</div></a><?php endif; ?>
+                        <?php if ($canPoInternal): ?><a href="po_internal.php" class="quick-action"><span class="qa-icon purple"><i class="fas fa-file-invoice-dollar"></i></span><div>Create Purchase Order</div></a><?php endif; ?>
+                        <?php if ($canReceiving): ?><a href="receiving_reports.php" class="quick-action"><span class="qa-icon green"><i class="fas fa-truck-ramp-box"></i></span><div>Record Receiving Report</div></a><?php endif; ?>
+                        <?php if ($canIssuance): ?><a href="issuances.php" class="quick-action"><span class="qa-icon red"><i class="fas fa-cash-register"></i></span><div>Issue Goods (POS)</div></a><?php endif; ?>
+                        <?php if ($canInventory): ?><a href="inventory.php" class="quick-action"><span class="qa-icon amber"><i class="fas fa-boxes-stacked"></i></span><div>Check Inventory</div></a><?php endif; ?>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Recent Activity</div></div>
+                    <div class="panel-body" id="recentActivity">
+                        <div class="text-muted small">Loading…</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="section-label">Business Performance — This Month</div>
@@ -195,13 +320,6 @@ $dGreetingWord = $dHour < 12 ? 'Morning' : ($dHour < 18 ? 'Afternoon' : 'Evening
                 </div>
             </div>
         </div>
-
-        <div class="panel">
-            <div class="panel-header"><div class="panel-title">Recent Activity</div></div>
-            <div class="panel-body" id="recentActivity">
-                <div class="text-muted small">Loading…</div>
-            </div>
-        </div>
     </div>
 </div>
 </div>
@@ -247,6 +365,16 @@ function activityColor(action) {
 
 let salesChartInstance = null;
 let topChartInstance = null;
+let invOverviewChartInstance = null;
+let catDonutChartInstance = null;
+let dashData = null;
+
+const statusLabels = {
+    draft: 'Draft', pending: 'Pending', approved: 'Approved', rejected: 'Rejected', converted: 'Converted',
+    open: 'Open', cancelled: 'Cancelled', quoted: 'Quoted', sent: 'Sent',
+    partially_received: 'Partial', received: 'Received', partially_delivered: 'Partial',
+    delivered: 'Delivered', completed: 'Completed', issued: 'Issued',
+};
 
 async function loadDashboard() {
     try {
@@ -256,12 +384,18 @@ async function loadDashboard() {
         const res  = await fetch(url);
         const data = await res.json();
         if (!data.success) return;
+        dashData = data;
 
         const s = data.stats;
         document.getElementById('statPr').textContent        = Number(s.purchase_requisitions).toLocaleString();
         document.getElementById('statPo').textContent        = Number(s.purchase_orders).toLocaleString();
         document.getElementById('statReceived').textContent  = Number(s.received_items).toLocaleString();
         document.getElementById('statInventory').textContent = Number(s.inventory_items).toLocaleString();
+
+        document.getElementById('mkInventory').textContent  = Number(s.inventory_items).toLocaleString();
+        document.getElementById('mkPendingPr').textContent  = Number(data.needs_attention.pr_pending).toLocaleString();
+        document.getElementById('mkOpenPo').textContent     = Number(data.open_po_count).toLocaleString();
+        document.getElementById('mkDeliveries').textContent = Number(data.today_deliveries).toLocaleString();
 
         const f = data.financials;
         document.getElementById('kpiRevenue').textContent = fmtMoney(f.revenue);
@@ -280,6 +414,10 @@ async function loadDashboard() {
 
         renderSalesChart(data.monthly_sales);
         renderTopProducts(data.top_products);
+        renderInvOverviewChart('total');
+        renderCatDonut(data.stock_by_category);
+        renderRecentTransactions(data.recent_transactions);
+        renderTopSuppliers(data.top_suppliers);
 
         const feed = document.getElementById('recentActivity');
         if (!data.recent_activity.length) {
@@ -324,6 +462,110 @@ function renderSalesChart(series) {
             },
         },
     });
+}
+
+// Inventory Overview panel — one shared canvas, three tabs. "total" is a
+// line trend (units on hand over the last 6 months); "category"/"branch"
+// are bar breakdowns of the current snapshot.
+function switchInvTab(tab) {
+    document.querySelectorAll('#invTabs .chart-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+    renderInvOverviewChart(tab);
+}
+function renderInvOverviewChart(tab) {
+    const ctx = document.getElementById('invOverviewChart');
+    if (!ctx || !dashData) return;
+    if (invOverviewChartInstance) invOverviewChartInstance.destroy();
+
+    if (tab === 'total') {
+        const series = dashData.stock_trend;
+        invOverviewChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: series.map(r => r.label),
+                datasets: [{ label: 'Total Stock', data: series.map(r => r.total), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,.1)', fill: true, tension: .35, pointRadius: 3 }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } },
+            },
+        });
+        return;
+    }
+
+    const rows = tab === 'category' ? dashData.stock_by_category : dashData.stock_by_branch;
+    const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', '#0891b2', '#dc2626', '#65a30d', '#db2777'];
+    invOverviewChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: rows.map(r => r.name),
+            datasets: [{ label: 'On Hand', data: rows.map(r => r.qty), backgroundColor: rows.map((_, i) => colors[i % colors.length]), borderRadius: 6 }],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } },
+        },
+    });
+}
+
+function renderCatDonut(categories) {
+    const box  = document.getElementById('catDonutBox');
+    const legend = document.getElementById('catDonutLegend');
+    if (!categories.length) {
+        box.style.display = 'none';
+        legend.innerHTML = '<div class="text-muted small text-center py-3">No stock recorded yet.</div>';
+        return;
+    }
+    box.style.display = '';
+    const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', '#0891b2', '#dc2626', '#65a30d', '#db2777'];
+    const total = categories.reduce((sum, c) => sum + Number(c.qty), 0) || 1;
+    const ctx = document.getElementById('catDonutChart');
+    if (catDonutChartInstance) catDonutChartInstance.destroy();
+    catDonutChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: categories.map(c => c.name), datasets: [{ data: categories.map(c => c.qty), backgroundColor: colors, borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } },
+    });
+    legend.innerHTML = categories.map((c, i) => `
+        <div class="donut-legend-row">
+            <span class="donut-legend-dot" style="background:${colors[i % colors.length]}"></span>
+            <span class="donut-legend-name">${escapeHtml(c.name)}</span>
+            <span class="donut-legend-pct">${Math.round(c.qty / total * 100)}%</span>
+        </div>`).join('');
+}
+
+function renderRecentTransactions(rows) {
+    const box = document.getElementById('recentTransactionsBody');
+    if (!rows.length) {
+        box.innerHTML = '<div class="text-muted small p-3">No transactions recorded yet.</div>';
+        return;
+    }
+    box.innerHTML = `<table class="app-table">
+        <thead><tr><th>Date</th><th>Document No.</th><th>Type</th><th>Description</th><th>Status</th></tr></thead>
+        <tbody>${rows.map(r => `
+            <tr>
+                <td class="text-muted">${new Date(String(r.created_at).replace(' ', 'T')).toLocaleDateString()}</td>
+                <td><span class="doc-number ${r.doc_class}">${escapeHtml(r.doc_number)}</span></td>
+                <td>${escapeHtml(r.doc_type)}</td>
+                <td>${escapeHtml(r.description || '—')}</td>
+                <td><span class="badge-status ${r.status}">${statusLabels[r.status] || escapeHtml(r.status)}</span></td>
+            </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+function renderTopSuppliers(rows) {
+    const box = document.getElementById('topSuppliersBody');
+    if (!rows.length) {
+        box.innerHTML = '<div class="text-muted small">No supplier orders recorded yet.</div>';
+        return;
+    }
+    box.innerHTML = rows.map(r => `
+        <div class="supplier-row">
+            <div class="supplier-badge">${escapeHtml(r.name.slice(0, 2).toUpperCase())}</div>
+            <div class="supplier-name">${escapeHtml(r.name)}</div>
+            <div class="supplier-count">${Number(r.order_count).toLocaleString()} order${r.order_count == 1 ? '' : 's'}</div>
+        </div>`).join('');
 }
 
 function renderBranchLeaderboard(branches) {

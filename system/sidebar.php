@@ -40,7 +40,7 @@ $canAccessLevels = $navUser['role'] === 'super_admin';
         <div class="brand-icon"><img src="image/execom_icon.png" alt="EXECOM"></div>
         <div>
             <div class="brand-name"><?= e(APP_NAME) ?></div>
-            <div class="brand-sub">Logistics &amp; Procurement</div>
+            <div class="brand-sub">Logistics System</div>
         </div>
     </a>
 

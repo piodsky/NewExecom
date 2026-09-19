@@ -59,6 +59,19 @@ $activePage  = 'access_levels';
 <script>
 const roleLabels = { branch_admin: 'Branch Administrator', branch_user: 'Branch User' };
 
+// Mirrors sidebar.php's section groupings so the matrix reads the same way
+// the nav does. Any module key not listed here (e.g. a brand-new module
+// added to ACCESS_MODULES before this map is updated) still shows up, under
+// "Other" — nothing goes missing, it just isn't grouped yet.
+const moduleSections = [
+    { label: 'Internal Procurement', keys: ['purchase_requisition', 'internal_rfq', 'po_internal', 'receiving_reports', 'inventory', 'warehouse'] },
+    { label: 'Branch Operations',    keys: ['stock_transfer', 'issuance'] },
+    { label: 'Outgoing Sales',       keys: ['outgoing_rfq', 'outgoing_quotations', 'po_outgoing', 'delivery_reports'] },
+    { label: 'Reports',              keys: ['order_tracking', 'cost_profit_reports', 'reports'] },
+    { label: 'Master Data',          keys: ['suppliers', 'clients', 'items'] },
+    { label: 'System',               keys: ['settings', 'system_guide'] },
+];
+
 async function loadMatrix() {
     const res  = await fetch('api/access_levels.php');
     const data = await res.json();
@@ -67,7 +80,8 @@ async function loadMatrix() {
     document.getElementById('matrixHead').innerHTML =
         '<th>Module</th>' + data.roles.map(r => `<th class="text-center">${roleLabels[r] || r}</th>`).join('');
 
-    document.getElementById('matrixBody').innerHTML = Object.entries(data.modules).map(([key, label]) => `
+    const colCount = data.roles.length + 1;
+    const moduleRow = (key, label) => `
         <tr>
             <td>${label}</td>
             ${data.roles.map(role => `
@@ -78,7 +92,22 @@ async function loadMatrix() {
                                onchange="toggleAccess('${role}', '${key}', this.checked)">
                     </div>
                 </td>`).join('')}
-        </tr>`).join('');
+        </tr>`;
+    const sectionRow = (label) => `<tr class="matrix-section-row"><td colspan="${colCount}">${label}</td></tr>`;
+
+    const remaining = new Set(Object.keys(data.modules));
+    let html = '';
+    moduleSections.forEach(section => {
+        const present = section.keys.filter(k => remaining.has(k));
+        if (!present.length) return;
+        html += sectionRow(section.label);
+        present.forEach(k => { html += moduleRow(k, data.modules[k]); remaining.delete(k); });
+    });
+    if (remaining.size) {
+        html += sectionRow('Other');
+        remaining.forEach(k => { html += moduleRow(k, data.modules[k]); });
+    }
+    document.getElementById('matrixBody').innerHTML = html;
 }
 
 async function toggleAccess(role, moduleKey, canAccess) {

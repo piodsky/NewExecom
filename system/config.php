@@ -367,17 +367,18 @@ function notifyRoles(array $roles, string $title, string $message = '', ?string 
     }
 }
 
-function getRecentNotifications($userId, $userRole, $limit = 10) {
+function getRecentNotifications($userId, $userRole, $limit = 20) {
     $stmt = getDB()->prepare(
         "SELECT n.id, n.title, n.message, n.link, n.created_at,
                 (nr.user_id IS NOT NULL) AS is_read
          FROM notifications n
          LEFT JOIN notification_reads nr ON nr.notification_id = n.id AND nr.user_id = ?
-         WHERE n.role = ?
+         LEFT JOIN notification_dismissals nd ON nd.notification_id = n.id AND nd.user_id = ?
+         WHERE n.role = ? AND nd.user_id IS NULL
          ORDER BY n.created_at DESC
          LIMIT " . (int)$limit
     );
-    $stmt->execute([$userId, $userRole]);
+    $stmt->execute([$userId, $userId, $userRole]);
     return $stmt->fetchAll();
 }
 
@@ -385,9 +386,10 @@ function getUnreadNotificationCount($userId, $userRole) {
     $stmt = getDB()->prepare(
         "SELECT COUNT(*) FROM notifications n
          LEFT JOIN notification_reads nr ON nr.notification_id = n.id AND nr.user_id = ?
-         WHERE n.role = ? AND nr.user_id IS NULL"
+         LEFT JOIN notification_dismissals nd ON nd.notification_id = n.id AND nd.user_id = ?
+         WHERE n.role = ? AND nr.user_id IS NULL AND nd.user_id IS NULL"
     );
-    $stmt->execute([$userId, $userRole]);
+    $stmt->execute([$userId, $userId, $userRole]);
     return (int)$stmt->fetchColumn();
 }
 
@@ -396,11 +398,23 @@ function markNotificationRead($notificationId, $userId) {
            ->execute([$notificationId, $userId]);
 }
 
+function markNotificationUnread($notificationId, $userId) {
+    getDB()->prepare('DELETE FROM notification_reads WHERE notification_id = ? AND user_id = ?')
+           ->execute([$notificationId, $userId]);
+}
+
 function markAllNotificationsRead($userId, $userRole) {
     getDB()->prepare(
         'INSERT IGNORE INTO notification_reads (notification_id, user_id)
          SELECT id, ? FROM notifications WHERE role = ?'
     )->execute([$userId, $userRole]);
+}
+
+// Per-user hide — see the comment on notification_dismissals in schema.sql
+// for why this can't just DELETE the notifications row.
+function dismissNotification($notificationId, $userId) {
+    getDB()->prepare('INSERT IGNORE INTO notification_dismissals (notification_id, user_id) VALUES (?, ?)')
+           ->execute([$notificationId, $userId]);
 }
 
 // Web-relative <img src> path for a user's uploaded avatar, or null if they

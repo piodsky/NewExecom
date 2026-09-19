@@ -17,6 +17,7 @@ CREATE DATABASE IF NOT EXISTS execom_db CHARACTER SET utf8mb4 COLLATE utf8mb4_un
 USE execom_db;
 
 SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS notification_dismissals;
 DROP TABLE IF EXISTS notification_reads;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS user_module_access;
@@ -133,6 +134,19 @@ CREATE TABLE notification_reads (
     notification_id INT NOT NULL,
     user_id         INT NOT NULL,
     read_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (notification_id, user_id),
+    FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- A notification is one row broadcast to every user of a role (see
+-- notifyRoles()), so "deleting" it for one person can't touch the shared
+-- row — this just hides it from that person's own bell, the same way
+-- notification_reads tracks read state per user rather than per row.
+CREATE TABLE notification_dismissals (
+    notification_id INT NOT NULL,
+    user_id         INT NOT NULL,
+    dismissed_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (notification_id, user_id),
     FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

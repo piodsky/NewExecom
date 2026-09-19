@@ -36,7 +36,16 @@ require_once __DIR__ . '/date_time.php';
         <div class="dropdown-menu dropdown-menu-end notif-dropdown" aria-labelledby="topbarBell">
             <div class="notif-header">
                 <span>Notifications</span>
-                <button type="button" onclick="topbarMarkAllRead()">Mark all read</button>
+                <div class="notif-header-actions">
+                    <button type="button" class="notif-kebab" onclick="event.stopPropagation(); topbarToggleKebab()"><i class="fas fa-ellipsis"></i></button>
+                    <div class="notif-kebab-menu d-none" id="topbarKebabMenu">
+                        <button type="button" onclick="topbarMarkAllRead()"><i class="fas fa-check-double"></i> Mark all as read</button>
+                    </div>
+                </div>
+            </div>
+            <div class="notif-tabs">
+                <button type="button" class="notif-tab active" data-tab="all" onclick="topbarSwitchTab('all')">All</button>
+                <button type="button" class="notif-tab" data-tab="unread" onclick="topbarSwitchTab('unread')">Unread</button>
             </div>
             <div class="notif-list" id="topbarNotifList">
                 <div class="notif-empty"><i class="fas fa-spinner fa-spin"></i>Loading…</div>
@@ -102,6 +111,78 @@ function topbarRenderBadge() {
     }
 }
 
+// Heuristic icon/color for a notification, from its title text — the
+// notifications table has no module/category column of its own (see
+// notifyRoles() in config.php), so this reads the same title strings every
+// notifyRoles() call site already writes.
+function topbarNotifIcon(title) {
+    const t = (title || '').toLowerCase();
+    if (t.includes('reject')) return { icon: 'fa-circle-xmark', color: 'red' };
+    if (t.includes('transfer')) return { icon: 'fa-truck-arrow-right', color: 'amber' };
+    if (t.includes('requisition')) return { icon: 'fa-file-signature', color: 'blue' };
+    if (t.includes('canvass') || t.includes('rfq')) return { icon: 'fa-file-invoice', color: 'teal' };
+    if (t.includes('awarded') || t.includes('completed') || t.includes('received') || t.includes('approved')) return { icon: 'fa-circle-check', color: 'green' };
+    if (t.includes('order') || t.includes('po ') || t.includes('purchase order')) return { icon: 'fa-file-invoice-dollar', color: 'purple' };
+    return { icon: 'fa-bell', color: 'gray' };
+}
+
+let topbarNotifCache = [];
+let topbarActiveTab  = 'all';
+
+function topbarRenderNotifList() {
+    const list = document.getElementById('topbarNotifList');
+    const rows = topbarActiveTab === 'unread' ? topbarNotifCache.filter(n => !n.is_read) : topbarNotifCache;
+
+    if (!topbarNotifCache.length) {
+        list.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash"></i>No notifications yet.</div>';
+        return;
+    }
+    if (!rows.length) {
+        list.innerHTML = '<div class="notif-empty"><i class="fas fa-check-double"></i>You\'re all caught up.</div>';
+        return;
+    }
+
+    const unread = rows.filter(n => !n.is_read);
+    const read   = rows.filter(n => n.is_read);
+    const renderRow = (n) => {
+        const ic = topbarNotifIcon(n.title);
+        return `
+        <div class="notif-item ${n.is_read ? '' : 'unread'}" data-id="${n.id}">
+            <div class="notif-icon ${ic.color}"><i class="fas ${ic.icon}"></i></div>
+            <a href="${topbarEscapeHtml(n.link) || '#'}" class="ni-body" onclick="topbarMarkRead('${n.id}', this.closest('.notif-item'))">
+                <div class="ni-title">${topbarEscapeHtml(n.title)}</div>
+                ${n.message ? `<div class="ni-message">${topbarEscapeHtml(n.message)}</div>` : ''}
+                <div class="ni-time">${topbarTimeAgo(n.created_at)}</div>
+            </a>
+            <div class="ni-side">
+                ${n.is_read ? '' : '<div class="ni-dot"></div>'}
+                <button type="button" class="ni-more" onclick="event.stopPropagation(); topbarToggleItemMenu('${n.id}')"><i class="fas fa-ellipsis"></i></button>
+            </div>
+            <div class="notif-item-menu d-none" id="topbarItemMenu${n.id}">
+                <button type="button" onclick="topbarToggleRead('${n.id}', ${n.is_read ? 'true' : 'false'})">
+                    <i class="fas fa-${n.is_read ? 'circle' : 'check'}"></i> Mark as ${n.is_read ? 'unread' : 'read'}
+                </button>
+                <button type="button" class="danger" onclick="topbarDismiss('${n.id}')"><i class="fas fa-xmark"></i> Delete this notification</button>
+            </div>
+        </div>`;
+    };
+
+    let html = '';
+    if (topbarActiveTab === 'all' && unread.length && read.length) {
+        html += '<div class="notif-section-label">New</div>' + unread.map(renderRow).join('');
+        html += '<div class="notif-section-label">Earlier</div>' + read.map(renderRow).join('');
+    } else {
+        html += rows.map(renderRow).join('');
+    }
+    list.innerHTML = html;
+}
+
+function topbarSwitchTab(tab) {
+    topbarActiveTab = tab;
+    document.querySelectorAll('.notif-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+    topbarRenderNotifList();
+}
+
 async function topbarLoadNotifications() {
     const list = document.getElementById('topbarNotifList');
     try {
@@ -111,18 +192,8 @@ async function topbarLoadNotifications() {
 
         topbarUnreadCount = data.unread_count || 0;
         topbarRenderBadge();
-
-        if (!data.notifications.length) {
-            list.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash"></i>No notifications yet.</div>';
-            return;
-        }
-        list.innerHTML = data.notifications.map(n => `
-            <a href="${topbarEscapeHtml(n.link) || '#'}" class="notif-item ${n.is_read ? '' : 'unread'}" data-id="${n.id}" onclick="topbarMarkRead('${n.id}', this)">
-                <div class="ni-title">${topbarEscapeHtml(n.title)}</div>
-                ${n.message ? `<div class="ni-message">${topbarEscapeHtml(n.message)}</div>` : ''}
-                <div class="ni-time">${topbarTimeAgo(n.created_at)}</div>
-            </a>
-        `).join('');
+        topbarNotifCache = data.notifications;
+        topbarRenderNotifList();
     } catch (err) {
         list.innerHTML = '<div class="notif-empty">Failed to load notifications.</div>';
         console.error(err);
@@ -131,22 +202,59 @@ async function topbarLoadNotifications() {
 
 // Marks read the moment it's clicked — the unread highlight clears and the
 // badge count steps down right away (Facebook-style), instead of only
-// catching up the next time the bell dropdown is reopened. el is the clicked
-// <a> itself (passed as `this` from the inline handler) rather than looked
-// up again by data-id, since we already have it for free.
+// catching up the next time the bell dropdown is reopened.
 function topbarMarkRead(id, el) {
+    const cached = topbarNotifCache.find(n => String(n.id) === String(id));
     if (el && el.classList.contains('unread')) {
         el.classList.remove('unread');
+        el.querySelector('.ni-dot')?.remove();
         topbarUnreadCount = Math.max(0, topbarUnreadCount - 1);
         topbarRenderBadge();
     }
+    if (cached) cached.is_read = true;
     fetch('api/notifications.php', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'mark_read', id }),
     }).catch(() => {});
 }
 
+function topbarToggleRead(id, isRead) {
+    document.getElementById('topbarItemMenu' + id)?.classList.add('d-none');
+    fetch('api/notifications.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: isRead ? 'mark_unread' : 'mark_read', id }),
+    }).finally(topbarLoadNotifications);
+}
+
+function topbarDismiss(id) {
+    const cached = topbarNotifCache.find(n => String(n.id) === String(id));
+    topbarNotifCache = topbarNotifCache.filter(n => String(n.id) !== String(id));
+    if (cached && !cached.is_read) { topbarUnreadCount = Math.max(0, topbarUnreadCount - 1); topbarRenderBadge(); }
+    topbarRenderNotifList();
+    fetch('api/notifications.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'dismiss', id }),
+    }).catch(() => {});
+}
+
+function topbarToggleItemMenu(id) {
+    const menu = document.getElementById('topbarItemMenu' + id);
+    const wasOpen = !menu.classList.contains('d-none');
+    document.querySelectorAll('.notif-item-menu').forEach(m => m.classList.add('d-none'));
+    if (!wasOpen) menu.classList.remove('d-none');
+}
+
+function topbarToggleKebab() {
+    document.getElementById('topbarKebabMenu')?.classList.toggle('d-none');
+}
+
+document.addEventListener('click', () => {
+    document.querySelectorAll('.notif-item-menu').forEach(m => m.classList.add('d-none'));
+    document.getElementById('topbarKebabMenu')?.classList.add('d-none');
+});
+
 async function topbarMarkAllRead() {
+    document.getElementById('topbarKebabMenu')?.classList.add('d-none');
     try {
         await fetch('api/notifications.php', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },

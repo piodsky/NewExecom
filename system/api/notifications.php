@@ -26,9 +26,23 @@ if ($method === 'POST') {
         jsonResponse(true, 'Marked as read.');
     }
 
+    if ($action === 'mark_unread') {
+        $id = (int)($data['id'] ?? 0);
+        if (!$id) jsonResponse(false, 'Invalid notification ID.');
+        markNotificationUnread($id, $user['id']);
+        jsonResponse(true, 'Marked as unread.');
+    }
+
     if ($action === 'mark_all_read') {
         markAllNotificationsRead($user['id'], $user['role']);
         jsonResponse(true, 'All notifications marked as read.');
+    }
+
+    if ($action === 'dismiss') {
+        $id = (int)($data['id'] ?? 0);
+        if (!$id) jsonResponse(false, 'Invalid notification ID.');
+        dismissNotification($id, $user['id']);
+        jsonResponse(true, 'Notification deleted.');
     }
 
     jsonResponse(false, 'Invalid action.');

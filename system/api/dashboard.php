@@ -163,6 +163,187 @@ $needsAttention = [
     'low_stock'     => dashboardCount($db, $lowStockSql, $lowStockParams),
 ];
 
+// ── Today's Deliveries + combined Open PO count (internal + client-facing) ──
+$todaySql = "SELECT COUNT(*) FROM delivery_reports WHERE is_deleted = 0 AND DATE(date_delivered) = CURDATE()";
+$todayParams = [];
+if ($scope !== null) { $todaySql .= ' AND branch_id = ?'; $todayParams[] = $scope; }
+$todayDeliveries = dashboardCount($db, $todaySql, $todayParams);
+
+$openPoInternalSql = "SELECT COUNT(*) FROM po_internal WHERE is_deleted = 0 AND status IN ('draft','sent','partially_received')";
+$openPoInternalParams = [];
+if ($scope !== null) { $openPoInternalSql .= ' AND branch_id = ?'; $openPoInternalParams[] = $scope; }
+$openPoCount = dashboardCount($db, $openPoInternalSql, $openPoInternalParams) + $needsAttention['orders_open'];
+
+// ── Stock on hand grouped by category / by branch (bulk qty + serialized
+// in-stock units combined, same definition as the KPI card above). ──
+function dashboardStockByCategory(PDO $db, ?int $scope): array {
+    $totals = [];
+    $stockSql = "SELECT c.id AS gid, COALESCE(c.name,'Uncategorized') AS gname, COALESCE(SUM(s.quantity_on_hand),0) AS qty
+                 FROM inventory_stock s
+                 JOIN items i ON i.id = s.item_id
+                 LEFT JOIN item_categories c ON c.id = i.category_id
+                 WHERE 1=1";
+    $params = [];
+    if ($scope !== null) { $stockSql .= ' AND s.branch_id = ?'; $params[] = $scope; }
+    $stockSql .= ' GROUP BY c.id, c.name';
+    $stmt = $db->prepare($stockSql); $stmt->execute($params);
+    foreach ($stmt->fetchAll() as $r) {
+        $key = $r['gid'] ?? 0;
+        $totals[$key] = ['name' => $r['gname'], 'qty' => (float)$r['qty']];
+    }
+    $unitSql = "SELECT c.id AS gid, COALESCE(c.name,'Uncategorized') AS gname, COUNT(*) AS qty
+                FROM inventory_units u
+                JOIN items i ON i.id = u.item_id
+                LEFT JOIN item_categories c ON c.id = i.category_id
+                WHERE u.is_deleted = 0 AND u.status = 'in_stock'";
+    $uparams = [];
+    if ($scope !== null) { $unitSql .= ' AND u.branch_id = ?'; $uparams[] = $scope; }
+    $unitSql .= ' GROUP BY c.id, c.name';
+    $stmt = $db->prepare($unitSql); $stmt->execute($uparams);
+    foreach ($stmt->fetchAll() as $r) {
+        $key = $r['gid'] ?? 0;
+        if (!isset($totals[$key])) { $totals[$key] = ['name' => $r['gname'], 'qty' => 0]; }
+        $totals[$key]['qty'] += (float)$r['qty'];
+    }
+    $out = array_values(array_filter($totals, fn($r) => $r['qty'] > 0));
+    usort($out, fn($a, $b) => $b['qty'] <=> $a['qty']);
+    return $out;
+}
+function dashboardStockByBranch(PDO $db, ?int $scope): array {
+    $totals = [];
+    $stockSql = "SELECT b.id AS gid, b.name AS gname, COALESCE(SUM(s.quantity_on_hand),0) AS qty
+                 FROM branches b
+                 LEFT JOIN inventory_stock s ON s.branch_id = b.id
+                 WHERE b.is_active = 1";
+    $params = [];
+    if ($scope !== null) { $stockSql .= ' AND b.id = ?'; $params[] = $scope; }
+    $stockSql .= ' GROUP BY b.id, b.name';
+    $stmt = $db->prepare($stockSql); $stmt->execute($params);
+    foreach ($stmt->fetchAll() as $r) { $totals[$r['gid']] = ['name' => $r['gname'], 'qty' => (float)$r['qty']]; }
+    $unitSql = "SELECT branch_id AS gid, COUNT(*) AS qty FROM inventory_units WHERE is_deleted = 0 AND status = 'in_stock'";
+    $uparams = [];
+    if ($scope !== null) { $unitSql .= ' AND branch_id = ?'; $uparams[] = $scope; }
+    $unitSql .= ' GROUP BY branch_id';
+    $stmt = $db->prepare($unitSql); $stmt->execute($uparams);
+    foreach ($stmt->fetchAll() as $r) {
+        if (isset($totals[$r['gid']])) { $totals[$r['gid']]['qty'] += (float)$r['qty']; }
+    }
+    $out = array_values($totals);
+    usort($out, fn($a, $b) => $b['qty'] <=> $a['qty']);
+    return $out;
+}
+$stockByCategory = dashboardStockByCategory($db, $scope);
+$stockByBranch   = dashboardStockByBranch($db, $scope);
+
+// ── Total Stock trend — last 6 months. Walked backward from today's actual
+// total (exact at the right edge); each earlier point is today's total minus
+// the net received-vs-issued movement since then. Doesn't net out inter-
+// branch stock transfers, so it's an approximation further back in time. ──
+$stockTrend = [];
+for ($i = 5; $i >= 0; $i--) {
+    $mFrom = (clone $curFrom)->modify("-{$i} months");
+    $mTo   = $i === 0 ? $curTo : (clone $mFrom)->modify('+1 month')->modify('-1 day')->setTime(23, 59, 59);
+
+    $recvSql = "SELECT COALESCE(SUM(rri.quantity),0) FROM receiving_report_items rri
+                JOIN receiving_reports rr ON rr.rr_number = rri.rr_number
+                WHERE rri.is_deleted = 0 AND rr.is_deleted = 0 AND rr.date_received BETWEEN ? AND ?";
+    $recvParams = [$mFrom->format('Y-m-d H:i:s'), $mTo->format('Y-m-d H:i:s')];
+    if ($scope !== null) { $recvSql .= ' AND rr.branch_id = ?'; $recvParams[] = $scope; }
+    $stmt = $db->prepare($recvSql); $stmt->execute($recvParams);
+    $recvQty = (float)$stmt->fetchColumn();
+
+    $issSql = "SELECT COALESCE(SUM(COALESCE(ii.quantity,1)),0) FROM issuance_items ii
+               JOIN issuances iss ON iss.issuance_number = ii.issuance_number
+               WHERE ii.is_deleted = 0 AND iss.is_deleted = 0 AND iss.date_created BETWEEN ? AND ?";
+    $issParams = [$mFrom->format('Y-m-d H:i:s'), $mTo->format('Y-m-d H:i:s')];
+    if ($scope !== null) { $issSql .= ' AND iss.branch_id = ?'; $issParams[] = $scope; }
+    $stmt = $db->prepare($issSql); $stmt->execute($issParams);
+    $issQty = (float)$stmt->fetchColumn();
+
+    $stockTrend[] = ['label' => $mFrom->format('M'), 'net' => $recvQty - $issQty];
+}
+$runningTotal = $inventoryItems - array_sum(array_column($stockTrend, 'net'));
+foreach ($stockTrend as &$row) {
+    $runningTotal += $row['net'];
+    $row['total'] = round($runningTotal, 2);
+    unset($row['net']);
+}
+unset($row);
+
+// ── Recent Transactions — latest handful across every document type, for
+// the landing-page feed (separate from the audit-log-driven Recent Activity). ──
+function dashboardRecentTransactions(PDO $db, ?int $scope): array {
+    $rows = [];
+    $fetch = function (string $sql, array $params) use ($db) {
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    };
+
+    $sql = "SELECT pr_number AS doc_number, purpose AS description, status, created_at FROM pr_requests WHERE is_deleted = 0";
+    $params = []; if ($scope !== null) { $sql .= ' AND branch_id = ?'; $params[] = $scope; }
+    $sql .= ' ORDER BY created_at DESC LIMIT 5';
+    foreach ($fetch($sql, $params) as $r) {
+        $rows[] = ['doc_number' => $r['doc_number'], 'doc_type' => 'PR', 'doc_class' => 'doc-pr',
+                   'description' => $r['description'] ?: 'Purchase Requisition', 'status' => $r['status'], 'created_at' => $r['created_at']];
+    }
+
+    $sql = "SELECT po_number AS doc_number, supplier_name AS description, status, created_at FROM po_internal WHERE is_deleted = 0";
+    $params = []; if ($scope !== null) { $sql .= ' AND branch_id = ?'; $params[] = $scope; }
+    $sql .= ' ORDER BY created_at DESC LIMIT 5';
+    foreach ($fetch($sql, $params) as $r) {
+        $rows[] = ['doc_number' => $r['doc_number'], 'doc_type' => 'PO (Supplier)', 'doc_class' => 'doc-poi',
+                   'description' => $r['description'] ?: 'Supplier order', 'status' => $r['status'], 'created_at' => $r['created_at']];
+    }
+
+    $sql = "SELECT po_number AS doc_number, client_name AS description, status, created_at FROM po_outgoing WHERE is_deleted = 0";
+    $params = []; if ($scope !== null) { $sql .= ' AND branch_id = ?'; $params[] = $scope; }
+    $sql .= ' ORDER BY created_at DESC LIMIT 5';
+    foreach ($fetch($sql, $params) as $r) {
+        $rows[] = ['doc_number' => $r['doc_number'], 'doc_type' => 'PO (Client)', 'doc_class' => 'doc-poo',
+                   'description' => $r['description'] ?: 'Client order', 'status' => $r['status'], 'created_at' => $r['created_at']];
+    }
+
+    $sql = "SELECT rr_number AS doc_number, po_number, created_at FROM receiving_reports WHERE is_deleted = 0";
+    $params = []; if ($scope !== null) { $sql .= ' AND branch_id = ?'; $params[] = $scope; }
+    $sql .= ' ORDER BY created_at DESC LIMIT 5';
+    foreach ($fetch($sql, $params) as $r) {
+        $rows[] = ['doc_number' => $r['doc_number'], 'doc_type' => 'Receiving', 'doc_class' => 'doc-rr',
+                   'description' => $r['po_number'] ? ('For ' . $r['po_number']) : 'Goods received', 'status' => 'received', 'created_at' => $r['created_at']];
+    }
+
+    $sql = "SELECT dr_number AS doc_number, po_number, created_at FROM delivery_reports WHERE is_deleted = 0";
+    $params = []; if ($scope !== null) { $sql .= ' AND branch_id = ?'; $params[] = $scope; }
+    $sql .= ' ORDER BY created_at DESC LIMIT 5';
+    foreach ($fetch($sql, $params) as $r) {
+        $rows[] = ['doc_number' => $r['doc_number'], 'doc_type' => 'Delivery', 'doc_class' => 'doc-dr',
+                   'description' => $r['po_number'] ? ('For ' . $r['po_number']) : 'Client delivery', 'status' => 'delivered', 'created_at' => $r['created_at']];
+    }
+
+    $sql = "SELECT issuance_number AS doc_number, walkin_name, po_number, created_at FROM issuances WHERE is_deleted = 0";
+    $params = []; if ($scope !== null) { $sql .= ' AND branch_id = ?'; $params[] = $scope; }
+    $sql .= ' ORDER BY created_at DESC LIMIT 5';
+    foreach ($fetch($sql, $params) as $r) {
+        $rows[] = ['doc_number' => $r['doc_number'], 'doc_type' => 'Issuance', 'doc_class' => 'doc-iss',
+                   'description' => $r['walkin_name'] ?: ($r['po_number'] ? ('For ' . $r['po_number']) : 'Walk-in sale'),
+                   'status' => 'completed', 'created_at' => $r['created_at']];
+    }
+
+    usort($rows, fn($a, $b) => strcmp((string)$b['created_at'], (string)$a['created_at']));
+    return array_slice($rows, 0, 8);
+}
+$recentTransactions = dashboardRecentTransactions($db, $scope);
+
+// ── Top Suppliers — ranked by how many internal POs have gone to them ──
+$supSql = "SELECT s.id, s.name, COUNT(*) AS order_count
+           FROM po_internal p JOIN suppliers s ON s.id = p.supplier_id
+           WHERE p.is_deleted = 0";
+$supParams = [];
+if ($scope !== null) { $supSql .= ' AND p.branch_id = ?'; $supParams[] = $scope; }
+$supSql .= ' GROUP BY s.id, s.name ORDER BY order_count DESC LIMIT 5';
+$stmt = $db->prepare($supSql); $stmt->execute($supParams);
+$topSuppliers = $stmt->fetchAll();
+
 // ── Low stock alerts — the actual items behind needs_attention.low_stock ──
 $lowStockItemsSql = "SELECT it.name AS item_name, b.name AS branch_name,
                              s.quantity_on_hand, s.reorder_level
@@ -245,4 +426,11 @@ jsonResponse(true, '', [
     'order_pipeline'     => $orderPipeline,
     'top_products'       => $topProducts,
     'recent_activity'    => $recentActivity,
+    'today_deliveries'   => $todayDeliveries,
+    'open_po_count'      => $openPoCount,
+    'stock_by_category'  => $stockByCategory,
+    'stock_by_branch'    => $stockByBranch,
+    'stock_trend'        => $stockTrend,
+    'recent_transactions' => $recentTransactions,
+    'top_suppliers'      => $topSuppliers,
 ]);
