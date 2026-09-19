@@ -78,6 +78,7 @@ $activePage  = 'system_guide';
                 <div class="d-flex guide-jump gap-2">
                     <a href="#flow" class="btn btn-light btn-sm"><i class="fas fa-route me-1"></i>Document chain</a>
                     <a href="#inventory" class="btn btn-light btn-sm"><i class="fas fa-warehouse me-1"></i>Inside Inventory</a>
+                    <a href="#warehousemap" class="btn btn-light btn-sm"><i class="fas fa-map-location-dot me-1"></i>Warehouse Map</a>
                     <a href="#example" class="btn btn-light btn-sm"><i class="fas fa-desktop me-1"></i>Worked example</a>
                     <a href="#reference" class="btn btn-light btn-sm"><i class="fas fa-list-check me-1"></i>Module reference</a>
                 </div>
@@ -184,6 +185,10 @@ $activePage  = 'system_guide';
                 <p class="text-muted small mt-2 mb-0">Solid arrows move stock or a serial number; dashed arrows are paperwork references only. Stock Transfer never creates a new inventory row — it just re-points an existing serialized unit at a different branch.</p>
 
                 <div class="guide-note"><b>Worth knowing:</b> Issuance (the POS screen, barcode-driven) and Delivery Report (the signed proof-of-delivery document) are <em>siblings</em>, not a pipeline — both reference the same Outgoing PO, but neither is built from the other. Issuance is what actually flips a serial's status; Delivery Report is the paperwork that closes the sale.</div>
+
+                <div class="guide-note"><b>Don't trace this by hand:</b> <a href="order_tracking.php">Order Tracking</a> picks up any Purchase Requisition or Outgoing RFQ and renders its whole chain above automatically — every RFQ, PO, Receiving Report, Delivery Report and Issuance that came from it, with live status and quantities. Every document number it shows is color-coded by type (PR blue, Internal PO violet, Outgoing PO orange, and so on) and clicking one jumps straight to that record on its own page.</div>
+
+                <div class="guide-note"><b>The PR's "Department" field</b> is a dropdown, not free text — it's a small master list (Sales, Warehouse, Technical/Service, Admin, or whatever your admins add) managed from the "Departments" tab right next to the Requisitions list on <a href="purchase_requisitions.php">Purchase Requisitions</a>. It only labels which section of the branch is asking; it doesn't gate or route anything.</div>
             </div>
         </div>
 
@@ -286,8 +291,74 @@ $activePage  = 'system_guide';
             </div>
         </div>
 
+        <div class="panel mb-3" id="warehousemap">
+            <div class="panel-header"><div class="panel-title">3. Warehouse Map: where a unit physically sits</div></div>
+            <div class="panel-body">
+                <p class="guide-lede">Inventory answers "how many, of what, at which branch." <a href="warehouse.php">Warehouse Map</a> answers the next question — "which shelf" — without changing how anything gets received. A unit or a pooled bulk line always becomes an inventory row first; placing it on the map is a separate step afterward, never the other way around.</p>
+
+                <div class="guide-dgm">
+                <svg viewBox="0 0 900 300" role="img" aria-label="A Receiving Report, Manual Add, or Quick Scan creates an inventory row that starts unplaced. Someone then places it into a bin on the Warehouse Map's floor plan. Once Issuance or Stock Transfer moves that unit out of stock, it automatically drops off the map with no extra step.">
+                  <defs>
+                    <marker id="arC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                      <polygon points="0,0 10,5 0,10" fill="#94a3b8"/>
+                    </marker>
+                  </defs>
+
+                  <text x="10" y="18" class="row-label">FROM RECEIVING TO A SHELF, AND BACK OUT</text>
+
+                  <g>
+                    <rect class="n-box" x="10" y="40" width="160" height="60" rx="9"/>
+                    <text class="n-title" x="90" y="65" text-anchor="middle" font-size="12">Receiving Report /</text>
+                    <text class="n-title" x="90" y="80" text-anchor="middle" font-size="12">Manual Add / Quick Scan</text>
+                  </g>
+                  <g>
+                    <rect class="n-box" x="220" y="40" width="150" height="60" rx="9"/>
+                    <text class="n-title" x="295" y="65" text-anchor="middle">Inventory row</text>
+                    <text class="n-sub" x="295" y="82" text-anchor="middle">location_id = NULL</text>
+                  </g>
+                  <g>
+                    <rect class="n-box emph" x="420" y="40" width="150" height="60" rx="9"/>
+                    <text class="n-title emph" x="495" y="65" text-anchor="middle">"Unplaced" list</text>
+                    <text class="n-sub" x="495" y="82" text-anchor="middle">on the Warehouse Map</text>
+                  </g>
+                  <g>
+                    <rect class="n-box" x="620" y="40" width="150" height="60" rx="9"/>
+                    <text class="n-title" x="695" y="65" text-anchor="middle">Bin</text>
+                    <text class="n-sub" x="695" y="82" text-anchor="middle">e.g. A-01</text>
+                  </g>
+
+                  <line class="e-line" x1="170" y1="70" x2="216" y2="70" marker-end="url(#arC)"/>
+                  <line class="e-line" x1="370" y1="70" x2="416" y2="70" marker-end="url(#arC)"/>
+                  <line class="e-line" x1="570" y1="70" x2="616" y2="70" marker-end="url(#arC)"/>
+                  <text class="e-label" x="593" y="56" text-anchor="middle">place</text>
+
+                  <path class="e-line dashed" d="M 695 100 L 695 160 L 295 160 L 295 106" marker-end="url(#arC)"/>
+                  <text class="e-label" x="495" y="150" text-anchor="middle">Issuance or Stock Transfer moves it out &#8594; drops off the map automatically, no extra step</text>
+
+                  <text x="10" y="210" class="row-label">THE FLOOR PLAN ITSELF</text>
+                  <g>
+                    <rect x="10" y="228" width="90" height="50" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+                    <text class="n-sub" x="55" y="248" text-anchor="middle" font-weight="700">A-01</text>
+                    <text class="n-sub" x="55" y="263" text-anchor="middle" font-size="9">2 units</text>
+                  </g>
+                  <rect x="112" y="228" width="90" height="50" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="4 3"/>
+                  <text class="n-sub" x="157" y="253" text-anchor="middle" font-size="9">A-02 &#183; empty</text>
+                  <rect x="214" y="228" width="90" height="50" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="2"/>
+                  <text class="n-sub" x="259" y="248" text-anchor="middle" font-weight="700">A-03</text>
+                  <text class="n-sub" x="259" y="263" text-anchor="middle" font-size="9">at capacity</text>
+                  <rect x="316" y="228" width="90" height="50" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="4 3"/>
+                  <text class="n-sub" x="361" y="253" text-anchor="middle" font-size="9">B-01 &#183; empty</text>
+                  <text x="440" y="250" class="n-sub" font-size="11">grid_row / grid_col place each bin here — they don't need to be exact,</text>
+                  <text x="440" y="266" class="n-sub" font-size="11">just relative to the bins around them.</text>
+                </svg>
+                </div>
+
+                <div class="guide-note"><b>Capacity only counts serialized units.</b> A bin's optional capacity limits how many <span class="guide-mono">inventory_units</span> rows it can hold — a bulk item's pooled quantity (e.g. "6 pc of RAM") is shown alongside for context but never blocks placement, since one bulk SKU isn't "one item, one slot" the way a serialized unit is.</div>
+            </div>
+        </div>
+
         <div class="panel mb-3" id="example">
-            <div class="panel-header"><div class="panel-title">3. Worked example: monitors</div></div>
+            <div class="panel-header"><div class="panel-title">4. Worked example: monitors</div></div>
             <div class="panel-body">
                 <p class="guide-lede">One category, two sellable models, and what a handful of physical units under one model would actually look like.</p>
                 <div class="table-responsive">
@@ -308,7 +379,7 @@ $activePage  = 'system_guide';
         </div>
 
         <div class="panel mb-3" id="reference">
-            <div class="panel-header"><div class="panel-title">4. Module quick reference</div></div>
+            <div class="panel-header"><div class="panel-title">5. Module quick reference</div></div>
             <div class="panel-body">
                 <p class="guide-lede">Where each piece of the flow above actually lives in the app.</p>
                 <div class="table-responsive">
@@ -320,11 +391,12 @@ $activePage  = 'system_guide';
                         <tr><td>Suppliers</td><td class="guide-mono">suppliers.php</td><td class="guide-mono">suppliers</td></tr>
                         <tr><td>Clients</td><td class="guide-mono">clients.php</td><td class="guide-mono">clients</td></tr>
 
-                        <tr><td rowspan="5">Internal Procurement</td><td>Purchase Requisition</td><td class="guide-mono">purchase_requisitions.php</td><td class="guide-mono">purchase_requisition</td></tr>
+                        <tr><td rowspan="6">Internal Procurement</td><td>Purchase Requisition <span class="text-muted small">(+ Departments tab)</span></td><td class="guide-mono">purchase_requisitions.php</td><td class="guide-mono">purchase_requisition</td></tr>
                         <tr><td>RFQ (Internal)</td><td class="guide-mono">internal_rfq.php</td><td class="guide-mono">internal_rfq</td></tr>
                         <tr><td>PO (Internal)</td><td class="guide-mono">po_internal.php</td><td class="guide-mono">po_internal</td></tr>
                         <tr><td>Receiving Reports</td><td class="guide-mono">receiving_reports.php</td><td class="guide-mono">receiving_reports</td></tr>
                         <tr><td>Inventory</td><td class="guide-mono">inventory.php</td><td class="guide-mono">inventory</td></tr>
+                        <tr><td>Warehouse Map</td><td class="guide-mono">warehouse.php</td><td class="guide-mono">warehouse</td></tr>
 
                         <tr><td rowspan="2">Branch Operations</td><td>Stock Transfer</td><td class="guide-mono">stock_transfers.php</td><td class="guide-mono">stock_transfer</td></tr>
                         <tr><td>Issuance (POS)</td><td class="guide-mono">issuances.php / issuance_pos.php</td><td class="guide-mono">issuance</td></tr>
@@ -334,7 +406,8 @@ $activePage  = 'system_guide';
                         <tr><td>PO (Outgoing)</td><td class="guide-mono">po_outgoing.php</td><td class="guide-mono">po_outgoing</td></tr>
                         <tr><td>Delivery Reports</td><td class="guide-mono">delivery_reports.php</td><td class="guide-mono">delivery_reports</td></tr>
 
-                        <tr><td rowspan="2">Reports</td><td>Cost/Profit Reports</td><td class="guide-mono">cost_profit_reports.php</td><td class="guide-mono">cost_profit_reports</td></tr>
+                        <tr><td rowspan="3">Reports</td><td>Order Tracking</td><td class="guide-mono">order_tracking.php</td><td class="guide-mono">order_tracking</td></tr>
+                        <tr><td>Cost/Profit Reports</td><td class="guide-mono">cost_profit_reports.php</td><td class="guide-mono">cost_profit_reports</td></tr>
                         <tr><td>Reports</td><td class="guide-mono">reports.php</td><td class="guide-mono">reports</td></tr>
                     </tbody>
                 </table>

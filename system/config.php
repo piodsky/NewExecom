@@ -229,6 +229,7 @@ const ACCESS_MODULES = [
     'po_internal'          => 'Purchase Order (Internal)',
     'receiving_reports'    => 'Receiving Reports',
     'inventory'            => 'Inventory',
+    'warehouse'            => 'Warehouse Map',
     'stock_transfer'       => 'Stock Transfer',
     'issuance'             => 'Issuance (POS)',
     'outgoing_rfq'         => 'RFQ (Outgoing)',

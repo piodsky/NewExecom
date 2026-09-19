@@ -9,6 +9,7 @@ $canInternalRfq  = $moduleAccess['internal_rfq'] ?? true;
 $canPoInternal   = $moduleAccess['po_internal'] ?? true;
 $canReceiving    = $moduleAccess['receiving_reports'] ?? true;
 $canInventory    = $moduleAccess['inventory'] ?? true;
+$canWarehouse    = $moduleAccess['warehouse'] ?? true;
 $canStockTransfer = $moduleAccess['stock_transfer'] ?? true;
 $canIssuance      = $moduleAccess['issuance'] ?? true;
 $canOutgoingRfq   = $moduleAccess['outgoing_rfq'] ?? true;
@@ -85,7 +86,7 @@ $canAccessLevels = $navUser['role'] === 'super_admin';
         <?php endif; ?>
         <?php endif; ?>
 
-        <?php if ($canPr || $canInternalRfq || $canPoInternal || $canReceiving || $canInventory): ?>
+        <?php if ($canPr || $canInternalRfq || $canPoInternal || $canReceiving || $canInventory || $canWarehouse): ?>
         <div class="sidebar-section-title mt-2">Internal Procurement</div>
 
         <?php if ($canPr): ?>
@@ -115,6 +116,12 @@ $canAccessLevels = $navUser['role'] === 'super_admin';
         <?php if ($canInventory): ?>
         <a href="inventory.php" class="sidebar-link <?= ($activePage === 'inventory') ? 'active' : '' ?>">
             <span class="nav-icon"><i class="fas fa-warehouse"></i></span> Inventory
+        </a>
+        <?php endif; ?>
+
+        <?php if ($canWarehouse): ?>
+        <a href="warehouse.php" class="sidebar-link <?= ($activePage === 'warehouse') ? 'active' : '' ?>">
+            <span class="nav-icon"><i class="fas fa-map-location-dot"></i></span> Warehouse Map
         </a>
         <?php endif; ?>
         <?php endif; ?>

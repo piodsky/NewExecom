@@ -31,6 +31,7 @@ DROP TABLE IF EXISTS stock_transfers;
 DROP TABLE IF EXISTS inventory_units;
 DROP TABLE IF EXISTS inventory_unassigned_units;
 DROP TABLE IF EXISTS inventory_stock;
+DROP TABLE IF EXISTS warehouse_locations;
 DROP TABLE IF EXISTS delivery_report_items;
 DROP TABLE IF EXISTS delivery_reports;
 DROP TABLE IF EXISTS receiving_report_items;
@@ -532,8 +533,28 @@ CREATE TABLE delivery_report_items (
 );
 
 -- ── 6. Inventory — Internal, hybrid serialized + bulk ────────────────────
--- (Module 5, Warehouse, has no table of its own — a branch IS a warehouse;
--- see the `location` free-text column below for shelf/bin.)
+-- A branch IS a warehouse. warehouse_locations is that warehouse's own
+-- floor plan: a small grid of named bins (grid_row/grid_col place it on the
+-- Warehouse Map page). inventory_units/inventory_stock.location_id is where
+-- a unit or a pooled bulk line currently sits — NULL means "in stock but not
+-- yet put away." The free-text `location` column on inventory_units predates
+-- this and is kept as a plain shelf/bin note; location_id is what the map
+-- and the put-away/pick workflow actually use.
+
+CREATE TABLE warehouse_locations (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    branch_id   INT          NOT NULL,
+    code        VARCHAR(20)  NOT NULL,   -- e.g. "A-01"
+    label       VARCHAR(100) NULL,       -- e.g. "Aisle A, Rack 1"
+    grid_row    INT          NOT NULL DEFAULT 1,
+    grid_col    INT          NOT NULL DEFAULT 1,
+    capacity    INT          NULL,       -- max serialized units this bin holds; NULL = unlimited
+    is_active   TINYINT(1)   NOT NULL DEFAULT 1,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY loc_branch_code (branch_id, code),
+    FOREIGN KEY (branch_id) REFERENCES branches(id),
+    INDEX idx_wl_branch (branch_id)
+);
 
 CREATE TABLE inventory_units (
     id                    INT AUTO_INCREMENT PRIMARY KEY,
@@ -547,7 +568,8 @@ CREATE TABLE inventory_units (
     reserved_for_po_number VARCHAR(30)  NULL,
     date_received         DATETIME      NULL,
     date_out              DATETIME      NULL,
-    location              VARCHAR(100)  NULL,   -- shelf/bin, free text
+    location               VARCHAR(100)  NULL,   -- shelf/bin, free text (legacy note)
+    location_id            INT          NULL,     -- structured bin on the Warehouse Map
     remarks               VARCHAR(255)  NULL,
     is_deleted            TINYINT(1)    NOT NULL DEFAULT 0,
     created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -555,10 +577,12 @@ CREATE TABLE inventory_units (
     FOREIGN KEY (branch_id) REFERENCES branches(id),
     FOREIGN KEY (source_rr_number) REFERENCES receiving_reports(rr_number),
     FOREIGN KEY (reserved_for_client_id) REFERENCES clients(id),
+    FOREIGN KEY (location_id) REFERENCES warehouse_locations(id),
     INDEX idx_invu_branch (branch_id),
     INDEX idx_invu_item (item_id),
     INDEX idx_invu_serial (serial_number),
-    INDEX idx_invu_status (status)
+    INDEX idx_invu_status (status),
+    INDEX idx_invu_location (location_id)
 );
 
 CREATE TABLE inventory_stock (
@@ -567,9 +591,11 @@ CREATE TABLE inventory_stock (
     branch_id         INT NOT NULL,
     quantity_on_hand  DECIMAL(14,2) NOT NULL DEFAULT 0,
     reorder_level     DECIMAL(14,2) NOT NULL DEFAULT 0,
+    location_id       INT NULL,   -- structured bin on the Warehouse Map (one home bin per pooled item/branch line)
     UNIQUE KEY item_branch (item_id, branch_id),
     FOREIGN KEY (item_id) REFERENCES items(id),
-    FOREIGN KEY (branch_id) REFERENCES branches(id)
+    FOREIGN KEY (branch_id) REFERENCES branches(id),
+    FOREIGN KEY (location_id) REFERENCES warehouse_locations(id)
 );
 
 -- Quick Scan: a serial can be scanned in before anyone has picked which item
