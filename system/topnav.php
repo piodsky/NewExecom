@@ -194,12 +194,10 @@ function navLink($href, $icon, $label, $active) {
 ?>
 <nav class="subnav d-print-none">
     <div class="container-xl subnav-inner">
-        <span class="subnav-label"><i class="fas <?= e($navGroups[$activeGroupKey]['icon']) ?> me-2"></i><?= e($navGroups[$activeGroupKey]['label']) ?></span>
+        <span class="subnav-label">Section: <?= e($navGroups[$activeGroupKey]['label']) ?></span>
         <div class="subnav-links">
             <?php foreach ($activeLinks as [$page, $icon, $label]): ?>
-            <a href="<?= e($page) ?>" class="subnav-link <?= $activePage === basename($page, '.php') ? 'active' : '' ?>">
-                <i class="fas <?= e($icon) ?> me-1"></i><?= e($label) ?>
-            </a>
+            <a href="<?= e($page) ?>" class="subnav-link <?= $activePage === basename($page, '.php') ? 'active' : '' ?>"><?= e($label) ?></a>
             <?php endforeach; ?>
         </div>
     </div>
@@ -236,4 +234,20 @@ function topnavBranchChange(branchId) {
 function confirmLogout() {
     if (confirm('Sign out of <?= e(APP_NAME) ?>?')) window.location.href = 'logout.php';
 }
+
+// Close any open dropdown right before leaving the page. This isn't a
+// single-page app — clicking a link inside an open dropdown (Level-1 module
+// menu, notifications, user menu) navigates to a whole new page — and the
+// browser's last painted frame of the outgoing page (briefly visible while
+// the next page loads) still shows that dropdown open. With several
+// dropdowns on the header, that one frame can look like every menu flashing
+// open at once during the page change. Forcing them closed right as the
+// page starts unloading means that last frame is clean.
+window.addEventListener('pagehide', function () {
+    document.querySelectorAll('.dropdown-menu.show').forEach(function (menu) {
+        var toggle = menu.previousElementSibling;
+        var inst = toggle && window.bootstrap && window.bootstrap.Dropdown.getInstance(toggle);
+        if (inst) inst.hide(); else menu.classList.remove('show');
+    });
+});
 </script>

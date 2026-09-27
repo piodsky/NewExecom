@@ -616,29 +616,34 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 /* ── Level-2 context nav (Phase 7) — the current module's own pages, shown
    as a slim strip under the main header. Hidden entirely on Dashboard and
    on any page whose module group has none of its links visible to this
-   account (topnav.php only renders this <nav> when $activeGroupKey is set). */
+   account (topnav.php only renders this <nav> when $activeGroupKey is set).
+   Styled as an underlined tab strip (muted text, active tab gets a colored
+   underline) rather than the Level-1 dropdown's icon+pill look — icons and
+   filled/pill active states made this read as a second copy of the module
+   list instead of "pages within the section you're already in"; dropping
+   both is what actually tells them apart at a glance. */
 .subnav {
-    background: var(--surface-2);
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
 }
 .subnav-inner {
-    display: flex; align-items: center; gap: 1rem;
-    padding: .5rem 1rem; overflow-x: auto;
+    display: flex; align-items: center; gap: 1.5rem;
+    padding: 0 1rem; overflow-x: auto;
 }
 .subnav-label {
-    font-size: .78rem; font-weight: 700; color: var(--muted);
+    font-size: .68rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .06em;
     white-space: nowrap; flex-shrink: 0;
-    padding-right: .75rem; border-right: 1px solid var(--border);
 }
-.subnav-links { display: flex; gap: .3rem; flex-wrap: nowrap; }
+.subnav-links { display: flex; gap: 1.25rem; flex-wrap: nowrap; height: 100%; }
 .subnav-link {
     display: inline-flex; align-items: center;
-    padding: .35rem .75rem; border-radius: 8px;
-    font-size: .8rem; font-weight: 600; color: var(--text);
-    text-decoration: none; white-space: nowrap; transition: background .15s, color .15s;
+    padding: .6rem 0; border-bottom: 2px solid transparent;
+    font-size: .82rem; font-weight: 600; color: var(--muted);
+    text-decoration: none; white-space: nowrap; transition: color .15s, border-color .15s;
 }
-.subnav-link:hover { background: var(--border); color: var(--text); }
-.subnav-link.active { background: var(--primary); color: #fff; }
+.subnav-link:hover { color: var(--text); }
+.subnav-link.active { color: var(--primary); border-bottom-color: var(--primary); }
 
 /* ── Topbar quick search — filters the current page's own nav links ── */
 .topbar-search { position: relative; flex: 1 1 auto; max-width: 240px; margin-right: auto; }
