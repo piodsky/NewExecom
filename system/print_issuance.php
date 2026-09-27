@@ -16,10 +16,11 @@ $stmt = $db->prepare(
     'SELECT iss.*, b.name AS branch_name, b.address AS branch_address,
             COALESCE(c.name, iss.walkin_name) AS client_name,
             COALESCE(c.address, iss.walkin_address) AS client_address,
-            u.full_name AS issued_by_name
+            u.full_name AS issued_by_name, sm.name AS salesman_name
      FROM issuances iss
      JOIN branches b ON b.id = iss.branch_id
      LEFT JOIN clients c ON c.id = iss.client_id
+     LEFT JOIN salesmen sm ON sm.id = iss.salesman_id
      JOIN users u ON u.id = iss.issued_by
      WHERE iss.issuance_number = ? AND iss.is_deleted = 0'
 );
@@ -178,6 +179,7 @@ if (embeddedPreview) {
             <?php if ($iss['client_address']): ?><div><strong>Address:</strong> <?= e($iss['client_address']) ?></div><?php endif; ?>
             <?php if ($iss['walkin_contact']): ?><div><strong>Contact:</strong> <?= e($iss['walkin_contact']) ?></div><?php endif; ?>
             <?php if ($iss['po_number']): ?><div><strong>Fulfilling PO:</strong> <?= e($iss['po_number']) ?></div><?php endif; ?>
+            <?php if ($iss['salesman_name']): ?><div><strong>Salesman:</strong> <?= e($iss['salesman_name']) ?></div><?php endif; ?>
 
             <table>
                 <thead><tr><th>Item</th><th>Serial No.</th><th>Qty</th><th>Unit</th><th>Unit Price</th><th>Total</th></tr></thead>

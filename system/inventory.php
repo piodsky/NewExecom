@@ -15,7 +15,8 @@ if ($isAdminTier && empty($_SESSION['inventory_csrf_token'])) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inventory | <?= e(APP_NAME) ?></title>
 <link rel="icon" href="image/execom_icon.png">
-<link href="vendor/css/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/argon/css/argon-dashboard.min.css" rel="stylesheet">
+<link href="vendor/argon/css/nucleo-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="css/base.css">
 <style>
@@ -28,25 +29,23 @@ if ($isAdminTier && empty($_SESSION['inventory_csrf_token'])) {
 </style>
 </head>
 <body>
-<div class="wrapper">
-<?php include 'sidebar.php'; ?>
+<?php include 'topnav.php'; ?>
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle">Home</div>
+                    <h2 class="page-title">Inventory</h2>
+                    <div class="text-muted small">View stock on hand and manually add received inventory when needed.</div>
+                </div>
 
-<div class="main-content">
-    <div class="top-navbar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            <div>
-                <div class="page-title">Inventory</div>
-                <div class="small text-muted">View stock on hand and manually add received inventory when needed.</div>
-                <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Inventory</div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <?php include 'topbar.php'; ?>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="page-body">
+    <div class="container-xl">
         <?php if ($isAdminTier): ?>
         <div class="d-flex justify-content-end mb-3">
             <button type="button" class="btn btn-primary-app btn-sm" id="manualAddBtn" onclick="openManualInventory()"><i class="fas fa-plus me-1"></i>Manual Add Inventory</button>
@@ -315,7 +314,8 @@ if ($isAdminTier && empty($_SESSION['inventory_csrf_token'])) {
 <?php endif; ?>
 
 <script src="vendor/js/jquery.min.js"></script>
-<script src="vendor/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/argon/js/popper.min.js"></script>
+<script src="vendor/argon/js/bootstrap.min.js"></script>
 <script>
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const peso = n => '₱' + Number(n || 0).toLocaleString(undefined, {minimumFractionDigits: 2});

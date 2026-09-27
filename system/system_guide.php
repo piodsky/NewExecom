@@ -11,7 +11,8 @@ $activePage  = 'system_guide';
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>System Guide | <?= e(APP_NAME) ?></title>
 <link rel="icon" href="image/execom_icon.png">
-<link href="vendor/css/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/argon/css/argon-dashboard.min.css" rel="stylesheet">
+<link href="vendor/argon/css/nucleo-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="css/base.css">
 <style>
@@ -52,25 +53,23 @@ $activePage  = 'system_guide';
 </style>
 </head>
 <body>
-<div class="wrapper">
-<?php include 'sidebar.php'; ?>
+<?php include 'topnav.php'; ?>
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle">Home</div>
+                    <h2 class="page-title">System Guide</h2>
+                    <div class="text-muted small">Quick reference for modules, roles, workflows, and system rules.</div>
+                </div>
 
-<div class="main-content">
-    <div class="top-navbar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            <div>
-                <div class="page-title">System Guide</div>
-                <div class="small text-muted">Quick reference for modules, roles, workflows, and system rules.</div>
-                <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> System Guide</div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <?php include 'topbar.php'; ?>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="page-body">
+    <div class="container-xl">
 
         <div class="panel mb-3">
             <div class="panel-body">
@@ -80,6 +79,7 @@ $activePage  = 'system_guide';
                     <a href="#inventory" class="btn btn-light btn-sm"><i class="fas fa-warehouse me-1"></i>Inside Inventory</a>
                     <a href="#warehousemap" class="btn btn-light btn-sm"><i class="fas fa-map-location-dot me-1"></i>Warehouse Map</a>
                     <a href="#example" class="btn btn-light btn-sm"><i class="fas fa-desktop me-1"></i>Worked example</a>
+                    <a href="#billing" class="btn btn-light btn-sm"><i class="fas fa-file-invoice-dollar me-1"></i>Billing &amp; Payables</a>
                     <a href="#reference" class="btn btn-light btn-sm"><i class="fas fa-list-check me-1"></i>Module reference</a>
                 </div>
             </div>
@@ -91,35 +91,25 @@ $activePage  = 'system_guide';
                 <p class="guide-lede">Two paper trails meet at one shelf. Buying brings stock <em>into</em> Inventory; selling and branch transfers take it back <em>out</em> — every serialized item passes through the same middle box.</p>
 
                 <div class="guide-dgm">
-                <svg viewBox="0 0 1230 470" role="img" aria-label="Purchase Requisition leads to Internal RFQ, then Internal PO, then a Receiving Report that assigns serial numbers into Inventory. From Inventory, stock either moves to another branch via Stock Transfer, or is scanned out at Issuance POS. Separately, an Outgoing RFQ leads to a Quotation and an Outgoing PO, which fulfills at Issuance and closes via a Delivery Report.">
+                <svg viewBox="0 0 1230 470" role="img" aria-label="A Purchase Order (Internal) goes directly to a supplier, then a Receiving Report assigns serial numbers into Inventory. From Inventory, stock either moves to another branch via Stock Transfer, or is scanned out at Issuance POS. Separately, an Outgoing RFQ leads to a Quotation and an Outgoing PO, which fulfills at Issuance and closes via a Delivery Report.">
                   <defs>
                     <marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                       <polygon points="0,0 10,5 0,10" fill="#94a3b8"/>
                     </marker>
                   </defs>
 
-                  <text x="10" y="238" class="row-label">BUYING &#183; INTERNAL PROCUREMENT</text>
+                  <text x="10" y="238" class="row-label">BUYING &#183; DIRECT PURCHASE ORDER</text>
                   <text x="620" y="98" class="row-label">SELLING &#183; OUTGOING PAPERWORK</text>
 
                   <g>
-                    <rect class="n-box" x="10" y="260" width="100" height="64" rx="9"/>
-                    <text class="n-title" x="60" y="288" text-anchor="middle">PR</text>
-                    <text class="n-sub" x="60" y="303" text-anchor="middle">Requisition</text>
+                    <rect class="n-box" x="10" y="260" width="180" height="64" rx="9"/>
+                    <text class="n-title" x="100" y="288" text-anchor="middle">PO</text>
+                    <text class="n-sub" x="100" y="303" text-anchor="middle">Internal &#183; direct to supplier</text>
                   </g>
                   <g>
-                    <rect class="n-box" x="140" y="260" width="120" height="64" rx="9"/>
-                    <text class="n-title" x="200" y="288" text-anchor="middle">RFQ</text>
-                    <text class="n-sub" x="200" y="303" text-anchor="middle">Internal</text>
-                  </g>
-                  <g>
-                    <rect class="n-box" x="290" y="260" width="120" height="64" rx="9"/>
-                    <text class="n-title" x="350" y="288" text-anchor="middle">PO</text>
-                    <text class="n-sub" x="350" y="303" text-anchor="middle">Internal</text>
-                  </g>
-                  <g>
-                    <rect class="n-box" x="440" y="260" width="150" height="64" rx="9"/>
-                    <text class="n-title" x="515" y="288" text-anchor="middle">Receiving Report</text>
-                    <text class="n-sub" x="515" y="303" text-anchor="middle">serials entered here</text>
+                    <rect class="n-box" x="250" y="260" width="200" height="64" rx="9"/>
+                    <text class="n-title" x="350" y="288" text-anchor="middle">Receiving Report</text>
+                    <text class="n-sub" x="350" y="303" text-anchor="middle">serials entered here</text>
                   </g>
                   <g>
                     <rect class="n-box emph" x="620" y="244" width="190" height="96" rx="10"/>
@@ -133,11 +123,9 @@ $activePage  = 'system_guide';
                     <text class="n-sub" x="925" y="303" text-anchor="middle">POS &#183; barcode scan-out</text>
                   </g>
 
-                  <line class="e-line" x1="110" y1="292" x2="136" y2="292" marker-end="url(#arA)"/>
-                  <line class="e-line" x1="260" y1="292" x2="286" y2="292" marker-end="url(#arA)"/>
-                  <line class="e-line" x1="410" y1="292" x2="436" y2="292" marker-end="url(#arA)"/>
-                  <line class="e-line" x1="590" y1="292" x2="616" y2="292" marker-end="url(#arA)"/>
-                  <text class="e-label" x="603" y="278" text-anchor="middle">serial in</text>
+                  <line class="e-line" x1="190" y1="292" x2="246" y2="292" marker-end="url(#arA)"/>
+                  <line class="e-line" x1="450" y1="292" x2="616" y2="292" marker-end="url(#arA)"/>
+                  <text class="e-label" x="533" y="278" text-anchor="middle">serial in</text>
                   <line class="e-line" x1="810" y1="292" x2="836" y2="292" marker-end="url(#arA)"/>
                   <text class="e-label" x="823" y="278" text-anchor="middle">scan out</text>
 
@@ -186,9 +174,9 @@ $activePage  = 'system_guide';
 
                 <div class="guide-note"><b>Worth knowing:</b> Issuance (the POS screen, barcode-driven) and Delivery Report (the signed proof-of-delivery document) are <em>siblings</em>, not a pipeline — both reference the same Outgoing PO, but neither is built from the other. Issuance is what actually flips a serial's status; Delivery Report is the paperwork that closes the sale.</div>
 
-                <div class="guide-note"><b>Don't trace this by hand:</b> <a href="order_tracking.php">Order Tracking</a> picks up any Purchase Requisition or Outgoing RFQ and renders its whole chain above automatically — every RFQ, PO, Receiving Report, Delivery Report and Issuance that came from it, with live status and quantities. Every document number it shows is color-coded by type (PR blue, Internal PO violet, Outgoing PO orange, and so on) and clicking one jumps straight to that record on its own page.</div>
+                <div class="guide-note"><b>Don't trace this by hand:</b> <a href="order_tracking.php">Order Tracking</a> picks up any PO (Internal) or Outgoing RFQ and renders its whole chain above automatically — every RFQ, PO, Receiving Report, Delivery Report and Issuance that came from it, with live status and quantities. Every document number it shows is color-coded by type (Internal PO violet, Outgoing PO orange, and so on) and clicking one jumps straight to that record on its own page.</div>
 
-                <div class="guide-note"><b>The PR's "Department" field</b> is a dropdown, not free text — it's a small master list (Sales, Warehouse, Technical/Service, Admin, or whatever your admins add) managed from the "Departments" tab right next to the Requisitions list on <a href="purchase_requisitions.php">Purchase Requisitions</a>. It only labels which section of the branch is asking; it doesn't gate or route anything.</div>
+                <div class="guide-note"><b>Why there's no requisition/canvass step on the buying side:</b> EXECOM buys directly from its own known suppliers — there's no multi-department approval chain to route through before a PO goes out, unlike the outgoing side below, which exists specifically to satisfy LGU procurement law on the sales side. This system originally had one (Purchase Requisition &#8594; RFQ Internal &#8594; quote comparison), modeled after that same LGU process, but it was removed to match how the business actually buys — a direct Purchase Order, same as the old Globalchips system's own purchase entry.</div>
             </div>
         </div>
 
@@ -378,8 +366,92 @@ $activePage  = 'system_guide';
             </div>
         </div>
 
+        <div class="panel mb-3" id="billing">
+            <div class="panel-header"><div class="panel-title">5. Financial flow: Billing &amp; Payables</div></div>
+            <div class="panel-body">
+                <p class="guide-lede">Two more paper trails, added after the ones above: money clients owe <em>us</em>, and money <em>we</em> owe suppliers. Both follow the same shape — an invoice with a balance, then a payment applied against it — mirroring how the old Globalchips system tracked both sides.</p>
+
+                <div class="guide-dgm">
+                <svg viewBox="0 0 1150 320" role="img" aria-label="Accounts Payable: a Receiving Report becomes a Supplier Invoice, which is settled by a Disbursement, reaching Paid. Accounts Receivable: a credit Issuance or a released Job Order becomes a Sales Invoice, which is settled by a Collection (Official Receipt), reaching Paid. A shared Post-Dated Check register links to a Disbursement when issued to a supplier, or to a Collection when received from a client.">
+                  <defs>
+                    <marker id="arD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                      <polygon points="0,0 10,5 0,10" fill="#94a3b8"/>
+                    </marker>
+                  </defs>
+
+                  <text x="10" y="30" class="row-label">PAYABLES (AP) &#183; WHAT WE OWE SUPPLIERS</text>
+                  <g>
+                    <rect class="n-box" x="10" y="50" width="180" height="64" rx="9"/>
+                    <text class="n-title" x="100" y="76" text-anchor="middle">Receiving Report</text>
+                    <text class="n-sub" x="100" y="92" text-anchor="middle">goods arrive &#8212; see Diagram 1</text>
+                  </g>
+                  <g>
+                    <rect class="n-box" x="230" y="50" width="180" height="64" rx="9"/>
+                    <text class="n-title" x="320" y="76" text-anchor="middle">Supplier Invoice</text>
+                    <text class="n-sub" x="320" y="92" text-anchor="middle">Payables &#183; doc PINV</text>
+                  </g>
+                  <g>
+                    <rect class="n-box" x="450" y="50" width="180" height="64" rx="9"/>
+                    <text class="n-title" x="540" y="76" text-anchor="middle">Disbursement</text>
+                    <text class="n-sub" x="540" y="92" text-anchor="middle">cash / check / bank &#183; doc DV</text>
+                  </g>
+                  <g>
+                    <rect class="n-box emph" x="670" y="50" width="110" height="64" rx="9"/>
+                    <text class="n-title emph" x="725" y="76" text-anchor="middle">Paid</text>
+                    <text class="n-sub" x="725" y="92" text-anchor="middle">balance = 0</text>
+                  </g>
+                  <line class="e-line" x1="190" y1="82" x2="226" y2="82" marker-end="url(#arD)"/>
+                  <line class="e-line" x1="410" y1="82" x2="446" y2="82" marker-end="url(#arD)"/>
+                  <line class="e-line" x1="630" y1="82" x2="666" y2="82" marker-end="url(#arD)"/>
+
+                  <text x="10" y="200" class="row-label">COLLECTIONS (AR) &#183; WHAT CLIENTS OWE US</text>
+                  <g>
+                    <rect class="n-box" x="10" y="220" width="200" height="64" rx="9"/>
+                    <text class="n-title" x="110" y="246" text-anchor="middle" font-size="12.5">Issuance (credit) /</text>
+                    <text class="n-title" x="110" y="261" text-anchor="middle" font-size="12.5">Job Order released</text>
+                  </g>
+                  <g>
+                    <rect class="n-box" x="250" y="220" width="180" height="64" rx="9"/>
+                    <text class="n-title" x="340" y="246" text-anchor="middle">Sales Invoice</text>
+                    <text class="n-sub" x="340" y="262" text-anchor="middle">Billing &#183; doc SI</text>
+                  </g>
+                  <g>
+                    <rect class="n-box" x="470" y="220" width="190" height="64" rx="9"/>
+                    <text class="n-title" x="565" y="246" text-anchor="middle">Collection (OR)</text>
+                    <text class="n-sub" x="565" y="262" text-anchor="middle">gross &#8722; withholding = net</text>
+                  </g>
+                  <g>
+                    <rect class="n-box emph" x="700" y="220" width="110" height="64" rx="9"/>
+                    <text class="n-title emph" x="755" y="246" text-anchor="middle">Paid</text>
+                    <text class="n-sub" x="755" y="262" text-anchor="middle">balance = 0</text>
+                  </g>
+                  <line class="e-line" x1="210" y1="252" x2="246" y2="252" marker-end="url(#arD)"/>
+                  <line class="e-line" x1="430" y1="252" x2="466" y2="252" marker-end="url(#arD)"/>
+                  <line class="e-line" x1="660" y1="252" x2="696" y2="252" marker-end="url(#arD)"/>
+
+                  <g>
+                    <rect class="n-box emph" x="880" y="130" width="200" height="70" rx="10"/>
+                    <text class="n-title emph" x="980" y="158" text-anchor="middle">Post-Dated Checks</text>
+                    <text class="n-sub" x="980" y="174" text-anchor="middle">shared register &#183; either direction</text>
+                  </g>
+                  <path class="e-line dashed" d="M 540 114 L 880 155" marker-end="url(#arD)"/>
+                  <text class="e-label" x="770" y="128" text-anchor="middle">issued</text>
+                  <path class="e-line dashed" d="M 880 175 L 565 220" marker-end="url(#arD)"/>
+                  <text class="e-label" x="790" y="205" text-anchor="middle">received</text>
+                </svg>
+                </div>
+                <p class="text-muted small mt-2 mb-0">Both sides use the same "many payments can settle many invoices" shape under the hood (one Collection or Disbursement can be split across several open invoices) — the diagram shows the common case of one paying one.</p>
+
+                <div class="guide-note"><b>Only a registered client/order gets invoiced.</b> A walk-in Issuance or a Job Order with no client on file is assumed paid in cash on the spot and never gets a Sales Invoice row — same rule Payables follows in reverse: a receiving report only becomes a Supplier Invoice when you choose to invoice it, for suppliers actually on credit terms.</div>
+
+                <div class="guide-note"><b>Withholding tax only appears on Collections, not Disbursements.</b> LGU clients are legally required to withhold tax when paying EXECOM (BIR Form 2307), so every Collection captures gross / withholding / net. That rule doesn't run the other way — EXECOM paying its own suppliers has no equivalent withholding step, so Disbursements record a plain amount.</div>
+
+                <div class="guide-note">Pages: <a href="job_orders.php">Job Orders</a>, <a href="billing.php">Billing</a> and <a href="collections.php">Collections</a> (AR side); <a href="payables.php">Payables</a> and <a href="disbursements.php">Disbursements</a> (AP side). The Post-Dated Check register itself lives inside Collections regardless of direction — Disbursements just offers any on-hand issued check as a way to pay.</div>
+            </div>
+        </div>
+
         <div class="panel mb-3" id="reference">
-            <div class="panel-header"><div class="panel-title">5. Module quick reference</div></div>
+            <div class="panel-header"><div class="panel-title">6. Module quick reference</div></div>
             <div class="panel-body">
                 <p class="guide-lede">Where each piece of the flow above actually lives in the app.</p>
                 <div class="table-responsive">
@@ -391,10 +463,10 @@ $activePage  = 'system_guide';
                         <tr><td>Suppliers</td><td class="guide-mono">suppliers.php</td><td class="guide-mono">suppliers</td></tr>
                         <tr><td>Clients</td><td class="guide-mono">clients.php</td><td class="guide-mono">clients</td></tr>
 
-                        <tr><td rowspan="6">Internal Procurement</td><td>Purchase Requisition <span class="text-muted small">(+ Departments tab)</span></td><td class="guide-mono">purchase_requisitions.php</td><td class="guide-mono">purchase_requisition</td></tr>
-                        <tr><td>RFQ (Internal)</td><td class="guide-mono">internal_rfq.php</td><td class="guide-mono">internal_rfq</td></tr>
-                        <tr><td>PO (Internal)</td><td class="guide-mono">po_internal.php</td><td class="guide-mono">po_internal</td></tr>
+                        <tr><td rowspan="6">Internal Procurement</td><td>PO (Internal) <span class="text-muted small">(direct to supplier)</span></td><td class="guide-mono">po_internal.php</td><td class="guide-mono">po_internal</td></tr>
                         <tr><td>Receiving Reports</td><td class="guide-mono">receiving_reports.php</td><td class="guide-mono">receiving_reports</td></tr>
+                        <tr><td>Payables (AP)</td><td class="guide-mono">payables.php</td><td class="guide-mono">payables</td></tr>
+                        <tr><td>Disbursements</td><td class="guide-mono">disbursements.php</td><td class="guide-mono">payables</td></tr>
                         <tr><td>Inventory</td><td class="guide-mono">inventory.php</td><td class="guide-mono">inventory</td></tr>
                         <tr><td>Warehouse Map</td><td class="guide-mono">warehouse.php</td><td class="guide-mono">warehouse</td></tr>
 
@@ -406,9 +478,18 @@ $activePage  = 'system_guide';
                         <tr><td>PO (Outgoing)</td><td class="guide-mono">po_outgoing.php</td><td class="guide-mono">po_outgoing</td></tr>
                         <tr><td>Delivery Reports</td><td class="guide-mono">delivery_reports.php</td><td class="guide-mono">delivery_reports</td></tr>
 
+                        <tr><td rowspan="3">Service &amp; Billing</td><td>Job Orders</td><td class="guide-mono">job_orders.php</td><td class="guide-mono">job_orders</td></tr>
+                        <tr><td>Billing (AR)</td><td class="guide-mono">billing.php</td><td class="guide-mono">billing</td></tr>
+                        <tr><td>Collections &amp; PDC</td><td class="guide-mono">collections.php</td><td class="guide-mono">collections</td></tr>
+
                         <tr><td rowspan="3">Reports</td><td>Order Tracking</td><td class="guide-mono">order_tracking.php</td><td class="guide-mono">order_tracking</td></tr>
                         <tr><td>Cost/Profit Reports</td><td class="guide-mono">cost_profit_reports.php</td><td class="guide-mono">cost_profit_reports</td></tr>
                         <tr><td>Reports</td><td class="guide-mono">reports.php</td><td class="guide-mono">reports</td></tr>
+
+                        <tr><td rowspan="4">System</td><td>User Management</td><td class="guide-mono">settings.php</td><td class="guide-mono">settings</td></tr>
+                        <tr><td>Access Levels</td><td class="guide-mono">access_levels.php</td><td class="guide-mono">&#8212; (super_admin)</td></tr>
+                        <tr><td>Activity Log</td><td class="guide-mono">audit_logs.php</td><td class="guide-mono">&#8212; (super_admin / branch_admin)</td></tr>
+                        <tr><td>System Guide</td><td class="guide-mono">system_guide.php</td><td class="guide-mono">system_guide</td></tr>
                     </tbody>
                 </table>
                 </div>
@@ -420,7 +501,8 @@ $activePage  = 'system_guide';
 </div>
 
 <script src="vendor/js/jquery.min.js"></script>
-<script src="vendor/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/argon/js/popper.min.js"></script>
+<script src="vendor/argon/js/bootstrap.min.js"></script>
 <?php include 'profile_modal.php'; ?>
 </body>
 </html>

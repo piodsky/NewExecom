@@ -1,0 +1,36 @@
+// EXECOM recolor — overrides Argon's stock purple/orange palette to match
+// the navy/slate scheme already used across the app (see system/css/base.css's
+// --navy/--primary/--success/--warning/--danger/--info). This file is
+// imported before the main _variables.scss (see argon-dashboard.scss's
+// @import order), so these values win via SCSS's !default mechanism without
+// touching Argon's own source.
+$primary:   #1e3a8a; // matches --navy
+$secondary: #64748b; // matches --muted
+$info:      #0891b2; // matches --info
+$success:   #16a34a; // matches --success
+$warning:   #d97706; // matches --warning (Argon's stock #fb6340 reads as bright orange)
+$danger:    #dc2626; // matches --danger
+$dark:      #1e293b; // matches --text
+
+$body-bg: #f1f5f9; // matches --body-bg
+
+// Argon's gradient utilities (bg-gradient-primary, text-gradient, checkbox
+// checks, etc.) read from a SEPARATE set of *-gradient/*-gradient-state
+// variables, not from $primary/$secondary/etc. above — override both sets
+// so nothing falls back to Argon's stock purple gradient.
+$primary-gradient:         #1e3a8a;
+$primary-gradient-state:   #2563eb;
+$secondary-gradient:       #64748b;
+$secondary-gradient-state: #94a3b8;
+$info-gradient:            #0891b2;
+$info-gradient-state:      #06b6d4;
+$success-gradient:         #16a34a;
+$success-gradient-state:   #22c55e;
+$warning-gradient:         #d97706;
+$warning-gradient-state:   #f59e0b;
+$danger-gradient:          #dc2626;
+$danger-gradient-state:    #ef4444;
+$dark-gradient:            #1e293b;
+$dark-gradient-state:      #334155;
+
+$font-family-sans-serif: 'Segoe UI', system-ui, -apple-system, sans-serif; // no Google Fonts CDN dependency

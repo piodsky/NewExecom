@@ -5,13 +5,12 @@
    ============================================================ */
 
 :root {
-    --sidebar-w: 264px;
     --navy: #1e3a8a;
-    --navy-hover: rgba(255,255,255,.08);
     --sidebar-bg: #0f1d38;
     --sidebar-bg-2: #142a4d;
     --body-bg: #f1f5f9;
-    --card-shadow: 0 2px 12px rgba(0,0,0,.07);
+    --card-shadow: 0 20px 27px 0 rgba(0,0,0,.05);
+    --card-shadow-hover: 0 8px 26px rgba(0,0,0,.09);
     --primary: #2563eb;
     --success: #16a34a;
     --warning: #d97706;
@@ -20,443 +19,66 @@
     --text: #1e293b;
     --muted: #64748b;
     --border: #e2e8f0;
+    --surface: #fff;
+    --surface-2: #f8fafc;
+    --hairline: #f1f5f9;
+    --input-border: #d1d5db;
+    --label-color: #374151;
 }
 
-/* ── Layout ── */
+/* ── Layout ──
+   Plain flat body — Argon's own dashboards use a solid pale surface behind
+   floating, borderless cards; the graph-paper dot-grid this used to have
+   read as a landing-page/demo texture, not enterprise software. */
 body {
-    background: var(--body-bg);
+    background-color: var(--body-bg);
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     color: var(--text);
     font-size: .9rem;
     overflow-x: hidden;
 }
 
-.wrapper { display: flex; min-height: 100vh; }
 
-/* ── Sidebar ── */
-.sidebar {
-    width: var(--sidebar-w);
-    /* Clean, solid dusk-navy panel — a subtle top-to-bottom deepening rather
-       than a multi-hue gradient, so nav labels stay high-contrast and the
-       whole rail reads as one calm surface instead of a decorative scene. */
-    background: linear-gradient(180deg, var(--sidebar-bg-2) 0%, var(--sidebar-bg) 55%);
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    z-index: 1050;
-    display: flex;
-    flex-direction: column;
-    transition: transform .3s ease;
-    /* The sidebar no longer scrolls as one piece — .sidebar-nav does, below.
-       Scrolling the whole column would push the brand and branch footer
-       off-screen the moment the module list grew past the viewport. */
-    overflow: hidden;
+/* ── Page shell (breadcrumb/title header, spacing around the main content) ──
+   Tabler defined .page-wrapper/.page-header/.page-body/.page-pretitle as
+   plain layout classes. Argon doesn't define .page-wrapper/.page-body/
+   .page-pretitle at all, and it REUSES .page-header for an unrelated
+   skewed hero-banner component (padding:0, overflow:hidden, flex,
+   background-size:cover) — every page's Home/title/subtitle block has been
+   silently rendering with that hero's rules (no breathing room, clipped
+   overflow) since the Tabler->Argon swap. All 28 pages use this same
+   pattern (`.page-header d-print-none` > `.container-xl` > breadcrumb/
+   title/subtitle), so this is one shared-shell fix rather than 28 edits. */
+.page-wrapper { display: block; }
+.page-header {
+    padding: 1.5rem 0 .75rem;
+    position: static;
+    overflow: visible;
+    display: block;
+    background: none;
 }
-.sidebar > * { position: relative; z-index: 1; }
-
-.sidebar-brand {
-    flex: 0 0 auto;
-    padding: 1.35rem 1.5rem 1.15rem;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    color: #fff;
-    text-decoration: none;
+.page-pretitle {
+    font-size: .72rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .05em;
+    margin-bottom: .25rem;
 }
-/* White plate behind the logo: the mark is black + red on a transparent
-   background, so its dark half would disappear straight into the navy
-   sidebar without something light behind it. */
-.sidebar-brand .brand-icon {
-    width: 40px; height: 40px;
-    background: #fff;
-    border-radius: 10px;
-    padding: 3px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; color: #fff; flex-shrink: 0;
-    overflow: hidden;
-}
-.sidebar-brand .brand-icon img { width: 100%; height: 100%; object-fit: contain; }
-.sidebar-brand .brand-name { font-weight: 800; font-size: 1.05rem; line-height: 1.2; letter-spacing: .01em; }
-.sidebar-brand .brand-sub  {
-    display: inline-block;
-    margin-top: .3rem;
-    padding: .18rem .5rem;
-    border-radius: 5px;
-    background: rgba(37,99,235,.35);
-    border: 1px solid rgba(255,255,255,.12);
-    font-size: .58rem; line-height: 1.3; color: #fff;
-    text-transform: uppercase; letter-spacing: .06em; font-weight: 700;
-}
-
-.sidebar-nav {
-    padding: .75rem 0;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-}
-/* A thin scrollbar in the sidebar's own palette. Left visible rather than
-   revealed on hover: on a long module list it is the only cue that there is
-   more below the fold. */
-.sidebar-nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.28) transparent; }
-.sidebar-nav::-webkit-scrollbar { width: 6px; }
-.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
-.sidebar-nav::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,.25);
-    border-radius: 3px;
-}
-.sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.45); }
-
-/* Decorative illustration at the foot of the sidebar (drawn in sidebar.php).
-   flex: 0 0 auto so a long nav scrolls inside itself rather than squashing the
-   artwork — the default flex-shrink:1 would flatten it into a smear first.
-   Being outside the scrolling .sidebar-nav is what keeps it on screen however
-   many modules the account can see and however far the nav is scrolled. */
-.sidebar-art {
-    flex: 0 0 auto;
-    padding: .5rem .75rem 1rem;
-    pointer-events: none;
-    user-select: none;
-    border-top: 1px solid rgba(255,255,255,.08);
-}
-/* max-height is the ceiling on how much of a short window the decoration may
-   take before the nav starts losing rows. The SVG's default preserveAspectRatio
-   keeps it centred and undistorted when the cap bites. */
-.sidebar-art svg { display: block; width: 100%; height: auto; max-height: 27vh; }
-/* Decoration is still the first thing to go when there is genuinely no room,
-   but the bar for that is much lower now than the 760px it used to be: the
-   artwork no longer pushes nav rows below the fold, because the nav scrolls
-   inside itself. This only fires on a window short enough that the remaining
-   nav strip would show barely two links at a time. */
-@media (max-height: 620px) { .sidebar-art { display: none; } }
-/* Print: the sidebar is hidden anyway on most screens, but this makes sure a
-   stray print never spends ink on it. */
-@media print { .sidebar-art { display: none; } }
-
-/* ── The greeting and the handover, in the sidebar ──────────────────────────
-   All of it is CSS on the inline SVG in sidebar.php — no JS, no sprite sheet,
-   nothing to load. (The one line of JS in that file only keeps the greeting's
-   WORDS current; it has nothing to do with the motion.)
-
-   One 24s master clock, and everything that has to agree with it — the step in
-   and out, both arms, the parcel, all three bubbles — is written against that
-   same 24s so the percentages line up by construction:
-
-       0-6%    apart, greeting appears
-       6-14%   they step toward each other
-       14-30%  handshake, three pumps
-       30-40%  release, step back out
-       40-50%  the courier says their piece
-       50-58%  the parcel crosses over
-       58-74%  the inspector checks it
-       74-82%  the parcel goes back
-       82-100% rest
-
-   Idle motion — breathing, the clipboard swaying at a side, the dots filling —
-   runs on its own short clocks, because none of it is keeping time with
-   anything.
-
-   Deliberately unhurried. This sits in peripheral vision all day beside the
-   screen someone is actually working in, and anything brisk enough to catch
-   the eye twice is something they will end up resenting. */
-
-/* Stepping in to shake, and back out to trade. Without this the handshake
-   cannot happen: an arm is 18 units long and they stand 82 apart. */
-@keyframes sb-step-a {
-    0%,   6% { transform: translateX(0); }
-    14%, 32% { transform: translateX(15px); }
-    40%,100% { transform: translateX(0); }
-}
-@keyframes sb-step-b {
-    0%,   6% { transform: translateX(0); }
-    14%, 32% { transform: translateX(-15px); }
-    40%,100% { transform: translateX(0); }
-}
-
-/* Both inner arms. The two figures are mirror images, so identical angles put
-   their hands in the same place — which is what keeps them clasped through the
-   pumps rather than sawing past each other. The pump is deliberately shallow:
-   a handshake is a small movement, and a big one reads as an argument.
-   Each arm then reaches again at 54% and 78% to meet the parcel, so the box is
-   never floating between two hands that are somewhere else. */
-@keyframes sb-shake-a {
-    0%,   8% { transform: rotate(-36deg); }
-    14%      { transform: rotate(-78deg); }
-    18%      { transform: rotate(-70deg); }
-    22%      { transform: rotate(-79deg); }
-    26%      { transform: rotate(-70deg); }
-    30%      { transform: rotate(-78deg); }
-    38%, 48% { transform: rotate(-36deg); }
-    54%      { transform: rotate(-56deg); }
-    58%, 72% { transform: rotate(-38deg); }
-    78%      { transform: rotate(-56deg); }
-    84%,100% { transform: rotate(-36deg); }
-}
-@keyframes sb-shake-b {
-    0%,   8% { transform: rotate(-38deg); }
-    14%      { transform: rotate(-78deg); }
-    18%      { transform: rotate(-70deg); }
-    22%      { transform: rotate(-79deg); }
-    26%      { transform: rotate(-70deg); }
-    30%      { transform: rotate(-78deg); }
-    38%, 48% { transform: rotate(-38deg); }
-    54%      { transform: rotate(-56deg); }
-    58%, 72% { transform: rotate(-34deg); }
-    78%      { transform: rotate(-56deg); }
-    84%,100% { transform: rotate(-38deg); }
-}
-
-/* The parcel: courier's hand, across to the inspector, a pause while it is
-   checked, then back. Handing it over and never returning it would need the
-   box to teleport home at the end of every loop. The dip mid-crossing is the
-   arc of a real pass; without it the box slides along an invisible rail. */
-@keyframes sb-pass {
-    0%,   6% { transform: translate(0, 0); }
-    /* Steps in and back out with the courier, who is carrying it. Left at its
-       resting spot it would hang in mid-air beside them for the whole
-       handshake, which is the sort of thing nobody can name but everybody
-       notices. */
-    14%, 32% { transform: translate(-15px, 0); }
-    40%, 50% { transform: translate(0, 0); }
-    54%      { transform: translate(-22px, -8px); }
-    58%, 74% { transform: translate(-44px, 0); }
-    78%      { transform: translate(-22px, -8px); }
-    82%,100% { transform: translate(0, 0); }
-}
-
-/* Five lines of dialogue, each keyed to the moment it belongs to. They pop up
-   and settle rather than simply appearing, which is what makes a bubble read
-   as somebody starting to speak. Every one of them holds long enough to be
-   READ — roughly two and a half seconds for two short lines, which is slower
-   than it feels like it needs to be and is still the right amount. */
-@keyframes sb-say-1 {   /* "Hi Pyo, / Good <time of day>!"  — the courier */
-    0%,   1% { opacity: 0; transform: translateY(5px) scale(.9); }
-    4%,  11% { opacity: 1; transform: translateY(0) scale(1); }
-    14%,100% { opacity: 0; transform: translateY(-3px) scale(.95); }
-}
-@keyframes sb-say-2 {   /* "Hello! / For inspection?"  — mid-handshake */
-    0%,  16% { opacity: 0; transform: translateY(5px) scale(.9); }
-    19%, 29% { opacity: 1; transform: translateY(0) scale(1); }
-    32%,100% { opacity: 0; transform: translateY(-3px) scale(.95); }
-}
-@keyframes sb-say-3 {   /* "Yes po — / one parcel."  — before the pass */
-    0%,  37% { opacity: 0; transform: translateY(5px) scale(.9); }
-    40%, 48% { opacity: 1; transform: translateY(0) scale(1); }
-    51%,100% { opacity: 0; transform: translateY(-3px) scale(.95); }
-}
-@keyframes sb-say-4 {   /* "Let me / check it…"  — while holding it */
-    0%,  57% { opacity: 0; transform: translateY(5px) scale(.9); }
-    60%, 70% { opacity: 1; transform: translateY(0) scale(1); }
-    73%,100% { opacity: 0; transform: translateY(-3px) scale(.95); }
-}
-@keyframes sb-say-5 {   /* "Thank you po!"  — as it goes back */
-    0%,  77% { opacity: 0; transform: translateY(5px) scale(.9); }
-    80%, 90% { opacity: 1; transform: translateY(0) scale(1); }
-    93%,100% { opacity: 0; transform: translateY(-3px) scale(.95); }
-}
-
-/* Idle motion, on its own clocks. */
-@keyframes sb-breathe { from { transform: translateY(0); } to { transform: translateY(-1.1px); } }
-@keyframes sb-sway    { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
-
-.sidebar-art .fig-a        { animation: sb-step-a 24s ease-in-out infinite; }
-.sidebar-art .fig-b        { animation: sb-step-b 24s ease-in-out infinite; }
-.sidebar-art .arm-a-in     { animation: sb-shake-a 24s ease-in-out infinite; }
-.sidebar-art .arm-b-in     { animation: sb-shake-b 24s ease-in-out infinite; }
-.sidebar-art .parcel       { animation: sb-pass 24s ease-in-out infinite; }
-.sidebar-art .say-1        { animation: sb-say-1 24s ease-in-out infinite; opacity: 0; }
-.sidebar-art .say-2        { animation: sb-say-2 24s ease-in-out infinite; opacity: 0; }
-.sidebar-art .say-3        { animation: sb-say-3 24s ease-in-out infinite; opacity: 0; }
-.sidebar-art .say-4        { animation: sb-say-4 24s ease-in-out infinite; opacity: 0; }
-.sidebar-art .say-5        { animation: sb-say-5 24s ease-in-out infinite; opacity: 0; }
-.sidebar-art .body-a       { animation: sb-breathe 2.6s ease-in-out infinite alternate; }
-.sidebar-art .body-b       { animation: sb-breathe 3.1s ease-in-out infinite alternate; }
-.sidebar-art .arm-hold     { animation: sb-sway 3.4s ease-in-out infinite alternate; }
-.sidebar-art .arm-hold-b   { animation: sb-sway 2.9s ease-in-out infinite alternate; }
-
-/* Motion is a preference the operating system already collects, and movement in
-   the corner of the eye is exactly what someone who sets it is asking not to
-   have. The scene stays, posed at the handshake with the greeting up — the
-   friendliest moment in the loop, and the one that still says what the picture
-   is about. The transforms below are what hold that pose: with the animations
-   simply switched off, every element snaps back to its untransformed position,
-   which is two people standing apart with their arms hanging down. */
-@media (prefers-reduced-motion: reduce) {
-    .sidebar-art .fig-a, .sidebar-art .fig-b,
-    .sidebar-art .arm-a-in, .sidebar-art .arm-b-in,
-    .sidebar-art .parcel,
-    .sidebar-art .say-1, .sidebar-art .say-2, .sidebar-art .say-3,
-    .sidebar-art .say-4, .sidebar-art .say-5,
-    .sidebar-art .body-a, .sidebar-art .body-b,
-    .sidebar-art .arm-hold, .sidebar-art .arm-hold-b { animation: none; }
-    .sidebar-art .fig-a        { transform: translateX(15px); }
-    .sidebar-art .fig-b        { transform: translateX(-15px); }
-    .sidebar-art .arm-a-in     { transform: rotate(-78deg); }
-    .sidebar-art .arm-b-in     { transform: rotate(-78deg); }
-    .sidebar-art .arm-hold     { transform: rotate(2deg); }
-    /* The greeting is the line to hold: it is the friendliest moment in the
-       loop and the only one that still says what the picture is about. */
-    .sidebar-art .say-1        { opacity: 1; }
-}
-
-
-/* ── Branch indicator, pinned at the foot of the sidebar ──
-   A super_admin sees a real <select> (they can view any branch's numbers);
-   a branch-scoped admin/user sees a plain readonly pill naming their own
-   branch, since they have nowhere else to go. */
-.sidebar-branch {
-    flex: 0 0 auto;
-    margin-top: auto;
-    padding: .9rem 1rem;
-    border-top: 1px solid rgba(255,255,255,.08);
-}
-.sidebar-branch-label {
-    font-size: .6rem; font-weight: 700; letter-spacing: .09em;
-    text-transform: uppercase; color: rgba(255,255,255,.35);
-    margin-bottom: .45rem;
-}
-.sidebar-branch-pill {
-    display: flex; align-items: center; gap: .6rem;
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 10px;
-    padding: .55rem .7rem;
-    color: #fff;
-}
-.sidebar-branch-pill i.pin { color: #60a5fa; font-size: .85rem; flex-shrink: 0; }
-.sidebar-branch-pill .sb-name { font-size: .8rem; font-weight: 600; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sidebar-branch-pill select {
-    flex: 1 1 auto; min-width: 0;
-    background: transparent; border: none; color: #fff;
-    font-size: .8rem; font-weight: 600;
-    outline: none; cursor: pointer;
-    appearance: none; -webkit-appearance: none;
-}
-.sidebar-branch-pill select option { color: #0f172a; }
-.sidebar-branch-pill i.chev { color: rgba(255,255,255,.4); font-size: .7rem; flex-shrink: 0; }
-
-.sidebar-section-title {
-    padding: .9rem 1.5rem .35rem;
-    font-size: .63rem;
-    font-weight: 700;
-    letter-spacing: .09em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,.35);
-}
-.sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    margin: .1rem .75rem;
-    padding: .55rem .85rem;
-    border-radius: 9px;
-    color: rgba(255,255,255,.72);
-    text-decoration: none;
-    font-size: .84rem;
-    font-weight: 500;
-    transition: all .15s;
-}
-.sidebar-link:hover {
-    background: var(--navy-hover);
-    color: #fff;
-}
-.sidebar-link.active {
-    background: linear-gradient(135deg, var(--primary), #1d4ed8);
-    color: #fff;
-    font-weight: 600;
-    box-shadow: 0 4px 14px rgba(37,99,235,.35);
-}
-.sidebar-link .nav-icon {
-    width: 20px; text-align: center;
-    font-size: .88rem; flex-shrink: 0;
-}
-.sidebar-link .badge-count {
-    margin-left: auto;
-    background: #ef4444;
-    color: #fff;
-    font-size: .65rem;
-    padding: .15rem .45rem;
-    border-radius: 10px;
-}
-/* A module group that exists as a heading before it exists as a page —
-   Warehouse Management today. Same row shape as a real .sidebar-link so the
-   group reads as one list, but inert: no hover highlight, no active state,
-   cursor says so too. The "Soon" pill is what tells it apart from a link
-   that is merely disabled by permissions. */
-.sidebar-link.disabled {
-    color: rgba(255,255,255,.38);
-    cursor: default;
-}
-.sidebar-link.disabled:hover { background: transparent; border-left-color: transparent; }
-.sidebar-link .soon-badge {
-    margin-left: auto;
-    background: rgba(255,255,255,.12);
-    color: rgba(255,255,255,.65);
-    font-size: .62rem;
-    font-weight: 700;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    padding: .15rem .45rem;
-    border-radius: 10px;
-}
-
-/* ── Main Content ── */
-.main-content {
-    margin-left: var(--sidebar-w);
-    flex: 1;
-    /* A flex item defaults to min-width:auto, i.e. it refuses to shrink below
-       its content's intrinsic width. A wide table (the 40-column Reports
-       tables, say) therefore stretched this whole column past the viewport:
-       the page grew its own horizontal scrollbar, content was clipped off the
-       left edge, and toolbar buttons were pushed off the right. min-width:0
-       lets the column stay viewport-width so inner containers do the
-       scrolling instead. Same trap as min-height:0 on flex columns. */
-    min-width: 0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-/* ── Top Navbar ── */
-.top-navbar {
-    background: #fff;
-    border-bottom: 1px solid var(--border);
-    padding: .75rem 1.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.25rem;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 1px 3px rgba(0,0,0,.05);
-}
+.page-body { padding: 0 0 1.5rem; }
 .page-title { font-size: 1.15rem; font-weight: 700; color: var(--text); margin: 0; }
 .page-subtitle { font-size: .78rem; color: var(--muted); margin: 0; }
-/* Every page's .top-navbar has exactly two direct children: the title block,
-   then the actions wrapper that includes topbar.php. Letting the second one
-   grow (rather than sizing to content) is what gives the search box inside
-   it real room to sit between the title and the bell/profile icons, without
-   editing every page's markup individually. */
-.top-navbar > div:nth-child(2) { flex: 1 1 auto; min-width: 0; justify-content: flex-end; }
-
-/* ── Content Area ── */
-.content-area { padding: 1.5rem 1.75rem; flex: 1; }
 
 /* ── Summary Cards ── */
 .stat-card {
-    background: #fff;
-    border-radius: 12px;
+    background: var(--surface);
+    border-radius: 16px;
     padding: 1.25rem 1.5rem;
     box-shadow: var(--card-shadow);
     display: flex;
     align-items: center;
     gap: 1rem;
-    border: 1px solid var(--border);
+    border: none;
     transition: transform .2s, box-shadow .2s;
 }
-.stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--card-shadow-hover); }
 .stat-icon {
     width: 52px; height: 52px; border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
@@ -473,19 +95,19 @@ body {
 
 /* ── Panel Cards ── */
 .panel {
-    background: #fff;
-    border-radius: 12px;
-    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 16px;
+    border: none;
     box-shadow: var(--card-shadow);
     overflow: hidden;
 }
 .panel-header {
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--hairline);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #fff;
+    background: var(--surface);
 }
 .panel-title {
     font-size: .9rem; font-weight: 700; color: var(--text); margin: 0;
@@ -497,14 +119,14 @@ body {
    flex column its default min-width:auto can force the column (and the
    whole row) wider than the viewport before Chart.js's responsive resize
    kicks in. Constrain via a sized, positioned wrapper instead. */
-.content-area .row > [class*="col-"] { min-width: 0; }
+.page-body .row > [class*="col-"] { min-width: 0; }
 .chart-box { position: relative; width: 100%; height: 220px; }
 .chart-box canvas { width: 100% !important; height: 100% !important; }
 
 /* ── Tables ── */
 .app-table { width: 100%; margin: 0; border-collapse: collapse; font-size: .845rem; }
 .app-table thead th {
-    background: #f8fafc;
+    background: var(--surface-2);
     color: var(--muted);
     font-size: .72rem;
     font-weight: 700;
@@ -524,8 +146,8 @@ body {
     padding: .5rem 1rem;
     border-bottom: 1px solid var(--border);
 }
-.app-table tbody tr { border-bottom: 1px solid #f1f5f9; transition: background .15s; }
-.app-table tbody tr:hover { background: #f8fafc; }
+.app-table tbody tr { border-bottom: 1px solid var(--hairline); transition: background .15s; }
+.app-table tbody tr:hover { background: var(--surface-2); }
 .app-table tbody td { padding: .65rem 1rem; vertical-align: middle; }
 .app-table tbody tr:last-child { border-bottom: none; }
 
@@ -569,7 +191,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
     padding: .85rem 1rem;
     border-radius: 10px;
     border: 1px solid var(--border);
-    background: #f8fafc;
+    background: var(--surface-2);
     text-decoration: none;
     color: var(--text);
     font-size: .85rem;
@@ -604,18 +226,18 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 .kpi-trend.flat  { background: rgba(100,116,139,.12); color: #64748b; }
 
 /* ── Branch performance leaderboard (dashboard) ── */
-.lb-row { display: flex; align-items: center; gap: .75rem; padding: .55rem 0; border-bottom: 1px solid #f1f5f9; }
+.lb-row { display: flex; align-items: center; gap: .75rem; padding: .55rem 0; border-bottom: 1px solid var(--hairline); }
 .lb-row:last-child { border-bottom: none; }
 .lb-rank {
     width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
-    background: #f1f5f9; color: var(--muted);
+    background: var(--hairline); color: var(--muted);
     font-size: .72rem; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
 }
 .lb-body { flex: 1; min-width: 0; }
 .lb-name { font-size: .83rem; font-weight: 600; color: var(--text); display: flex; justify-content: space-between; gap: .5rem; }
 .lb-value { font-weight: 700; color: var(--text); flex-shrink: 0; }
-.lb-bar-track { height: 6px; border-radius: 4px; background: #f1f5f9; margin-top: .35rem; overflow: hidden; }
+.lb-bar-track { height: 6px; border-radius: 4px; background: var(--hairline); margin-top: .35rem; overflow: hidden; }
 .lb-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#2563eb,#3b82f6); }
 
 /* ── Client order pipeline pills (dashboard) ── */
@@ -623,7 +245,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 .pipeline-pill {
     flex: 1 1 0; min-width: 80px; text-align: center;
     padding: .8rem .5rem; border-radius: 10px;
-    background: #f8fafc; border: 1px solid var(--border);
+    background: var(--surface-2); border: 1px solid var(--border);
 }
 .pipeline-pill .pp-count { font-size: 1.25rem; font-weight: 800; color: var(--text); line-height: 1; }
 .pipeline-pill .pp-label { font-size: .68rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; margin-top: .3rem; }
@@ -670,7 +292,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 .track-stage-marker.doc-iss  { background: #e11d48; }
 .track-stage-title { font-size: .85rem; font-weight: 700; color: var(--text); margin-bottom: .6rem; }
 .track-doc-card {
-    background: #f8fafc; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
     padding: .65rem .9rem; margin-bottom: .5rem;
     display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
 }
@@ -680,12 +302,12 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 .track-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#16a34a,#22c55e); }
 
 .modal-header-app .btn-close { filter: invert(1); }
-.modal-content { border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+.modal-content { border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
 
 /* ── Form Controls ── */
-.form-label { font-size: .82rem; font-weight: 600; color: #374151; margin-bottom: .3rem; }
+.form-label { font-size: .82rem; font-weight: 600; color: var(--label-color); margin-bottom: .3rem; }
 .form-control, .form-select {
-    border: 1.5px solid #d1d5db;
+    border: 1.5px solid var(--input-border);
     border-radius: 8px;
     font-size: .875rem;
     padding: .5rem .85rem;
@@ -695,7 +317,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(37,99,235,.1);
 }
-.input-group-text { border: 1.5px solid #d1d5db; background: #f8fafc; font-size: .85rem; }
+.input-group-text { border: 1.5px solid var(--input-border); background: var(--surface-2); font-size: .85rem; }
 
 /* ── Buttons ── */
 .btn-primary-app {
@@ -715,8 +337,8 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 
 /* A list wider than its panel scrolls sideways INSIDE the panel.
  *
- * Without this it is silently clipped instead. .wrapper and body both set
- * overflow-x: hidden (above) to stop the whole page scrolling sideways, and
+ * Without this it is silently clipped instead. body sets overflow-x: hidden
+ * (above) to stop the whole page scrolling sideways, and
  * the side effect is that a table wider than its column simply has the excess
  * cut off — with no scrollbar anywhere to say anything is missing. On
  * Competitive Bidding, which carries the most columns, that ate the Delete
@@ -731,7 +353,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 
 .dataTables_wrapper .dataTables_filter input,
 .dataTables_wrapper .dataTables_length select {
-    border: 1.5px solid #d1d5db;
+    border: 1.5px solid var(--input-border);
     border-radius: 8px;
     padding: .35rem .7rem;
     font-size: .82rem;
@@ -753,7 +375,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 .txn-item {
     display: flex; align-items: flex-start; gap: .75rem;
     padding: .65rem 0;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--hairline);
 }
 .txn-item:last-child { border-bottom: none; }
 .txn-icon {
@@ -773,7 +395,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 .dash-subtitle { font-size: .82rem; color: var(--muted); margin-top: .15rem; }
 .dash-date-pill {
     display: flex; align-items: center; gap: .5rem;
-    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
     padding: .55rem .9rem; font-size: .82rem; font-weight: 600; color: var(--text);
     box-shadow: var(--card-shadow);
 }
@@ -785,13 +407,13 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 .at-item:last-child { padding-bottom: 0; }
 .at-item::before {
     content: ''; position: absolute; left: 5px; top: 22px; bottom: -4px;
-    width: 2px; background: #eef2f7;
+    width: 2px; background: var(--hairline);
 }
 .at-item:last-child::before { display: none; }
 .at-dot {
     width: 12px; height: 12px; border-radius: 50%;
     flex-shrink: 0; margin-top: 3px;
-    box-shadow: 0 0 0 3px #fff, 0 0 0 4px currentColor;
+    box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px currentColor;
 }
 .at-dot.blue   { background: #2563eb; color: rgba(37,99,235,.25); }
 .at-dot.green  { background: #16a34a; color: rgba(22,163,74,.25); }
@@ -811,7 +433,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
    photo still shows through on the right. */
 .dash-hero {
     position: relative;
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 2rem 2.25rem;
     margin-bottom: 1.25rem;
     overflow: hidden;
@@ -827,7 +449,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
     font-size: .78rem; font-weight: 700; letter-spacing: .04em;
     color: rgba(255,255,255,.8); margin-bottom: .35rem;
 }
-.dash-hero-title { font-size: 1.6rem; font-weight: 800; margin: 0 0 .5rem; line-height: 1.25; }
+.dash-hero-title { font-size: 1.6rem; font-weight: 800; margin: 0 0 .5rem; line-height: 1.25; color: #fff; }
 .dash-hero-sub { font-size: .87rem; color: rgba(255,255,255,.85); margin: 0 0 1.1rem; max-width: 480px; }
 .dash-hero-chips { display: flex; gap: .6rem; flex-wrap: wrap; }
 .dash-hero-chip {
@@ -842,11 +464,11 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 
 /* ── Dashboard: mockup-style KPI cards (icon top-left, number, caption) ── */
 .mk-kpi {
-    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface); border: none; border-radius: 16px;
     padding: 1.1rem 1.15rem; box-shadow: var(--card-shadow);
     height: 100%; transition: transform .2s, box-shadow .2s;
 }
-.mk-kpi:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+.mk-kpi:hover { transform: translateY(-2px); box-shadow: var(--card-shadow-hover); }
 .mk-kpi-icon {
     width: 42px; height: 42px; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
@@ -859,7 +481,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 /* ── Dashboard: chart panel tabs (Total Stock / By Category / By Branch) ── */
 .chart-tabs { display: flex; gap: .35rem; }
 .chart-tab {
-    border: none; background: #f1f5f9; color: var(--muted);
+    border: none; background: var(--hairline); color: var(--muted);
     font-size: .72rem; font-weight: 700; padding: .35rem .75rem;
     border-radius: 20px; cursor: pointer; transition: all .15s;
 }
@@ -871,13 +493,13 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
     display: flex; align-items: center; gap: .55rem;
     padding: .4rem 0; font-size: .8rem;
 }
-.donut-legend-row:not(:last-child) { border-bottom: 1px solid #f8fafc; }
+.donut-legend-row:not(:last-child) { border-bottom: 1px solid var(--surface-2); }
 .donut-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .donut-legend-name { flex: 1; color: var(--text); font-weight: 500; }
 .donut-legend-pct { color: var(--muted); font-weight: 700; font-size: .75rem; }
 
 /* ── Dashboard: supplier ranking list ── */
-.supplier-row { display: flex; align-items: center; gap: .7rem; padding: .55rem 0; border-bottom: 1px solid #f8fafc; }
+.supplier-row { display: flex; align-items: center; gap: .7rem; padding: .55rem 0; border-bottom: 1px solid var(--surface-2); }
 .supplier-row:last-child { border-bottom: none; }
 .supplier-badge {
     width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
@@ -891,7 +513,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 /* ── Dashboard: Top Products list ── */
 .tp-row {
     display: flex; align-items: center; gap: .75rem;
-    padding: .6rem 0; border-bottom: 1px solid #f1f5f9;
+    padding: .6rem 0; border-bottom: 1px solid var(--hairline);
 }
 .tp-row:last-child { border-bottom: none; }
 .tp-rank {
@@ -910,20 +532,116 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 #toastContainer { z-index: 9999; }
 .toast { border-radius: 10px; font-size: .85rem; }
 
-/* ── Responsive ── */
-@media (max-width: 992px) {
-    .sidebar { transform: translateX(-100%); }
-    .sidebar.open { transform: translateX(0); }
-    .main-content { margin-left: 0; }
-    .sidebar-overlay {
-        display: none; position: fixed; inset: 0;
-        background: rgba(0,0,0,.5); z-index: 1040;
-    }
-    .sidebar-overlay.show { display: block; }
+/* ── Top-nav branch picker (super_admin only) — a plain Bootstrap/Tabler
+   .form-select renders white-on-white against the dark navbar, so this
+   dresses it as a pill matching the rest of the header instead. */
+.topnav-branch-pill {
+    display: flex; align-items: center; gap: .5rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: .4rem .8rem;
+    cursor: pointer;
+    margin: 0;
+}
+.topnav-branch-pill i.pin { color: var(--primary); font-size: .8rem; flex-shrink: 0; }
+.topnav-branch-pill i.chev { color: var(--muted); font-size: .65rem; flex-shrink: 0; }
+.topnav-branch-pill select {
+    background: transparent; border: none; color: var(--text);
+    font-size: .78rem; font-weight: 600;
+    outline: none; cursor: pointer;
+    appearance: none; -webkit-appearance: none;
+    width: 140px;
+    text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
+}
+.topnav-branch-pill select option { color: #0f172a; }
+.topnav-branch-pill:hover { background: var(--border); }
+
+/* ── Top nav bar, light theme (Phase 6) ── */
+.topnav-light {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+/* Row 1 is brand + primary nav links only now (search/branch/bell/avatar
+   moved to .topnav-utility below), so it rarely needs to wrap — this stays
+   only as a safety net for truly narrow windows. */
+.topnav-light > .container-xl { flex-wrap: wrap; row-gap: .4rem; }
+
+/* ── Utility row: branch picker + search/bell/avatar, its own dedicated
+   strip under the main nav row (see topnav.php) rather than crammed into
+   the same row as the primary nav links. Deliberately plain, self-contained
+   flex rules (not Bootstrap's .navbar-nav/.flex-row utilities) since this
+   row sits outside the <header class="navbar"> element and shouldn't
+   depend on any navbar-scoped behavior from the vendor CSS. */
+.topnav-utility {
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+}
+.topnav-utility-inner {
+    display: flex !important; flex-direction: row !important;
+    align-items: center !important; justify-content: space-between;
+    gap: 1rem; padding: .45rem 1rem; flex-wrap: wrap;
+}
+.topnav-branch { display: flex; align-items: center; flex-shrink: 0; }
+.topnav-actions {
+    display: flex !important; flex-direction: row !important;
+    align-items: center !important; gap: .5rem; flex-wrap: nowrap;
+    margin-left: auto;
+}
+.topnav-branch .text-muted.small {
+    max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Phone widths: stack the branch picker above the action icons instead of
+   letting them wrap mid-line — each gets the full row width to itself. */
+@media (max-width: 575.98px) {
+    .topnav-utility-inner { flex-direction: column !important; align-items: stretch !important; }
+    .topnav-actions { justify-content: flex-end; margin-left: 0; }
+}
+.topnav-links { --tblr-navbar-nav-link-padding-x: .5rem; gap: .1rem; }
+.topnav-links .nav-link { color: var(--text); font-weight: 600; padding-top: .5rem; padding-bottom: .5rem; font-size: .84rem; }
+.topnav-links .nav-link-icon { margin-inline-end: .35rem; }
+.topnav-links .nav-link:hover, .topnav-links .nav-link.dropdown-toggle.show { color: var(--primary); }
+.topnav-links .nav-link.active {
+    background: rgba(37,99,235,.12);
+    color: var(--primary);
+    border-radius: 8px;
+}
+.topnav-links .nav-link-icon { color: inherit; }
+.topnav-light .navbar-toggler { border-color: var(--border); color: var(--text); }
+.topnav-light .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(30,41,59,0.85)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
-/* ── Topbar quick search — filters the current sidebar's own nav links ── */
-.topbar-search { position: relative; flex: 1 1 auto; max-width: 380px; margin-right: auto; }
+/* ── Level-2 context nav (Phase 7) — the current module's own pages, shown
+   as a slim strip under the main header. Hidden entirely on Dashboard and
+   on any page whose module group has none of its links visible to this
+   account (topnav.php only renders this <nav> when $activeGroupKey is set). */
+.subnav {
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+}
+.subnav-inner {
+    display: flex; align-items: center; gap: 1rem;
+    padding: .5rem 1rem; overflow-x: auto;
+}
+.subnav-label {
+    font-size: .78rem; font-weight: 700; color: var(--muted);
+    white-space: nowrap; flex-shrink: 0;
+    padding-right: .75rem; border-right: 1px solid var(--border);
+}
+.subnav-links { display: flex; gap: .3rem; flex-wrap: nowrap; }
+.subnav-link {
+    display: inline-flex; align-items: center;
+    padding: .35rem .75rem; border-radius: 8px;
+    font-size: .8rem; font-weight: 600; color: var(--text);
+    text-decoration: none; white-space: nowrap; transition: background .15s, color .15s;
+}
+.subnav-link:hover { background: var(--border); color: var(--text); }
+.subnav-link.active { background: var(--primary); color: #fff; }
+
+/* ── Topbar quick search — filters the current page's own nav links ── */
+.topbar-search { position: relative; flex: 1 1 auto; max-width: 240px; margin-right: auto; }
 .topbar-search i.tsi { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .85rem; pointer-events: none; }
 .topbar-search input {
     width: 100%; height: 40px;
@@ -934,17 +652,17 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
     font-size: .85rem; color: var(--text);
     outline: none; transition: border-color .15s, background .15s;
 }
-.topbar-search input:focus { background: #fff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.topbar-search input:focus { background: var(--surface); border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
 .topbar-search-results {
     position: absolute; top: calc(100% + 6px); left: 0; right: 0;
-    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
     box-shadow: 0 12px 32px rgba(0,0,0,.12);
     max-height: 320px; overflow-y: auto; z-index: 200;
 }
 .topbar-search-results a {
     display: flex; align-items: center; gap: .65rem;
     padding: .6rem .9rem; font-size: .84rem; color: var(--text);
-    text-decoration: none; border-bottom: 1px solid #f1f5f9;
+    text-decoration: none; border-bottom: 1px solid var(--hairline);
 }
 .topbar-search-results a:last-child { border-bottom: none; }
 .topbar-search-results a:hover, .topbar-search-results a.tsr-active { background: var(--body-bg); }
@@ -961,7 +679,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
     border: 1px solid var(--border);
-    background: #fff;
+    background: var(--surface);
     color: var(--muted);
     font-size: .95rem;
     transition: background .15s, color .15s;
@@ -982,7 +700,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 .notif-dropdown {
     width: 360px; padding: 0; border: 1px solid var(--border);
     box-shadow: 0 12px 32px rgba(0,0,0,.14);
-    background: #fff; border-radius: 12px; overflow: hidden;
+    background: var(--surface); border-radius: 12px; overflow: hidden;
 }
 .notif-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -998,7 +716,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 .notif-kebab:hover { background: var(--border); }
 .notif-kebab-menu {
     position: absolute; top: 40px; right: 0; z-index: 5;
-    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0,0,0,.16);
     padding: .35rem; min-width: 190px;
 }
@@ -1054,7 +772,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
 .ni-more:hover { background: var(--border); color: var(--text); }
 .notif-item-menu {
     position: absolute; top: 38px; right: 1rem; z-index: 6;
-    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0,0,0,.16);
     padding: .35rem; min-width: 210px;
 }
@@ -1073,7 +791,7 @@ a.doc-number:hover { text-decoration: underline; filter: brightness(.92); }
     padding: .35rem .75rem .35rem .4rem;
     border: 1px solid var(--border);
     border-radius: 999px;
-    background: #fff;
+    background: var(--surface);
     cursor: pointer;
 }
 .user-pill:hover { background: var(--body-bg); }

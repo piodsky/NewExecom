@@ -11,7 +11,8 @@ $activePage  = 'audit_logs';
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Activity Log | <?= e(APP_NAME) ?></title>
 <link rel="icon" href="image/execom_icon.png">
-<link href="vendor/css/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/argon/css/argon-dashboard.min.css" rel="stylesheet">
+<link href="vendor/argon/css/nucleo-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="vendor/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="css/base.css">
@@ -55,25 +56,23 @@ $activePage  = 'audit_logs';
 </style>
 </head>
 <body>
-<div class="wrapper">
-<?php include 'sidebar.php'; ?>
+<?php include 'topnav.php'; ?>
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle">Home</div>
+                    <h2 class="page-title">Activity Log</h2>
+                    <div class="text-muted small">Review recorded user actions and system activity for accountability.</div>
+                </div>
 
-<div class="main-content">
-    <div class="top-navbar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            <div>
-                <div class="page-title">Activity Log</div>
-                <div class="small text-muted">Review recorded user actions and system activity for accountability.</div>
-                <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Activity Log</div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <?php include 'topbar.php'; ?>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="page-body">
+    <div class="container-xl">
         <div class="panel mb-3">
             <div class="panel-body">
                 <div class="al-filters">
@@ -122,7 +121,8 @@ $activePage  = 'audit_logs';
 </div>
 
 <div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer"></div>
-<script src="vendor/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/argon/js/popper.min.js"></script>
+<script src="vendor/argon/js/bootstrap.min.js"></script>
 <script src="vendor/js/jquery.min.js"></script>
 <script src="vendor/js/jquery.dataTables.min.js"></script>
 <script src="vendor/js/dataTables.bootstrap5.min.js"></script>

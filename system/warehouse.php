@@ -13,7 +13,8 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Warehouse Map | <?= e(APP_NAME) ?></title>
 <link rel="icon" href="image/execom_icon.png">
-<link href="vendor/css/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/argon/css/argon-dashboard.min.css" rel="stylesheet">
+<link href="vendor/argon/css/nucleo-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="css/base.css">
 <style>
@@ -58,25 +59,23 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
 </style>
 </head>
 <body>
-<div class="wrapper">
-<?php include 'sidebar.php'; ?>
+<?php include 'topnav.php'; ?>
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle">Home</div>
+                    <h2 class="page-title">Warehouse Map</h2>
+                    <div class="text-muted small">Where every in-stock item physically sits — put it away, find it, pick it back out.</div>
+                </div>
 
-<div class="main-content">
-    <div class="top-navbar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            <div>
-                <div class="page-title">Warehouse Map</div>
-                <div class="small text-muted">Where every in-stock item physically sits — put it away, find it, pick it back out.</div>
-                <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Warehouse Map</div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <?php include 'topbar.php'; ?>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="page-body">
+    <div class="container-xl">
         <?php if ($isSuperAdmin): ?>
         <div class="panel mb-3">
             <div class="panel-body d-flex align-items-center gap-2 flex-wrap">
@@ -202,7 +201,8 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
 <?php endif; ?>
 
 <script src="vendor/js/jquery.min.js"></script>
-<script src="vendor/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/argon/js/popper.min.js"></script>
+<script src="vendor/argon/js/bootstrap.min.js"></script>
 <script>
 const isAdminTier  = <?= $isAdminTier ? 'true' : 'false' ?>;
 const isSuperAdmin = <?= $isSuperAdmin ? 'true' : 'false' ?>;

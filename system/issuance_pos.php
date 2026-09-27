@@ -191,6 +191,9 @@ body { background: var(--body-bg); display: flex; flex-direction: column; }
             <label class="form-label">Client / Recipient</label>
             <select class="form-select mb-3" id="posClient" onchange="onClientChanged()"><option value="">Walk-in / Retail</option></select>
 
+            <label class="form-label">Salesman <span class="text-muted">(optional)</span></label>
+            <select class="form-select mb-3" id="posSalesman"><option value="">—</option></select>
+
             <div id="posWalkinFields" class="mb-3">
                 <label class="form-label">Buyer Name <span class="text-danger">*</span></label>
                 <input type="text" class="form-control form-control-sm mb-2" id="posWalkinName" placeholder="Full name" maxlength="150">
@@ -248,6 +251,7 @@ let poItemFilter = null;       // array of item_ids, or null
 let poItemRemaining = null;    // item_id => remaining ordered quantity when a PO is picked
 let poClientPreset = null;     // { id, name } when a PO is picked
 let cart = [];                 // { key, kind:'unit'|'stock', item_id, inventory_unit_id?, serial_number?, item_name, unit, unit_price, quantity, max }
+let clientsCache = [];
 
 function setMode(m) {
     mode = m;
@@ -267,20 +271,35 @@ function setMode(m) {
 
 // Buyer-detail fields only make sense for a walk-in sale — once a client on
 // record (or a PO's preset client) is picked, their info is already on file.
+// A client with a default salesman on file prefills that here too (still
+// overridable — this is just a convenience, not a lock).
 function onClientChanged() {
-    const hasClient = !!document.getElementById('posClient').value;
+    const clientId = document.getElementById('posClient').value;
+    const hasClient = !!clientId;
     document.getElementById('posWalkinFields').classList.toggle('d-none', hasClient);
+    const client = clientsCache.find(c => String(c.id) === String(clientId));
+    if (client && client.default_salesman_id) {
+        document.getElementById('posSalesman').value = client.default_salesman_id;
+    }
 }
 
 async function loadClients() {
     const res  = await fetch('api/clients.php?type=all');
     const data = await res.json();
-    const clients = (data.success ? data.clients : []).filter(c => c.is_active == 1);
+    clientsCache = (data.success ? data.clients : []).filter(c => c.is_active == 1);
     // Previously-registered walk-in buyers show up here too (tagged, so
     // they're not mistaken for a formal/government client) — pick one
     // instead of retyping their details every visit.
     document.getElementById('posClient').innerHTML = '<option value="">Walk-in / Retail (new)</option>' +
-        clients.map(c => `<option value="${c.id}">${escapeHtml(c.name)}${c.client_type === 'walkin' ? ' (Walk-in)' : ''}</option>`).join('');
+        clientsCache.map(c => `<option value="${c.id}">${escapeHtml(c.name)}${c.client_type === 'walkin' ? ' (Walk-in)' : ''}</option>`).join('');
+}
+
+async function loadSalesmen() {
+    const res  = await fetch('api/salesmen.php');
+    const data = await res.json();
+    const salesmen = (data.success ? data.salesmen : []).filter(s => s.is_active == 1);
+    document.getElementById('posSalesman').innerHTML = '<option value="">—</option>' +
+        salesmen.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
 }
 
 async function loadBranches() {
@@ -618,6 +637,7 @@ async function submitIssuance() {
     const subtotal = cart.reduce((n, l) => n + l.unit_price * l.quantity, 0);
     const payload = {
         client_id: clientId,
+        salesman_id: document.getElementById('posSalesman').value || null,
         po_number: mode === 'po' ? (document.getElementById('posPoSelect').value || null) : null,
         items: cart.map(l => l.kind === 'unit'
             ? { inventory_unit_id: l.inventory_unit_id, unit_price: l.unit_price }
@@ -662,6 +682,7 @@ async function submitIssuance() {
 
 (async function init() {
     await loadClients();
+    await loadSalesmen();
     await loadPoOptions();
     renderCart();
     if (isSuperAdmin) {

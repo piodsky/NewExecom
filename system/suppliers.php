@@ -12,7 +12,8 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Suppliers | <?= e(APP_NAME) ?></title>
 <link rel="icon" href="image/execom_icon.png">
-<link href="vendor/css/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/argon/css/argon-dashboard.min.css" rel="stylesheet">
+<link href="vendor/argon/css/nucleo-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="css/base.css">
 <style>
@@ -21,25 +22,23 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 </style>
 </head>
 <body>
-<div class="wrapper">
-<?php include 'sidebar.php'; ?>
+<?php include 'topnav.php'; ?>
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle">Home</div>
+                    <h2 class="page-title">Suppliers</h2>
+                    <div class="text-muted small">Maintain supplier profiles used for canvass, RFQ, and purchase orders.</div>
+                </div>
 
-<div class="main-content">
-    <div class="top-navbar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            <div>
-                <div class="page-title">Suppliers</div>
-                <div class="small text-muted">Maintain supplier profiles used for canvass, RFQ, and purchase orders.</div>
-                <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Suppliers</div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <?php include 'topbar.php'; ?>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="page-body">
+    <div class="container-xl">
         <div class="panel">
             <div class="panel-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="panel-title">EXECOM's Suppliers</div>
@@ -53,8 +52,8 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
             <div class="panel-body">
                 <div class="table-responsive">
                 <table class="app-table table">
-                    <thead><tr><th>Name</th><th>Contact Person</th><th>Number</th><th>Email</th><th>Terms</th><th>Status</th><th></th></tr></thead>
-                    <tbody id="supBody"><tr><td colspan="7" class="text-muted small">Loading…</td></tr></tbody>
+                    <thead><tr><th>Name</th><th>Contact Person</th><th>Number</th><th>Email</th><th>Terms</th><th>Credit Limit</th><th>Status</th><th></th></tr></thead>
+                    <tbody id="supBody"><tr><td colspan="8" class="text-muted small">Loading…</td></tr></tbody>
                 </table>
                 </div>
             </div>
@@ -78,6 +77,8 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
             <div class="col-6"><label class="form-label">Contact Number</label><input type="text" class="form-control" id="sContactNumber"></div>
             <div class="col-6"><label class="form-label">Email</label><input type="email" class="form-control" id="sEmail"></div>
             <div class="col-6"><label class="form-label">Payment Terms</label><input type="text" class="form-control" id="sTerms" placeholder="e.g. Net 30"></div>
+            <div class="col-6"><label class="form-label">Terms (days)</label><input type="number" min="0" class="form-control" id="sTermsDays" placeholder="e.g. 30"></div>
+            <div class="col-6"><label class="form-label">Credit Limit</label><input type="number" min="0" step="0.01" class="form-control" id="sCreditLimit" value="0"></div>
           </div>
         </div>
         <div class="modal-footer">
@@ -90,7 +91,8 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 </div>
 
 <script src="vendor/js/jquery.min.js"></script>
-<script src="vendor/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/argon/js/popper.min.js"></script>
+<script src="vendor/argon/js/bootstrap.min.js"></script>
 <script>
 const isAdminTier = <?= $isAdminTier ? 'true' : 'false' ?>;
 let supCache = [];
@@ -108,12 +110,13 @@ async function loadSuppliers() {
             <td>${escapeHtml(s.contact_person || '—')}</td>
             <td>${escapeHtml(s.contact_number || '—')}</td>
             <td>${escapeHtml(s.email || '—')}</td>
-            <td>${escapeHtml(s.payment_terms || '—')}</td>
+            <td>${escapeHtml(s.payment_terms || '—')}${s.payment_terms_days ? ` <span class="text-muted small">(${s.payment_terms_days}d)</span>` : ''}</td>
+            <td>${Number(s.credit_limit) > 0 ? Number(s.credit_limit).toLocaleString(undefined, {minimumFractionDigits:2}) : '—'}</td>
             <td><span class="badge-status ${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
             <td class="text-end">${isAdminTier ? `
                 <button class="btn-sm-action" onclick="editSupplier(${s.id})" title="Edit"><i class="fas fa-pen"></i></button>
                 <button class="btn-sm-action" onclick="toggleSupplier(${s.id})" title="Toggle"><i class="fas fa-power-off"></i></button>` : ''}</td>
-        </tr>`).join('') : '<tr><td colspan="7" class="text-muted small">No suppliers found.</td></tr>';
+        </tr>`).join('') : '<tr><td colspan="8" class="text-muted small">No suppliers found.</td></tr>';
 }
 
 function openSupplierModal() {
@@ -132,6 +135,8 @@ function editSupplier(id) {
     document.getElementById('sContactNumber').value = s.contact_number || '';
     document.getElementById('sEmail').value = s.email || '';
     document.getElementById('sTerms').value = s.payment_terms || '';
+    document.getElementById('sTermsDays').value = s.payment_terms_days ?? '';
+    document.getElementById('sCreditLimit').value = s.credit_limit ?? 0;
     document.getElementById('supplierModalTitle').textContent = 'Edit Supplier';
     new bootstrap.Modal(document.getElementById('supplierModal')).show();
 }
@@ -146,6 +151,8 @@ document.getElementById('supplierForm').addEventListener('submit', async (e) => 
         contact_number: document.getElementById('sContactNumber').value.trim(),
         email: document.getElementById('sEmail').value.trim(),
         payment_terms: document.getElementById('sTerms').value.trim(),
+        payment_terms_days: document.getElementById('sTermsDays').value,
+        credit_limit: document.getElementById('sCreditLimit').value || 0,
     };
     const res  = await fetch('api/suppliers.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     const data = await res.json();

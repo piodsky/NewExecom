@@ -18,13 +18,13 @@ require_once __DIR__ . '/date_time.php';
 
 <div class="topbar-actions">
     <?php if (in_array($activePage ?? '', [
-        'purchase_requisitions', 'internal_rfq', 'po_internal', 'receiving_reports', 'inventory',
+        'po_internal', 'receiving_reports', 'inventory',
         'stock_transfers', 'issuances', 'outgoing_rfq', 'outgoing_quotations', 'po_outgoing',
         'delivery_reports', 'cost_profit_reports', 'reports', 'branches', 'suppliers', 'clients',
-        'items', 'settings', 'access_levels', 'audit_logs',
+        'items', 'settings', 'access_levels', 'audit_logs', 'job_orders', 'billing', 'collections',
     ], true)): ?>
     <button type="button" class="btn btn-outline-secondary btn-sm" id="moduleReportButton" title="Preview, print or download the module report">
-        <i class="fas fa-file-pdf me-1"></i><span class="d-none d-sm-inline">Report</span>
+        <i class="fas fa-file-pdf"></i><span class="d-none d-md-inline ms-1">Report</span>
     </button>
     <?php include __DIR__ . '/report_tools.php'; ?>
     <?php endif; ?>
@@ -65,7 +65,7 @@ require_once __DIR__ . '/date_time.php';
                     <?= e($tbInitial) ?>
                 <?php endif; ?>
             </span>
-            <span class="up-name d-none d-sm-inline"><?= e($tbUser['full_name']) ?></span>
+            <span class="up-name d-none d-lg-inline"><?= e($tbUser['full_name']) ?></span>
             <i class="fas fa-chevron-down up-caret"></i>
         </button>
         <div class="dropdown-menu dropdown-menu-end user-dropdown" aria-labelledby="topbarUserMenu">
@@ -276,7 +276,7 @@ topbarLoadNotifications();
     if (!input || !results) return;
 
     function navLinks() {
-        return [...document.querySelectorAll('.sidebar-link')].filter(a => !a.classList.contains('disabled'));
+        return [...document.querySelectorAll('.navbar-search-link')].filter(a => !a.classList.contains('disabled'));
     }
 
     function render(matches) {
@@ -286,7 +286,7 @@ topbarLoadNotifications();
             return;
         }
         results.innerHTML = matches.map((a, i) => {
-            const icon = a.querySelector('.nav-icon i')?.outerHTML || '<i class="fas fa-circle"></i>';
+            const icon = a.querySelector('i')?.outerHTML || '<i class="fas fa-circle"></i>';
             const label = a.textContent.trim();
             return `<a href="${a.getAttribute('href')}" class="${i === 0 ? 'tsr-active' : ''}">${icon}<span>${topbarEscapeHtml(label)}</span></a>`;
         }).join('');

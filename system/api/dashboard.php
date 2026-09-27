@@ -16,12 +16,12 @@ if ($scope === null && isset($_GET['branch_id']) && ctype_digit((string)$_GET['b
 $db = getDB();
 
 // ── KPI cards ──────────────────────────────────────────────────────────
-$prCountSql = 'SELECT COUNT(*) FROM pr_requests WHERE is_deleted = 0';
-$prParams   = [];
-if ($scope !== null) { $prCountSql .= ' AND branch_id = ?'; $prParams[] = $scope; }
-$stmt = $db->prepare($prCountSql);
-$stmt->execute($prParams);
-$prCount = (int)$stmt->fetchColumn();
+$issuancesSql = 'SELECT COUNT(*) FROM issuances WHERE is_deleted = 0';
+$issuancesParams = [];
+if ($scope !== null) { $issuancesSql .= ' AND branch_id = ?'; $issuancesParams[] = $scope; }
+$stmt = $db->prepare($issuancesSql);
+$stmt->execute($issuancesParams);
+$issuancesCount = (int)$stmt->fetchColumn();
 
 $poInternalSql = 'SELECT COUNT(*) FROM po_internal WHERE is_deleted = 0';
 $poOutgoingSql = 'SELECT COUNT(*) FROM po_outgoing WHERE is_deleted = 0';
@@ -140,10 +140,6 @@ function dashboardCount(PDO $db, string $sql, array $params): int {
     $stmt->execute($params);
     return (int)$stmt->fetchColumn();
 }
-$prPendingSql = "SELECT COUNT(*) FROM pr_requests WHERE is_deleted = 0 AND status = 'pending'";
-$prPendingParams = [];
-if ($scope !== null) { $prPendingSql .= ' AND branch_id = ?'; $prPendingParams[] = $scope; }
-
 $stPendingSql = "SELECT COUNT(*) FROM stock_transfers WHERE is_deleted = 0 AND status IN ('pending','in_transit')";
 $stPendingParams = [];
 if ($scope !== null) { $stPendingSql .= ' AND (from_branch_id = ? OR to_branch_id = ?)'; $stPendingParams[] = $scope; $stPendingParams[] = $scope; }
@@ -157,7 +153,6 @@ $lowStockParams = [];
 if ($scope !== null) { $lowStockSql .= ' AND branch_id = ?'; $lowStockParams[] = $scope; }
 
 $needsAttention = [
-    'pr_pending'    => dashboardCount($db, $prPendingSql, $prPendingParams),
     'stock_pending' => dashboardCount($db, $stPendingSql, $stPendingParams),
     'orders_open'   => dashboardCount($db, $ordersOpenSql, $ordersOpenParams),
     'low_stock'     => dashboardCount($db, $lowStockSql, $lowStockParams),
@@ -279,14 +274,6 @@ function dashboardRecentTransactions(PDO $db, ?int $scope): array {
         $stmt->execute($params);
         return $stmt->fetchAll();
     };
-
-    $sql = "SELECT pr_number AS doc_number, purpose AS description, status, created_at FROM pr_requests WHERE is_deleted = 0";
-    $params = []; if ($scope !== null) { $sql .= ' AND branch_id = ?'; $params[] = $scope; }
-    $sql .= ' ORDER BY created_at DESC LIMIT 5';
-    foreach ($fetch($sql, $params) as $r) {
-        $rows[] = ['doc_number' => $r['doc_number'], 'doc_type' => 'PR', 'doc_class' => 'doc-pr',
-                   'description' => $r['description'] ?: 'Purchase Requisition', 'status' => $r['status'], 'created_at' => $r['created_at']];
-    }
 
     $sql = "SELECT po_number AS doc_number, supplier_name AS description, status, created_at FROM po_internal WHERE is_deleted = 0";
     $params = []; if ($scope !== null) { $sql .= ' AND branch_id = ?'; $params[] = $scope; }
@@ -413,10 +400,10 @@ $recentActivity = $stmt->fetchAll();
 
 jsonResponse(true, '', [
     'stats' => [
-        'purchase_requisitions' => $prCount,
         'purchase_orders'       => $poCount,
         'received_items'        => $receivedItems,
         'inventory_items'       => $inventoryItems,
+        'issuances'             => $issuancesCount,
     ],
     'financials'         => $financials,
     'monthly_sales'      => $monthlySales,

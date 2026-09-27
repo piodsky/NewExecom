@@ -10,14 +10,6 @@
     const date = value => value ? AppDateTime.format(value) : '—';
     const label = value => String(value ?? '—').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     const definitions = {
-        purchase_requisition: {
-            fields: [['department', 'Department'], ['purpose', 'Purpose'], ['needed_date', 'Needed', date], ['requested_by_name', 'Requested By'], ['approved_by_name', 'Approved By'], ['approved_at', 'Approved', date], ['remarks', 'Remarks']],
-            signatures: [['Requested By', 'requested_by_name'], ['Approved By', 'approved_by_name']],
-        },
-        internal_rfq: {
-            fields: [['pr_number', 'PR Number'], ['sent_date', 'Sent', date], ['created_by_name', 'Prepared By']],
-            signatures: [['Prepared By', 'created_by_name'], ['Reviewed By', null]],
-        },
         outgoing_rfq: {
             fields: [['client_name', 'Client'], ['client_address', 'Address'], ['received_date', 'Received', date], ['due_date', 'Due', date], ['created_by_name', 'Recorded By']],
             signatures: [['Recorded By', 'created_by_name'], ['Reviewed By', null]],
@@ -77,16 +69,6 @@
         if (config.module === 'receiving_reports') {
             const total = record.items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.unit_cost), 0);
             sheet.append(element('p', 'TOTAL RECEIVED COST (PHP): ' + money(total), 'report-total'));
-        }
-        if (config.module === 'internal_rfq') {
-            const quotes = record.items.flatMap(item => (item.quotes || []).map(quote => [
-                item.description || item.item_name || '—', quote.supplier_name, money(quote.quoted_price),
-                quote.lead_time_days ?? '—', Number(quote.is_selected) ? 'Yes' : 'No',
-            ]));
-            if (quotes.length) {
-                sheet.append(element('h2', 'Supplier Quotation Comparison'));
-                sheet.append(table(['Item', 'Supplier', 'Quoted Unit Price (PHP)', 'Lead Time (Days)', 'Selected'], quotes));
-            }
         }
         const signatures = element('div', undefined, 'report-signatures');
         definition.signatures.forEach(([name, field]) => {

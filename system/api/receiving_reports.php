@@ -27,7 +27,8 @@ function loadRr(PDO $db, string $rrNumber): ?array {
     if (!$rr) return null;
 
     $itemStmt = $db->prepare(
-        'SELECT rri.id, rri.item_id, i.name AS item_name, i.unit, rri.quantity, rri.unit_cost, rri.serial_number
+        'SELECT rri.id, rri.item_id, i.name AS item_name, i.unit, i.purchase_unit, i.purchase_conversion_factor,
+                rri.quantity, rri.unit_cost, rri.serial_number
          FROM receiving_report_items rri LEFT JOIN items i ON i.id = rri.item_id
          WHERE rri.rr_number = ? AND rri.is_deleted = 0 ORDER BY rri.id'
     );
@@ -118,7 +119,7 @@ if ($method === 'POST') {
         }
     }
 
-    $itemMetaStmt = $db->prepare('SELECT is_serialized FROM items WHERE id = ?');
+    $itemMetaStmt = $db->prepare('SELECT is_serialized, purchase_conversion_factor FROM items WHERE id = ?');
 
     $db->beginTransaction();
     try {
@@ -143,7 +144,9 @@ if ($method === 'POST') {
             $serial   = trim($l['serial_number'] ?? '');
 
             $itemMetaStmt->execute([$itemId]);
-            $isSerialized = (bool)$itemMetaStmt->fetchColumn();
+            $itemMeta = $itemMetaStmt->fetch();
+            $isSerialized = (bool)($itemMeta['is_serialized'] ?? false);
+            $conversionFactor = (float)($itemMeta['purchase_conversion_factor'] ?? 1);
 
             if ($isSerialized) {
                 if ($serial === '') { $db->rollBack(); jsonResponse(false, 'Serial number is required for this item.'); }
@@ -151,8 +154,12 @@ if ($method === 'POST') {
                 $lineStmt->execute([$rrNumber, $itemId, 1, $unitCost, $serial]);
                 $unitStmt->execute([$itemId, $po['branch_id'], $serial, 'in_stock', $unitCost, $rrNumber, $dateReceived]);
             } else {
+                // receiving_report_items.quantity stays in purchase-unit terms
+                // (matching po_internal_items.quantity, for the ordered-vs-
+                // received reconciliation above) — only the stock credit
+                // itself converts to the item's actual sell/stock unit.
                 $lineStmt->execute([$rrNumber, $itemId, $qty, $unitCost, null]);
-                $stockStmt->execute([$itemId, $po['branch_id'], $qty]);
+                $stockStmt->execute([$itemId, $po['branch_id'], $qty * $conversionFactor]);
             }
         }
 

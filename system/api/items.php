@@ -13,10 +13,11 @@ $method = $_SERVER['REQUEST_METHOD'];
 $isAdminTier = in_array($user['role'], ['super_admin', 'branch_admin'], true);
 
 if ($method === 'GET') {
-    $categories = $db->query('SELECT id, name, is_serialized, is_active FROM item_categories ORDER BY name')->fetchAll();
+    $categories = $db->query('SELECT id, name, parent_id, is_serialized, is_active FROM item_categories ORDER BY name')->fetchAll();
 
     $q = trim($_GET['q'] ?? '');
     $sql = 'SELECT i.id, i.sku, i.name, i.category_id, c.name AS category_name, i.brand, i.unit,
+                   i.purchase_unit, i.purchase_conversion_factor,
                    i.is_serialized, i.default_cost, i.default_price, i.is_active
             FROM items i LEFT JOIN item_categories c ON c.id = i.category_id';
     $params = [];
@@ -40,20 +41,38 @@ if ($method === 'POST') {
     if ($action === 'create_category' || $action === 'update_category') {
         $name         = trim($data['name'] ?? '');
         $isSerialized = !empty($data['is_serialized']) ? 1 : 0;
+        $parentId     = !empty($data['parent_id']) ? (int)$data['parent_id'] : null;
         if ($name === '') jsonResponse(false, 'Category name is required.');
 
         if ($action === 'create_category') {
             $exists = $db->prepare('SELECT COUNT(*) FROM item_categories WHERE name = ?');
             $exists->execute([$name]);
             if ($exists->fetchColumn() > 0) jsonResponse(false, 'That category already exists.');
-            $db->prepare('INSERT INTO item_categories (name, is_serialized) VALUES (?,?)')->execute([$name, $isSerialized]);
+            $db->prepare('INSERT INTO item_categories (name, parent_id, is_serialized) VALUES (?,?,?)')->execute([$name, $parentId, $isSerialized]);
             logAudit('CREATE_CATEGORY', 'items', "Created category \"{$name}\"");
             jsonResponse(true, 'Category added.');
         }
 
         $id = (int)($data['id'] ?? 0);
         if (!$id) jsonResponse(false, 'Invalid category.');
-        $db->prepare('UPDATE item_categories SET name=?, is_serialized=? WHERE id=?')->execute([$name, $isSerialized, $id]);
+
+        // A self-referencing tree only needs one invariant enforced: a category
+        // can't become its own ancestor. Categories are never many levels deep
+        // in practice, so a bounded walk up the chosen parent's own chain is
+        // simpler and just as correct as a recursive CTE here.
+        if ($parentId !== null) {
+            if ($parentId === $id) jsonResponse(false, 'A category cannot be its own parent.');
+            $walk = $parentId;
+            for ($i = 0; $i < 20 && $walk !== null; $i++) {
+                if ($walk === $id) jsonResponse(false, 'That would create a category loop.');
+                $stmt = $db->prepare('SELECT parent_id FROM item_categories WHERE id = ?');
+                $stmt->execute([$walk]);
+                $walk = $stmt->fetchColumn();
+                $walk = $walk !== false && $walk !== null ? (int)$walk : null;
+            }
+        }
+
+        $db->prepare('UPDATE item_categories SET name=?, parent_id=?, is_serialized=? WHERE id=?')->execute([$name, $parentId, $isSerialized, $id]);
         logAudit('UPDATE_CATEGORY', 'items', "Updated category \"{$name}\"");
         jsonResponse(true, 'Category updated.');
     }
@@ -68,6 +87,14 @@ if ($method === 'POST') {
         $defaultCost  = $data['default_cost']  !== '' && $data['default_cost']  !== null ? (float)$data['default_cost']  : null;
         $defaultPrice = $data['default_price'] !== '' && $data['default_price'] !== null ? (float)$data['default_price'] : null;
 
+        // Buy-by-box-sell-by-piece only makes sense for pooled/bulk stock —
+        // a serialized item is always received one at a time (enforced in
+        // api/receiving_reports.php), so force no conversion for those.
+        $purchaseUnit = !$isSerialized ? (trim($data['purchase_unit'] ?? '') ?: null) : null;
+        $conversionFactor = !$isSerialized && $purchaseUnit !== null
+            ? max(0.001, (float)($data['purchase_conversion_factor'] ?? 1))
+            : 1.0;
+
         if ($name === '') jsonResponse(false, 'Item name is required.');
         $categoryId = $categoryId !== '' && $categoryId !== null ? (int)$categoryId : null;
 
@@ -78,9 +105,9 @@ if ($method === 'POST') {
                 if ($exists->fetchColumn() > 0) jsonResponse(false, 'That SKU is already in use.');
             }
             $db->prepare(
-                'INSERT INTO items (sku, name, category_id, brand, unit, is_serialized, default_cost, default_price)
-                 VALUES (?,?,?,?,?,?,?,?)'
-            )->execute([$sku ?: null, $name, $categoryId, $brand ?: null, $unit, $isSerialized, $defaultCost, $defaultPrice]);
+                'INSERT INTO items (sku, name, category_id, brand, unit, purchase_unit, purchase_conversion_factor, is_serialized, default_cost, default_price)
+                 VALUES (?,?,?,?,?,?,?,?,?,?)'
+            )->execute([$sku ?: null, $name, $categoryId, $brand ?: null, $unit, $purchaseUnit, $conversionFactor, $isSerialized, $defaultCost, $defaultPrice]);
             logAudit('CREATE_ITEM', 'items', "Created item \"{$name}\"");
             jsonResponse(true, 'Item added.');
         }
@@ -88,8 +115,8 @@ if ($method === 'POST') {
         $id = (int)($data['id'] ?? 0);
         if (!$id) jsonResponse(false, 'Invalid item.');
         $db->prepare(
-            'UPDATE items SET sku=?, name=?, category_id=?, brand=?, unit=?, is_serialized=?, default_cost=?, default_price=? WHERE id=?'
-        )->execute([$sku ?: null, $name, $categoryId, $brand ?: null, $unit, $isSerialized, $defaultCost, $defaultPrice, $id]);
+            'UPDATE items SET sku=?, name=?, category_id=?, brand=?, unit=?, purchase_unit=?, purchase_conversion_factor=?, is_serialized=?, default_cost=?, default_price=? WHERE id=?'
+        )->execute([$sku ?: null, $name, $categoryId, $brand ?: null, $unit, $purchaseUnit, $conversionFactor, $isSerialized, $defaultCost, $defaultPrice, $id]);
         logAudit('UPDATE_ITEM', 'items', "Updated item \"{$name}\"");
         jsonResponse(true, 'Item updated.');
     }

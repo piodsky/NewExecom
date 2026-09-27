@@ -1,13 +1,14 @@
 <?php
 // Order Tracking — read-only. Every document chain in this app already
-// links forward via a foreign key (internal_rfq.pr_number, po_internal.
-// pr_number/internal_rfq_number, receiving_reports.po_number, etc.) but each
-// chain's stages only ever show up on separate pages. This just walks those
-// same links from one root document and hands back the whole chain in one
-// response, so "where is this order right now" doesn't mean opening five
-// modules and matching numbers by eye.
+// links forward via a foreign key (po_internal.po_number on receiving_reports,
+// outgoing_quotation_number on po_outgoing, etc.) but each chain's stages
+// only ever show up on separate pages. This just walks those same links from
+// one root document and hands back the whole chain in one response, so
+// "where is this order right now" doesn't mean opening several modules and
+// matching numbers by eye.
 //
-// Internal chain:  Purchase Requisition -> Internal RFQ -> PO (Internal) -> Receiving Report
+// Internal chain:  PO (Internal) -> Receiving Report — a direct purchase,
+//   no requisition/canvass step (EXECOM buys straight from its own supplier).
 // Outgoing chain:  RFQ (Outgoing) -> Quotation (Outgoing) -> PO (Outgoing) -> Delivery Report + Issuance
 require_once '../config.php';
 requireModule('order_tracking');
@@ -36,10 +37,10 @@ function poProgress(PDO $db, string $poNumber, string $itemsTable, string $moved
 }
 
 if ($type === 'internal') {
-    // No root: the picker's list of every PR in scope, newest first.
+    // No root: the picker's list of every internal PO in scope, newest first.
     if ($root === '') {
-        $sql = "SELECT p.pr_number, p.status, b.name AS branch_name
-                FROM pr_requests p JOIN branches b ON b.id = p.branch_id
+        $sql = "SELECT p.po_number, p.status, p.supplier_name, b.name AS branch_name
+                FROM po_internal p JOIN branches b ON b.id = p.branch_id
                 WHERE p.is_deleted = 0";
         $params = [];
         if ($scope !== null) { $sql .= ' AND p.branch_id = ?'; $params[] = $scope; }
@@ -50,56 +51,28 @@ if ($type === 'internal') {
     }
 
     $stmt = $db->prepare(
-        'SELECT p.*, b.name AS branch_name, u.full_name AS requested_by_name
-         FROM pr_requests p JOIN branches b ON b.id = p.branch_id JOIN users u ON u.id = p.requested_by
-         WHERE p.pr_number = ? AND p.is_deleted = 0'
+        'SELECT p.*, b.name AS branch_name, u.full_name AS created_by_name
+         FROM po_internal p JOIN branches b ON b.id = p.branch_id JOIN users u ON u.id = p.created_by
+         WHERE p.po_number = ? AND p.is_deleted = 0'
     );
     $stmt->execute([$root]);
-    $pr = $stmt->fetch();
-    if (!$pr) jsonResponse(false, 'Requisition not found.');
-    if ($scope !== null && (int)$pr['branch_id'] !== $scope) jsonResponse(false, 'Access denied.');
+    $po = $stmt->fetch();
+    if (!$po) jsonResponse(false, 'Purchase Order not found.');
+    if ($scope !== null && (int)$po['branch_id'] !== $scope) jsonResponse(false, 'Access denied.');
+
+    $progress = poProgress($db, $po['po_number'], 'po_internal_items', 'receiving_report_items', 'receiving_reports', 'rr_number');
+    $po['ordered_qty']  = $progress['ordered_qty'];
+    $po['received_qty'] = $progress['moved_qty'];
 
     $stmt = $db->prepare(
-        'SELECT rfq_number, status, sent_date, created_at FROM internal_rfq
-         WHERE pr_number = ? AND is_deleted = 0 ORDER BY created_at'
+        'SELECT rr_number, po_number, date_received, created_at FROM receiving_reports
+         WHERE is_deleted = 0 AND po_number = ? ORDER BY created_at'
     );
     $stmt->execute([$root]);
-    $rfqs = $stmt->fetchAll();
-    $rfqNumbers = array_column($rfqs, 'rfq_number');
-
-    $poSql = 'SELECT po_number, supplier_name, internal_rfq_number, status, total_amount, created_at
-               FROM po_internal WHERE is_deleted = 0 AND (pr_number = ?';
-    $poParams = [$root];
-    if ($rfqNumbers) {
-        $poSql .= ' OR internal_rfq_number IN (' . implode(',', array_fill(0, count($rfqNumbers), '?')) . ')';
-        $poParams = array_merge($poParams, $rfqNumbers);
-    }
-    $poSql .= ') ORDER BY created_at';
-    $stmt = $db->prepare($poSql);
-    $stmt->execute($poParams);
-    $pos = $stmt->fetchAll();
-    foreach ($pos as &$po) {
-        $progress = poProgress($db, $po['po_number'], 'po_internal_items', 'receiving_report_items', 'receiving_reports', 'rr_number');
-        $po['ordered_qty']  = $progress['ordered_qty'];
-        $po['received_qty'] = $progress['moved_qty'];
-    }
-    unset($po);
-    $poNumbers = array_column($pos, 'po_number');
-
-    $rrs = [];
-    if ($poNumbers) {
-        $sql = 'SELECT rr_number, po_number, date_received, created_at FROM receiving_reports
-                 WHERE is_deleted = 0 AND po_number IN (' . implode(',', array_fill(0, count($poNumbers), '?')) . ')
-                 ORDER BY created_at';
-        $stmt = $db->prepare($sql);
-        $stmt->execute($poNumbers);
-        $rrs = $stmt->fetchAll();
-    }
+    $rrs = $stmt->fetchAll();
 
     jsonResponse(true, '', ['chain' => [
-        'root'               => $pr,
-        'internal_rfqs'      => $rfqs,
-        'purchase_orders'    => $pos,
+        'root'               => $po,
         'receiving_reports'  => $rrs,
     ]]);
 }

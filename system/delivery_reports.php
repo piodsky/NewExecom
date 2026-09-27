@@ -12,7 +12,8 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Delivery Reports | <?= e(APP_NAME) ?></title>
 <link rel="icon" href="image/execom_icon.png">
-<link href="vendor/css/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/argon/css/argon-dashboard.min.css" rel="stylesheet">
+<link href="vendor/argon/css/nucleo-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="css/base.css">
 <style>
@@ -21,25 +22,23 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 </style>
 </head>
 <body>
-<div class="wrapper">
-<?php include 'sidebar.php'; ?>
+<?php include 'topnav.php'; ?>
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle">Home</div>
+                    <h2 class="page-title">Delivery Reports</h2>
+                    <div class="text-muted small">Record deliveries sent to clients from outgoing purchase orders.</div>
+                </div>
 
-<div class="main-content">
-    <div class="top-navbar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            <div>
-                <div class="page-title">Delivery Reports</div>
-                <div class="small text-muted">Record deliveries sent to clients from outgoing purchase orders.</div>
-                <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Delivery Reports</div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <?php include 'topbar.php'; ?>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="page-body">
+    <div class="container-xl">
         <div class="panel">
             <div class="panel-header d-flex justify-content-between align-items-center">
                 <div class="panel-title">Proof of Delivery to Clients</div>
@@ -106,7 +105,8 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 </div>
 
 <script src="vendor/js/jquery.min.js"></script>
-<script src="vendor/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/argon/js/popper.min.js"></script>
+<script src="vendor/argon/js/bootstrap.min.js"></script>
 <script>
 let drCache = [], currentPoItems = [];
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }

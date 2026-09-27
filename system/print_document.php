@@ -4,8 +4,6 @@ requireAuth();
 
 // The record APIs remain the source of truth for line items and branch access.
 $documents = [
-    'purchase_requisition' => ['purchase_requisitions', 'pr', 'Purchase Requisition'],
-    'internal_rfq' => ['internal_rfq', 'rfq', 'Request for Quotation (Internal)'],
     'receiving_reports' => ['receiving_reports', 'rr', 'Receiving Report'],
     'stock_transfer' => ['stock_transfers', 'transfer', 'Stock Transfer'],
     'outgoing_rfq' => ['outgoing_rfq', 'rfq', 'Request for Quotation (Outgoing)'],

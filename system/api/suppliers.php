@@ -14,7 +14,7 @@ $isAdminTier = in_array($user['role'], ['super_admin', 'branch_admin'], true);
 
 if ($method === 'GET') {
     $q = trim($_GET['q'] ?? '');
-    $sql = 'SELECT id, name, address, contact_person, contact_number, email, payment_terms, is_active, created_at FROM suppliers';
+    $sql = 'SELECT id, name, address, contact_person, contact_number, email, payment_terms, payment_terms_days, credit_limit, is_active, created_at FROM suppliers';
     $params = [];
     if ($q !== '') {
         $sql .= ' WHERE name LIKE ? OR contact_person LIKE ?';
@@ -39,12 +39,16 @@ if ($method === 'POST') {
         $number  = trim($data['contact_number'] ?? '');
         $email   = trim($data['email'] ?? '');
         $terms   = trim($data['payment_terms'] ?? '');
+        $termsDays = trim((string)($data['payment_terms_days'] ?? ''));
+        $termsDays = $termsDays === '' ? null : max(0, (int)$termsDays);
+        $creditLimit = (float)($data['credit_limit'] ?? 0);
+        if ($creditLimit < 0) jsonResponse(false, 'Credit limit cannot be negative.');
         if ($name === '') jsonResponse(false, 'Supplier name is required.');
 
         if ($action === 'create') {
             $db->prepare(
-                'INSERT INTO suppliers (name, address, contact_person, contact_number, email, payment_terms) VALUES (?,?,?,?,?,?)'
-            )->execute([$name, $address ?: null, $contact ?: null, $number ?: null, $email ?: null, $terms ?: null]);
+                'INSERT INTO suppliers (name, address, contact_person, contact_number, email, payment_terms, payment_terms_days, credit_limit) VALUES (?,?,?,?,?,?,?,?)'
+            )->execute([$name, $address ?: null, $contact ?: null, $number ?: null, $email ?: null, $terms ?: null, $termsDays, $creditLimit]);
             logAudit('CREATE_SUPPLIER', 'suppliers', "Created supplier \"{$name}\"");
             jsonResponse(true, 'Supplier added.');
         }
@@ -52,8 +56,8 @@ if ($method === 'POST') {
         $id = (int)($data['id'] ?? 0);
         if (!$id) jsonResponse(false, 'Invalid supplier.');
         $db->prepare(
-            'UPDATE suppliers SET name=?, address=?, contact_person=?, contact_number=?, email=?, payment_terms=? WHERE id=?'
-        )->execute([$name, $address ?: null, $contact ?: null, $number ?: null, $email ?: null, $terms ?: null, $id]);
+            'UPDATE suppliers SET name=?, address=?, contact_person=?, contact_number=?, email=?, payment_terms=?, payment_terms_days=?, credit_limit=? WHERE id=?'
+        )->execute([$name, $address ?: null, $contact ?: null, $number ?: null, $email ?: null, $terms ?: null, $termsDays, $creditLimit, $id]);
         logAudit('UPDATE_SUPPLIER', 'suppliers', "Updated supplier \"{$name}\"");
         jsonResponse(true, 'Supplier updated.');
     }

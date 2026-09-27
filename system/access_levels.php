@@ -11,30 +11,29 @@ $activePage  = 'access_levels';
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Access Levels | <?= e(APP_NAME) ?></title>
 <link rel="icon" href="image/execom_icon.png">
-<link href="vendor/css/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/argon/css/argon-dashboard.min.css" rel="stylesheet">
+<link href="vendor/argon/css/nucleo-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="css/base.css">
 </head>
 <body>
-<div class="wrapper">
-<?php include 'sidebar.php'; ?>
+<?php include 'topnav.php'; ?>
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle">Home</div>
+                    <h2 class="page-title">Access Levels</h2>
+                    <div class="text-muted small">Control which roles can open each system module.</div>
+                </div>
 
-<div class="main-content">
-    <div class="top-navbar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            <div>
-                <div class="page-title">Access Levels</div>
-                <div class="small text-muted">Control which roles can open each system module.</div>
-                <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Access Levels</div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <?php include 'topbar.php'; ?>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="page-body">
+    <div class="container-xl">
         <div class="panel">
             <div class="panel-header">
                 <div class="panel-title">Module Access by Role</div>
@@ -55,20 +54,22 @@ $activePage  = 'access_levels';
 </div>
 
 <script src="vendor/js/jquery.min.js"></script>
-<script src="vendor/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/argon/js/popper.min.js"></script>
+<script src="vendor/argon/js/bootstrap.min.js"></script>
 <script>
 const roleLabels = { branch_admin: 'Branch Administrator', branch_user: 'Branch User' };
 
-// Mirrors sidebar.php's section groupings so the matrix reads the same way
+// Mirrors topnav.php's dropdown groupings so the matrix reads the same way
 // the nav does. Any module key not listed here (e.g. a brand-new module
 // added to ACCESS_MODULES before this map is updated) still shows up, under
 // "Other" — nothing goes missing, it just isn't grouped yet.
 const moduleSections = [
-    { label: 'Internal Procurement', keys: ['purchase_requisition', 'internal_rfq', 'po_internal', 'receiving_reports', 'inventory', 'warehouse'] },
+    { label: 'Internal Procurement', keys: ['po_internal', 'receiving_reports', 'payables', 'inventory', 'warehouse'] },
     { label: 'Branch Operations',    keys: ['stock_transfer', 'issuance'] },
     { label: 'Outgoing Sales',       keys: ['outgoing_rfq', 'outgoing_quotations', 'po_outgoing', 'delivery_reports'] },
+    { label: 'Service & Billing',    keys: ['job_orders', 'billing', 'collections'] },
     { label: 'Reports',              keys: ['order_tracking', 'cost_profit_reports', 'reports'] },
-    { label: 'Master Data',          keys: ['suppliers', 'clients', 'items'] },
+    { label: 'Master Data',          keys: ['suppliers', 'clients', 'items', 'salesmen'] },
     { label: 'System',               keys: ['settings', 'system_guide'] },
 ];
 

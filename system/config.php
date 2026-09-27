@@ -224,10 +224,9 @@ function requireBranchAccess(?int $branchId): void {
 // Reports, Inventory, Stock Transfer, Issuance, Suppliers, Clients, Cost/
 // Profit Reports) gets its own key added here as that page is built.
 const ACCESS_MODULES = [
-    'purchase_requisition' => 'Purchase Requisition',
-    'internal_rfq'         => 'RFQ (Internal)',
     'po_internal'          => 'Purchase Order (Internal)',
     'receiving_reports'    => 'Receiving Reports',
+    'payables'             => 'Payables (AP)',
     'inventory'            => 'Inventory',
     'warehouse'            => 'Warehouse Map',
     'stock_transfer'       => 'Stock Transfer',
@@ -237,9 +236,13 @@ const ACCESS_MODULES = [
     'po_outgoing'          => 'Purchase Order (Outgoing)',
     'delivery_reports'     => 'Delivery Reports',
     'order_tracking'       => 'Order Tracking',
+    'billing'              => 'Billing (AR)',
+    'collections'          => 'Collections & PDC',
+    'job_orders'           => 'Job Orders (Repair/Service)',
     'cost_profit_reports'  => 'Cost/Profit Reports',
     'suppliers'            => 'Supplier Management',
     'clients'              => 'Client Management',
+    'salesmen'             => 'Salesman List',
     'items'                => 'Item Catalog',
     'reports'              => 'Reports',
     'settings'             => 'User Management',
@@ -454,7 +457,7 @@ function isApiRequest() {
 }
 
 function getBasePath() {
-    return '/SystemsMISPYO/EXECOM/system';
+    return '/NewEXECOM/system';
 }
 
 function e($str) {

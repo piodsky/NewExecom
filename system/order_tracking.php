@@ -11,7 +11,8 @@ $activePage  = 'order_tracking';
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Order Tracking | <?= e(APP_NAME) ?></title>
 <link rel="icon" href="image/execom_icon.png">
-<link href="vendor/css/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/argon/css/argon-dashboard.min.css" rel="stylesheet">
+<link href="vendor/argon/css/nucleo-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="css/base.css">
 <style>
@@ -24,25 +25,23 @@ $activePage  = 'order_tracking';
 </style>
 </head>
 <body>
-<div class="wrapper">
-<?php include 'sidebar.php'; ?>
+<?php include 'topnav.php'; ?>
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle">Home</div>
+                    <h2 class="page-title">Order Tracking</h2>
+                    <div class="text-muted small">Follow one order's full journey, from request to completion.</div>
+                </div>
 
-<div class="main-content">
-    <div class="top-navbar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            <div>
-                <div class="page-title">Order Tracking</div>
-                <div class="small text-muted">Follow one order's full journey, from request to completion.</div>
-                <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Order Tracking</div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <?php include 'topbar.php'; ?>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="page-body">
+    <div class="container-xl">
         <ul class="nav nav-tabs mb-3">
             <li class="nav-item"><button class="nav-link active" id="tabIntBtn" onclick="showTab('int')">Internal Chain</button></li>
             <li class="nav-item"><button class="nav-link" id="tabOutBtn" onclick="showTab('out')">Outgoing Chain</button></li>
@@ -51,14 +50,14 @@ $activePage  = 'order_tracking';
         <div id="tabInt">
             <div class="panel mb-3">
                 <div class="panel-body d-flex align-items-center gap-2 flex-wrap">
-                    <label class="form-label mb-0 fw-bold">Requisition:</label>
+                    <label class="form-label mb-0 fw-bold">Purchase Order:</label>
                     <select class="form-select" id="intRootSelect" style="max-width:420px" onchange="trackInternal(this.value)">
-                        <option value="">Select a requisition…</option>
+                        <option value="">Select a purchase order…</option>
                     </select>
                 </div>
             </div>
             <div id="intTimeline">
-                <div class="panel"><div class="panel-body text-muted small">Pick a Purchase Requisition above to see everything that happened to it — canvassing, purchase order, and receiving.</div></div>
+                <div class="panel"><div class="panel-body text-muted small">Pick an internal Purchase Order above to see everything that happened to it — receiving included.</div></div>
             </div>
         </div>
 
@@ -80,7 +79,8 @@ $activePage  = 'order_tracking';
 </div>
 
 <script src="vendor/js/jquery.min.js"></script>
-<script src="vendor/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/argon/js/popper.min.js"></script>
+<script src="vendor/argon/js/bootstrap.min.js"></script>
 <script>
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const peso = n => '₱' + Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
@@ -130,43 +130,25 @@ async function loadInternalRoots() {
     const res = await fetch('api/order_tracking.php?type=internal');
     const data = await res.json();
     if (!data.success) return;
-    document.getElementById('intRootSelect').innerHTML = '<option value="">Select a requisition…</option>' +
-        data.roots.map(r => `<option value="${escapeHtml(r.pr_number)}">${escapeHtml(r.pr_number)} — ${escapeHtml(r.branch_name)} (${escapeHtml(statusLabels[r.status] || r.status)})</option>`).join('');
+    document.getElementById('intRootSelect').innerHTML = '<option value="">Select a purchase order…</option>' +
+        data.roots.map(r => `<option value="${escapeHtml(r.po_number)}">${escapeHtml(r.po_number)} — ${escapeHtml(r.supplier_name || 'Supplier not set')} (${escapeHtml(statusLabels[r.status] || r.status)})</option>`).join('');
 }
 
-async function trackInternal(prNumber) {
+async function trackInternal(poNumber) {
     const box = document.getElementById('intTimeline');
-    if (!prNumber) {
-        box.innerHTML = '<div class="panel"><div class="panel-body text-muted small">Pick a Purchase Requisition above to see everything that happened to it — canvassing, purchase order, and receiving.</div></div>';
+    if (!poNumber) {
+        box.innerHTML = '<div class="panel"><div class="panel-body text-muted small">Pick an internal Purchase Order above to see everything that happened to it — receiving included.</div></div>';
         return;
     }
     box.innerHTML = '<div class="panel"><div class="panel-body text-muted small">Loading…</div></div>';
-    const res  = await fetch('api/order_tracking.php?type=internal&root=' + encodeURIComponent(prNumber));
+    const res  = await fetch('api/order_tracking.php?type=internal&root=' + encodeURIComponent(poNumber));
     const data = await res.json();
     if (!data.success) { box.innerHTML = `<div class="panel"><div class="panel-body text-danger small">${escapeHtml(data.message)}</div></div>`; return; }
     box.innerHTML = renderInternalChain(data.chain);
 }
 
 function renderInternalChain(chain) {
-    const pr = chain.root;
-
-    const rfqCards = chain.internal_rfqs.map(r => `
-        <div class="track-doc-card">
-            <div>${docLink('internal_rfq.php', r.rfq_number, 'doc-irfq')} <span class="text-muted small ms-2">Sent ${fmtDate(r.sent_date)}</span></div>
-            ${statusBadge(r.status)}
-        </div>`).join('');
-
-    const poCards = chain.purchase_orders.map(p => `
-        <div class="track-doc-card">
-            <div>
-                <div>${docLink('po_internal.php', p.po_number, 'doc-poi')} <span class="text-muted small ms-2">${escapeHtml(p.supplier_name || 'Supplier not set')}</span></div>
-                ${progressBar(p.received_qty, p.ordered_qty)}
-            </div>
-            <div class="text-end">
-                ${statusBadge(p.status)}
-                <div class="fw-bold small mt-1">${peso(p.total_amount)}</div>
-            </div>
-        </div>`).join('');
+    const po = chain.root;
 
     const rrCards = chain.receiving_reports.map(r => `
         <div class="track-doc-card">
@@ -176,20 +158,18 @@ function renderInternalChain(chain) {
     return `
     <div class="panel">
         <div class="panel-header">
-            <div class="panel-title">${docLink('purchase_requisitions.php', pr.pr_number, 'doc-pr')}</div>
-            ${statusBadge(pr.status)}
+            <div class="panel-title">${docLink('po_internal.php', po.po_number, 'doc-poi')}</div>
+            ${statusBadge(po.status)}
         </div>
         <div class="panel-body">
             <div class="row g-2 mb-4">
-                <div class="col-6"><strong>Branch:</strong> ${escapeHtml(pr.branch_name)}</div>
-                <div class="col-6"><strong>Requested By:</strong> ${escapeHtml(pr.requested_by_name)}</div>
-                <div class="col-6"><strong>Department:</strong> ${escapeHtml(pr.department || '—')}</div>
-                <div class="col-6"><strong>Needed:</strong> ${fmtDate(pr.needed_date)}</div>
-                <div class="col-12"><strong>Purpose:</strong> ${escapeHtml(pr.purpose || '—')}</div>
+                <div class="col-6"><strong>Branch:</strong> ${escapeHtml(po.branch_name)}</div>
+                <div class="col-6"><strong>Supplier:</strong> ${escapeHtml(po.supplier_name || '—')}</div>
+                <div class="col-6"><strong>Created By:</strong> ${escapeHtml(po.created_by_name)}</div>
+                <div class="col-6"><strong>Total:</strong> ${peso(po.total_amount)}</div>
             </div>
-            <div class="track-line">
-                ${trackStage('fa-file-invoice', 'doc-irfq', 'RFQ (Internal) — canvassing suppliers', rfqCards, 'Not sent for canvass yet.')}
-                ${trackStage('fa-file-invoice-dollar', 'doc-poi', 'Purchase Order (Internal)', poCards, 'No purchase order raised yet.')}
+            ${progressBar(po.received_qty, po.ordered_qty)}
+            <div class="track-line mt-3">
                 ${trackStage('fa-truck-ramp-box', 'doc-rr', 'Receiving Report', rrCards, 'Nothing received yet.')}
             </div>
         </div>

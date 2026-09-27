@@ -20,7 +20,7 @@ if ($method === 'GET') {
     // business client. Pass type=walkin or type=all to see past that.
     $type = trim($_GET['type'] ?? 'business');
 
-    $sql    = 'SELECT id, name, address, contact_person, contact_number, client_type, is_active, created_at FROM clients';
+    $sql    = 'SELECT id, name, address, contact_person, contact_number, client_type, payment_terms_days, credit_limit, default_salesman_id, is_active, created_at FROM clients';
     $where  = [];
     $params = [];
     if ($q !== '') { $where[] = '(name LIKE ? OR contact_person LIKE ?)'; $params[] = "%{$q}%"; $params[] = "%{$q}%"; }
@@ -44,12 +44,17 @@ if ($method === 'POST') {
         $contact = trim($data['contact_person'] ?? '');
         $number  = trim($data['contact_number'] ?? '');
         $type    = in_array($data['client_type'] ?? '', ['business', 'walkin'], true) ? $data['client_type'] : 'business';
+        $termsDays = trim((string)($data['payment_terms_days'] ?? ''));
+        $termsDays = $termsDays === '' ? null : max(0, (int)$termsDays);
+        $creditLimit = (float)($data['credit_limit'] ?? 0);
+        if ($creditLimit < 0) jsonResponse(false, 'Credit limit cannot be negative.');
         if ($name === '') jsonResponse(false, 'Client name is required.');
+        $defaultSalesmanId = !empty($data['default_salesman_id']) ? (int)$data['default_salesman_id'] : null;
 
         if ($action === 'create') {
             $db->prepare(
-                'INSERT INTO clients (name, address, contact_person, contact_number, client_type) VALUES (?,?,?,?,?)'
-            )->execute([$name, $address ?: null, $contact ?: null, $number ?: null, $type]);
+                'INSERT INTO clients (name, address, contact_person, contact_number, client_type, payment_terms_days, credit_limit, default_salesman_id) VALUES (?,?,?,?,?,?,?,?)'
+            )->execute([$name, $address ?: null, $contact ?: null, $number ?: null, $type, $termsDays, $creditLimit, $defaultSalesmanId]);
             logAudit('CREATE_CLIENT', 'clients', "Created client \"{$name}\"");
             jsonResponse(true, 'Client added.');
         }
@@ -57,8 +62,8 @@ if ($method === 'POST') {
         $id = (int)($data['id'] ?? 0);
         if (!$id) jsonResponse(false, 'Invalid client.');
         $db->prepare(
-            'UPDATE clients SET name=?, address=?, contact_person=?, contact_number=?, client_type=? WHERE id=?'
-        )->execute([$name, $address ?: null, $contact ?: null, $number ?: null, $type, $id]);
+            'UPDATE clients SET name=?, address=?, contact_person=?, contact_number=?, client_type=?, payment_terms_days=?, credit_limit=?, default_salesman_id=? WHERE id=?'
+        )->execute([$name, $address ?: null, $contact ?: null, $number ?: null, $type, $termsDays, $creditLimit, $defaultSalesmanId, $id]);
         logAudit('UPDATE_CLIENT', 'clients', "Updated client \"{$name}\"");
         jsonResponse(true, 'Client updated.');
     }

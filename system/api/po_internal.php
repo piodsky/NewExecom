@@ -1,8 +1,7 @@
 <?php
-// Purchase Order — Internal: EXECOM buying from its own supplier. Created
-// either by converting an Internal RFQ's winning quotes (api/internal_rfq.php)
-// or directly here for a straight purchase with no canvass. Admin-tier only
-// to create/manage.
+// Purchase Order — Internal: EXECOM buying directly from its own supplier,
+// no requisition/canvass step (mirrors Globalchips' direct PURCHTRN entry).
+// Admin-tier only to create/manage.
 require_once '../config.php';
 requireModule('po_internal');
 header('Content-Type: application/json');
@@ -24,7 +23,8 @@ function loadPoInternal(PDO $db, string $poNumber): ?array {
     if (!$po) return null;
 
     $itemStmt = $db->prepare(
-        'SELECT pi.id, pi.item_id, i.name AS item_name, i.is_serialized, pi.description, pi.quantity, pi.unit, pi.unit_cost, pi.total_cost,
+        'SELECT pi.id, pi.item_id, i.name AS item_name, i.is_serialized, i.purchase_unit, i.purchase_conversion_factor,
+                pi.description, pi.quantity, pi.unit, pi.unit_cost, pi.total_cost,
                 COALESCE((SELECT SUM(rri.quantity) FROM receiving_report_items rri
                           JOIN receiving_reports rr ON rr.rr_number = rri.rr_number
                           WHERE rr.po_number = pi.po_number AND rri.item_id = pi.item_id AND rri.is_deleted = 0 AND rr.is_deleted = 0), 0) AS received_qty
@@ -56,7 +56,7 @@ if ($method === 'GET') {
         jsonResponse(true, '', ['pos' => $stmt->fetchAll()]);
     }
 
-    $sql = 'SELECT p.po_number, p.branch_id, b.name AS branch_name, p.supplier_name, p.internal_rfq_number,
+    $sql = 'SELECT p.po_number, p.branch_id, b.name AS branch_name, p.supplier_name,
                    p.status, p.total_amount, u.full_name AS created_by_name, p.created_at
             FROM po_internal p JOIN branches b ON b.id = p.branch_id JOIN users u ON u.id = p.created_by
             WHERE p.is_deleted = 0';

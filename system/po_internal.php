@@ -13,7 +13,8 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Purchase Orders (Internal) | <?= e(APP_NAME) ?></title>
 <link rel="icon" href="image/execom_icon.png">
-<link href="vendor/css/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/argon/css/argon-dashboard.min.css" rel="stylesheet">
+<link href="vendor/argon/css/nucleo-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="css/base.css">
 <style>
@@ -26,25 +27,23 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
 </style>
 </head>
 <body>
-<div class="wrapper">
-<?php include 'sidebar.php'; ?>
+<?php include 'topnav.php'; ?>
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle">Home</div>
+                    <h2 class="page-title">Purchase Orders (Internal)</h2>
+                    <div class="text-muted small">Issue purchase orders to suppliers for approved internal purchases.</div>
+                </div>
 
-<div class="main-content">
-    <div class="top-navbar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            <div>
-                <div class="page-title">Purchase Orders (Internal)</div>
-                <div class="small text-muted">Issue purchase orders to suppliers for approved internal purchases.</div>
-                <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> PO (Internal)</div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <?php include 'topbar.php'; ?>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="page-body">
+    <div class="container-xl">
         <div class="panel">
             <div class="panel-header d-flex justify-content-between align-items-center">
                 <div class="panel-title">EXECOM's Orders to Suppliers</div>
@@ -55,8 +54,8 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
             <div class="panel-body">
                 <div class="table-responsive">
                 <table class="app-table table">
-                    <thead><tr><th>PO Number</th><th>Branch</th><th>Supplier</th><th>From RFQ</th><th>Total</th><th>Status</th><th></th></tr></thead>
-                    <tbody id="poBody"><tr><td colspan="7" class="text-muted small">Loading…</td></tr></tbody>
+                    <thead><tr><th>PO Number</th><th>Branch</th><th>Supplier</th><th>Total</th><th>Status</th><th></th></tr></thead>
+                    <tbody id="poBody"><tr><td colspan="6" class="text-muted small">Loading…</td></tr></tbody>
                 </table>
                 </div>
             </div>
@@ -107,7 +106,8 @@ $isSuperAdmin = $currentUser['role'] === 'super_admin';
 </div>
 
 <script src="vendor/js/jquery.min.js"></script>
-<script src="vendor/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/argon/js/popper.min.js"></script>
+<script src="vendor/argon/js/bootstrap.min.js"></script>
 <script>
 const isAdminTier = <?= $isAdminTier ? 'true' : 'false' ?>;
 const isSuperAdmin = <?= $isSuperAdmin ? 'true' : 'false' ?>;
@@ -137,11 +137,10 @@ async function loadPos() {
             <td><span class="doc-number doc-poi">${escapeHtml(p.po_number)}</span></td>
             <td>${escapeHtml(p.branch_name)}</td>
             <td>${escapeHtml(p.supplier_name)}</td>
-            <td>${escapeHtml(p.internal_rfq_number || '—')}</td>
             <td>${peso(p.total_amount)}</td>
             <td><span class="badge-status ${p.status}">${statusLabel[p.status] || p.status}</span></td>
             <td class="text-end"><i class="fas fa-chevron-right text-muted"></i></td>
-        </tr>`).join('') : '<tr><td colspan="7" class="text-muted small">No purchase orders yet.</td></tr>';
+        </tr>`).join('') : '<tr><td colspan="6" class="text-muted small">No purchase orders yet.</td></tr>';
 }
 
 async function openPoModal() {
@@ -160,13 +159,16 @@ async function openPoModal() {
 function addPoItemRow() {
     const wrap = document.createElement('div');
     wrap.className = 'po-item-row';
-    const itemOpts = catalogItems.map(i => `<option value="${i.id}" data-cost="${i.default_cost ?? ''}" data-unit="${escapeHtml(i.unit)}">${escapeHtml(i.name)}${i.sku ? ' ('+escapeHtml(i.sku)+')' : ''}</option>`).join('');
+    const itemOpts = catalogItems.map(i => `<option value="${i.id}" data-cost="${i.default_cost ?? ''}" data-unit="${escapeHtml(i.purchase_unit || i.unit)}" data-conversion="${i.purchase_unit ? i.purchase_conversion_factor : 1}">${escapeHtml(i.name)}${i.sku ? ' ('+escapeHtml(i.sku)+')' : ''}</option>`).join('');
     wrap.innerHTML = `
         <select class="form-select form-select-sm po-item-select" onchange="onPoItemPicked(this)">
             <option value="">— Custom (not in catalog) —</option>${itemOpts}
         </select>
         <input type="text" class="form-control form-control-sm po-desc" placeholder="Description (if custom)">
-        <input type="number" step="0.01" class="form-control form-control-sm po-qty" placeholder="Qty">
+        <span style="display:flex;flex-direction:column;">
+            <input type="number" step="0.01" class="form-control form-control-sm po-qty" placeholder="Qty" oninput="onPoQtyChanged(this)">
+            <span class="po-stock-hint text-muted" style="font-size:.7rem;"></span>
+        </span>
         <input type="text" class="form-control form-control-sm po-unit" placeholder="Unit">
         <input type="number" step="0.01" class="form-control form-control-sm po-cost" placeholder="Unit Cost">
         <button type="button" class="btn btn-sm btn-light" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>`;
@@ -182,10 +184,21 @@ function onPoItemPicked(select) {
         descField.disabled = true;
         if (opt.dataset.unit) row.querySelector('.po-unit').value = opt.dataset.unit;
         if (opt.dataset.cost) row.querySelector('.po-cost').value = opt.dataset.cost;
+        row.dataset.conversion = opt.dataset.conversion || '1';
     } else {
         descField.value = '';
         descField.disabled = false;
+        row.dataset.conversion = '1';
     }
+    onPoQtyChanged(row.querySelector('.po-qty'));
+}
+
+function onPoQtyChanged(input) {
+    const row = input.closest('.po-item-row');
+    const conversion = Number(row.dataset.conversion || 1);
+    const hint = row.querySelector('.po-stock-hint');
+    const qty = Number(input.value || 0);
+    hint.textContent = (conversion !== 1 && qty > 0) ? `(= ${qty * conversion} pcs)` : '';
 }
 
 document.getElementById('poForm').addEventListener('submit', async (e) => {

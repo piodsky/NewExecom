@@ -21,10 +21,11 @@ function loadIssuance(PDO $db, string $issuanceNumber): ?array {
                 COALESCE(c.name, iss.walkin_name) AS client_name,
                 COALESCE(c.address, iss.walkin_address) AS client_address,
                 COALESCE(c.client_type, IF(iss.walkin_name IS NOT NULL, \'walkin\', NULL)) AS client_type,
-                u.full_name AS issued_by_name
+                u.full_name AS issued_by_name, sm.name AS salesman_name
          FROM issuances iss
          JOIN branches b ON b.id = iss.branch_id
          LEFT JOIN clients c ON c.id = iss.client_id
+         LEFT JOIN salesmen sm ON sm.id = iss.salesman_id
          JOIN users u ON u.id = iss.issued_by
          WHERE iss.issuance_number = ? AND iss.is_deleted = 0'
     );
@@ -227,6 +228,13 @@ if ($method === 'POST') {
             if (!$clientCheck->fetchColumn()) jsonResponse(false, 'Client not found.');
         }
 
+        $salesmanId = !empty($data['salesman_id']) ? (int)$data['salesman_id'] : null;
+        if ($salesmanId) {
+            $smCheck = $db->prepare('SELECT COUNT(*) FROM salesmen WHERE id = ? AND is_active = 1');
+            $smCheck->execute([$salesmanId]);
+            if (!$smCheck->fetchColumn()) jsonResponse(false, 'Salesman not found.');
+        }
+
         // No client on record — this is a walk-in sale. Name is the only
         // thing the printed slip actually needs; address and contact number
         // are nice-to-have and stay optional. The name/address/contact are
@@ -326,9 +334,9 @@ if ($method === 'POST') {
             }
 
             $db->prepare(
-                'INSERT INTO issuances (issuance_number, branch_id, client_id, walkin_name, walkin_address, walkin_contact, po_number, issued_by, date_created, total_amount, discount_amount)
-                 VALUES (?,?,?,?,?,?,?,?,NOW(),?,?)'
-            )->execute([$issuanceNumber, $branchId, $clientId, $walkinName, $walkinAddress, $walkinContact, $poNumber, $user['id'], $total, $discount]);
+                'INSERT INTO issuances (issuance_number, branch_id, client_id, walkin_name, walkin_address, walkin_contact, po_number, issued_by, salesman_id, date_created, total_amount, discount_amount)
+                 VALUES (?,?,?,?,?,?,?,?,?,NOW(),?,?)'
+            )->execute([$issuanceNumber, $branchId, $clientId, $walkinName, $walkinAddress, $walkinContact, $poNumber, $user['id'], $salesmanId, $total, $discount]);
 
             $itemStmt = $db->prepare(
                 'INSERT INTO issuance_items (issuance_number, inventory_unit_id, item_id, quantity, unit_price, total_price)

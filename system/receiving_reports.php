@@ -12,7 +12,8 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Receiving Reports | <?= e(APP_NAME) ?></title>
 <link rel="icon" href="image/execom_icon.png">
-<link href="vendor/css/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/argon/css/argon-dashboard.min.css" rel="stylesheet">
+<link href="vendor/argon/css/nucleo-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="css/base.css">
 <style>
@@ -21,25 +22,23 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 </style>
 </head>
 <body>
-<div class="wrapper">
-<?php include 'sidebar.php'; ?>
+<?php include 'topnav.php'; ?>
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle">Home</div>
+                    <h2 class="page-title">Receiving Reports</h2>
+                    <div class="text-muted small">Record supplier deliveries and add accepted items to inventory.</div>
+                </div>
 
-<div class="main-content">
-    <div class="top-navbar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            <div>
-                <div class="page-title">Receiving Reports</div>
-                <div class="small text-muted">Record supplier deliveries and add accepted items to inventory.</div>
-                <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Receiving Reports</div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <?php include 'topbar.php'; ?>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="page-body">
+    <div class="container-xl">
         <div class="panel">
             <div class="panel-header d-flex justify-content-between align-items-center">
                 <div class="panel-title">Goods Received from Suppliers</div>
@@ -104,7 +103,8 @@ $isAdminTier = in_array($currentUser['role'], ['super_admin', 'branch_admin'], t
 </div>
 
 <script src="vendor/js/jquery.min.js"></script>
-<script src="vendor/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/argon/js/popper.min.js"></script>
+<script src="vendor/argon/js/bootstrap.min.js"></script>
 <script>
 let rrCache = [], currentPoItems = [];
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -154,9 +154,15 @@ async function onRrPoPicked() {
         received_qty: Number(i.received_qty || 0),
         remaining: Math.max(0, Number(i.quantity || 0) - Number(i.received_qty || 0)),
         is_serialized: Number(i.is_serialized || 0) === 1,
+        conversion_factor: Number(i.purchase_conversion_factor || 1),
     }));
     renderRrAvailableItems();
     document.getElementById('rrPoItemsWrap').style.display = '';
+}
+
+function stockHint(item, qtyValue) {
+    if (item.is_serialized || item.conversion_factor === 1) return '';
+    return ` <span class="text-muted">(= ${qty(qtyValue * item.conversion_factor)} pcs)</span>`;
 }
 
 function getRrItem(itemId) {
@@ -183,7 +189,7 @@ function renderRrAvailableItems() {
         const label = left <= 0 ? 'All queued' : 'Add';
         return `
             <div class="rr-avail-row">
-                <span>${escapeHtml(i.item_name)} <span class="text-muted">(ordered ${qty(i.quantity)}, received ${qty(i.received_qty)})</span></span>
+                <span>${escapeHtml(i.item_name)} <span class="text-muted">(ordered ${qty(i.quantity)}, received ${qty(i.received_qty)})</span>${stockHint(i, i.remaining)}</span>
                 <span>
                     ${queued > 0 ? `<span class="text-muted me-2">${qty(queued)} queued</span>` : ''}
                     <strong class="me-2">${qty(left)} left</strong>
@@ -201,6 +207,9 @@ function onRrQtyChanged(input) {
     const value = Number(input.value || 0);
     if (value > max) input.value = inputQty(max);
     if (Number(input.value || 0) < 0) input.value = '';
+    const item = getRrItem(row.dataset.itemId);
+    const hintSpan = row.querySelector('.rr-stock-hint');
+    if (item && hintSpan) hintSpan.innerHTML = stockHint(item, Number(input.value || 0));
     renderRrAvailableItems();
 }
 
@@ -224,7 +233,7 @@ function addRrLine(itemId) {
     wrap.dataset.itemId = item.item_id;
     wrap.dataset.serialized = item.is_serialized ? '1' : '0';
     wrap.innerHTML = `
-        <span>${escapeHtml(item.item_name)}</span>
+        <span>${escapeHtml(item.item_name)}<span class="rr-stock-hint">${stockHint(item, qtyValue)}</span></span>
         <input type="number" step="0.01" min="0.01" class="form-control form-control-sm rr-qty" placeholder="Qty" value="${qtyValue}" ${item.is_serialized ? 'readonly' : ''} max="${inputQty(left)}" oninput="onRrQtyChanged(this)">
         <input type="number" step="0.01" class="form-control form-control-sm rr-cost" placeholder="Unit Cost" value="${item.unit_cost ?? ''}">
         <input type="text" class="form-control form-control-sm rr-serial" placeholder="${item.is_serialized ? 'Serial number (required)' : 'Serial (n/a)'}" ${item.is_serialized ? '' : 'disabled'}>

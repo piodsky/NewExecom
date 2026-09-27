@@ -22,7 +22,8 @@ $dGreetingWord = $dHour < 12 ? 'Morning' : ($dHour < 18 ? 'Afternoon' : 'Evening
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard | <?= e(APP_NAME) ?></title>
 <link rel="icon" href="image/execom_icon.png">
-<link href="vendor/css/bootstrap.min.css" rel="stylesheet">
+<link href="vendor/argon/css/argon-dashboard.min.css" rel="stylesheet">
+<link href="vendor/argon/css/nucleo-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="vendor/css/all.min.css">
 <link rel="stylesheet" href="css/base.css">
 <style>
@@ -37,25 +38,23 @@ $dGreetingWord = $dHour < 12 ? 'Morning' : ($dHour < 18 ? 'Afternoon' : 'Evening
 </style>
 </head>
 <body>
-<div class="wrapper">
-<?php include 'sidebar.php'; ?>
+<?php include 'topnav.php'; ?>
+<div class="page-wrapper">
+    <div class="page-header d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle">Home</div>
+                    <h2 class="page-title">Dashboard</h2>
+                    <div class="text-muted small">Snapshot of procurement, inventory, sales, and recent activity.</div>
+                </div>
 
-<div class="main-content">
-    <div class="top-navbar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-sm d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-            <div>
-                <div class="page-title">Dashboard</div>
-                <div class="small text-muted">Snapshot of procurement, inventory, sales, and recent activity.</div>
-                <div class="page-breadcrumb">Home <i class="fas fa-chevron-right"></i> Dashboard</div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <?php include 'topbar.php'; ?>
         </div>
     </div>
 
-    <div class="content-area">
+    <div class="page-body">
+    <div class="container-xl">
         <div class="dash-hero">
             <div class="dash-hero-inner">
                 <div class="dash-hero-tag">Smarter Logistics. Stronger Connections.</div>
@@ -81,12 +80,12 @@ $dGreetingWord = $dHour < 12 ? 'Morning' : ($dHour < 18 ? 'Afternoon' : 'Evening
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <a href="purchase_requisitions.php" class="text-decoration-none">
+                        <a href="inventory.php" class="text-decoration-none">
                         <div class="mk-kpi">
-                            <div class="mk-kpi-icon" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><i class="fas fa-file-signature"></i></div>
-                            <div class="mk-kpi-value" id="mkPendingPr">—</div>
-                            <div class="mk-kpi-label">Pending PR</div>
-                            <div class="mk-kpi-caption">for approval</div>
+                            <div class="mk-kpi-icon" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><i class="fas fa-triangle-exclamation"></i></div>
+                            <div class="mk-kpi-value" id="mkLowStock">—</div>
+                            <div class="mk-kpi-label">Low Stock</div>
+                            <div class="mk-kpi-caption">below reorder level</div>
                         </div>
                         </a>
                     </div>
@@ -162,8 +161,6 @@ $dGreetingWord = $dHour < 12 ? 'Morning' : ($dHour < 18 ? 'Afternoon' : 'Evening
                 <div class="panel mb-3">
                     <div class="panel-header"><div class="panel-title">Quick Actions</div></div>
                     <div class="panel-body">
-                        <?php if ($canPr): ?><a href="purchase_requisitions.php" class="quick-action"><span class="qa-icon blue"><i class="fas fa-file-signature"></i></span><div>Create Purchase Requisition</div></a><?php endif; ?>
-                        <?php if ($canInternalRfq): ?><a href="internal_rfq.php" class="quick-action"><span class="qa-icon teal"><i class="fas fa-file-invoice"></i></span><div>Request RFQ / Quotation</div></a><?php endif; ?>
                         <?php if ($canPoInternal): ?><a href="po_internal.php" class="quick-action"><span class="qa-icon purple"><i class="fas fa-file-invoice-dollar"></i></span><div>Create Purchase Order</div></a><?php endif; ?>
                         <?php if ($canReceiving): ?><a href="receiving_reports.php" class="quick-action"><span class="qa-icon green"><i class="fas fa-truck-ramp-box"></i></span><div>Record Receiving Report</div></a><?php endif; ?>
                         <?php if ($canIssuance): ?><a href="issuances.php" class="quick-action"><span class="qa-icon red"><i class="fas fa-cash-register"></i></span><div>Issue Goods (POS)</div></a><?php endif; ?>
@@ -227,10 +224,10 @@ $dGreetingWord = $dHour < 12 ? 'Morning' : ($dHour < 18 ? 'Afternoon' : 'Evening
         <div class="row g-3 mb-3" id="statCards">
             <div class="col-6 col-lg-3">
                 <div class="stat-card blue">
-                    <div class="stat-icon"><i class="fas fa-file-signature"></i></div>
+                    <div class="stat-icon"><i class="fas fa-cash-register"></i></div>
                     <div>
-                        <div class="stat-value" id="statPr">—</div>
-                        <div class="stat-label">Purchase Requisitions</div>
+                        <div class="stat-value" id="statIssuances">—</div>
+                        <div class="stat-label">Issuances</div>
                     </div>
                 </div>
             </div>
@@ -325,7 +322,8 @@ $dGreetingWord = $dHour < 12 ? 'Morning' : ($dHour < 18 ? 'Afternoon' : 'Evening
 </div>
 
 <script src="vendor/js/jquery.min.js"></script>
-<script src="vendor/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/argon/js/popper.min.js"></script>
+<script src="vendor/argon/js/bootstrap.min.js"></script>
 <script src="vendor/js/chart.umd.min.js"></script>
 <script>
 function escapeHtml(s) {
@@ -387,13 +385,13 @@ async function loadDashboard() {
         dashData = data;
 
         const s = data.stats;
-        document.getElementById('statPr').textContent        = Number(s.purchase_requisitions).toLocaleString();
+        document.getElementById('statIssuances').textContent = Number(s.issuances).toLocaleString();
         document.getElementById('statPo').textContent        = Number(s.purchase_orders).toLocaleString();
         document.getElementById('statReceived').textContent  = Number(s.received_items).toLocaleString();
         document.getElementById('statInventory').textContent = Number(s.inventory_items).toLocaleString();
 
         document.getElementById('mkInventory').textContent  = Number(s.inventory_items).toLocaleString();
-        document.getElementById('mkPendingPr').textContent  = Number(data.needs_attention.pr_pending).toLocaleString();
+        document.getElementById('mkLowStock').textContent   = Number(data.needs_attention.low_stock).toLocaleString();
         document.getElementById('mkOpenPo').textContent     = Number(data.open_po_count).toLocaleString();
         document.getElementById('mkDeliveries').textContent = Number(data.today_deliveries).toLocaleString();
 
@@ -405,7 +403,7 @@ async function loadDashboard() {
         document.getElementById('kpiProfitTrend').innerHTML  = trendBadge(f.profit_change);
 
         const na = data.needs_attention;
-        const naTotal = na.pr_pending + na.stock_pending + na.orders_open + na.low_stock;
+        const naTotal = na.stock_pending + na.orders_open + na.low_stock;
         document.getElementById('kpiAttention').textContent = naTotal.toLocaleString();
         renderAttentionList(na);
         renderLowStock(data.low_stock_items);
@@ -541,17 +539,17 @@ function renderRecentTransactions(rows) {
         box.innerHTML = '<div class="text-muted small p-3">No transactions recorded yet.</div>';
         return;
     }
-    box.innerHTML = `<table class="app-table">
+    box.innerHTML = `<div class="table-responsive"><table class="app-table table mb-0">
         <thead><tr><th>Date</th><th>Document No.</th><th>Type</th><th>Description</th><th>Status</th></tr></thead>
         <tbody>${rows.map(r => `
             <tr>
-                <td class="text-muted">${new Date(String(r.created_at).replace(' ', 'T')).toLocaleDateString()}</td>
-                <td><span class="doc-number ${r.doc_class}">${escapeHtml(r.doc_number)}</span></td>
-                <td>${escapeHtml(r.doc_type)}</td>
+                <td class="text-muted text-nowrap">${new Date(String(r.created_at).replace(' ', 'T')).toLocaleDateString()}</td>
+                <td class="text-nowrap"><span class="doc-number ${r.doc_class}">${escapeHtml(r.doc_number)}</span></td>
+                <td class="text-nowrap">${escapeHtml(r.doc_type)}</td>
                 <td>${escapeHtml(r.description || '—')}</td>
-                <td><span class="badge-status ${r.status}">${statusLabels[r.status] || escapeHtml(r.status)}</span></td>
+                <td class="text-nowrap"><span class="badge-status ${r.status}">${statusLabels[r.status] || escapeHtml(r.status)}</span></td>
             </tr>`).join('')}</tbody>
-    </table>`;
+    </table></div>`;
 }
 
 function renderTopSuppliers(rows) {
@@ -597,7 +595,6 @@ function renderOrderPipeline(stages) {
 
 function renderAttentionList(na) {
     const items = [
-        { key: 'pr_pending',    icon: 'fa-file-signature',      color: 'blue',   label: 'Purchase Requisitions Pending', href: 'purchase_requisitions.php' },
         { key: 'stock_pending', icon: 'fa-truck-arrow-right',   color: 'purple', label: 'Stock Transfers In Progress',   href: 'stock_transfers.php' },
         { key: 'orders_open',   icon: 'fa-file-invoice-dollar', color: 'teal',   label: 'Client Orders In Progress',     href: 'po_outgoing.php' },
         { key: 'low_stock',     icon: 'fa-triangle-exclamation', color: 'amber', label: 'Items Below Reorder Level',     href: 'inventory.php' },
